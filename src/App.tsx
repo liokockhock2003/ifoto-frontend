@@ -29,7 +29,7 @@ function App() {
     if (photosError || testError) {
         return (
             <div className="flex min-h-screen items-center justify-center text-red-600 text-xl">
-                Error loading data
+                Error loading data meow
                 <br />
                 {JSON.stringify(photosError || testError, null, 2)}
             </div>
