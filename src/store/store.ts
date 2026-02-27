@@ -1,4 +1,3 @@
-// src/app/store.ts
 import { configureStore } from '@reduxjs/toolkit'
 import { photoApi } from '@/features/api/apiSlice'  // ← adjust path if your slice is elsewhere (e.g. '../features/api/apiSlice')
 
