@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { login } from '@/features/api/auth';
+import { Button } from "@/components/ui/button"
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
@@ -42,9 +43,9 @@ export default function LoginPage() {
                 required
             />
             {error && <p style={{ color: 'red' }}>{error}</p>}
-            <button type="submit" disabled={loading}>
+            <Button type="submit" disabled={loading}>
                 {loading ? 'Logging in...' : 'Login'}
-            </button>
+            </Button>
         </form>
     );
 }
