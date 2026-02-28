@@ -1,10 +1,6 @@
 import { NavLink } from 'react-router-dom'
-import { Home, LogIn } from 'lucide-react'
-
-const links = [
-    { to: '/', label: 'Home', icon: <Home size={18} /> },
-    { to: '/login', label: 'Login', icon: <LogIn size={18} /> },
-]
+import { ModeToggle } from '@/components/mode-toggle'
+import { menuItems } from '@/routerMenuItems'          // ← import from here
 
 export default function Sidebar() {
     return (
@@ -14,7 +10,7 @@ export default function Sidebar() {
 
             {/* Nav links */}
             <nav className="flex flex-col gap-1">
-                {links.map(({ to, label, icon }) => (
+                {menuItems.map(({ to, label, icon: Icon }) => (
                     <NavLink
                         key={to}
                         to={to}
@@ -26,11 +22,17 @@ export default function Sidebar() {
                             }`
                         }
                     >
-                        {icon}
+                        <Icon size={18} />              {/* ← render as component */}
                         <span>{label}</span>
                     </NavLink>
                 ))}
             </nav>
+
+            {/* Push toggle to bottom */}
+            <div className="mt-auto flex items-center gap-3 px-2">
+                <ModeToggle />
+                <span className="text-sm text-gray-400">Toggle theme</span>
+            </div>
         </aside>
     )
 }
