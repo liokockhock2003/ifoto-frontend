@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { Camera, ChevronUp, User2, Settings, LogOut } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -11,33 +12,44 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import { ModeToggle } from '@/components/mode-toggle'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { menuItems } from '@/routerMenuItems'
 
 export function AppSidebar() {
     return (
-        <Sidebar>
-            {/* Header */}
-            <SidebarHeader className="px-4 py-6">
-                <h1 className="text-xl font-bold">iFoto</h1>
+        <Sidebar collapsible="icon" variant='floating' className='bg-background'>
+            {/* ── Header: Logo ── */}
+            <SidebarHeader className="px-4 py-5 transition-all group-data-[collapsible=icon]:px-2">
+                <div className="flex items-center gap-2">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
+                        <Camera size={16} />
+                    </div>
+                    <span className="flex text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">iFoto</span>
+                </div>
             </SidebarHeader>
 
-            {/* Nav links */}
+            {/* ── Content: Nav group ── */}
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+                    <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {menuItems.map(({ to, label, icon: Icon }) => (
                                 <SidebarMenuItem key={to}>
-                                    <SidebarMenuButton asChild>
+                                    <SidebarMenuButton asChild tooltip={label}>
                                         <NavLink
                                             to={to}
                                             end
                                             className={({ isActive }) =>
                                                 `flex items-center gap-3 transition-colors ${isActive
-                                                    ? 'text-blue-600 font-semibold'
-                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    ? 'text-primary font-semibold'
+                                                    : 'text-sidebar-foreground/70 hover:text-sidebar-foreground'
                                                 }`
                                             }
                                         >
@@ -52,12 +64,41 @@ export function AppSidebar() {
                 </SidebarGroup>
             </SidebarContent>
 
-            {/* Footer with theme toggle */}
-            <SidebarFooter className="px-4 py-4">
-                <div className="flex items-center gap-3">
-                    <ModeToggle />
-                    <span className="text-sm text-muted-foreground">Toggle theme</span>
-                </div>
+            {/* ── Footer: Account ── */}
+            <SidebarFooter className="px-2 py-4">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton className="justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-1!" tooltip="Account">
+                                    <div className="flex items-center justify-center rounded-full bg-muted group-data-[collapsible=icon]:p-0">
+                                        <User2/>
+                                    </div>
+                                    <div className="flex flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
+                                        <span className="text-sm font-medium">John Doe</span>
+                                        <span className="text-xs text-muted-foreground">john@example.com</span>
+                                    </div>
+                                    <ChevronUp className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                                </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="top" align="start" className="w-56">
+                                <DropdownMenuItem>
+                                    <User2 className="mr-2 size-4" />
+                                    Profile
+                                </DropdownMenuItem>
+                                <DropdownMenuItem>
+                                    <Settings className="mr-2 size-4" />
+                                    Settings
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-destructive focus:text-destructive">
+                                    <LogOut className="mr-2 size-4" />
+                                    Log out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </SidebarMenuItem>
+                </SidebarMenu>
             </SidebarFooter>
         </Sidebar>
     )
