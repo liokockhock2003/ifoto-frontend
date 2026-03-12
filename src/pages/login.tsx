@@ -1,32 +1,33 @@
+// ...existing code...
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { login } from '@/features/api/auth';        // @/features  → src/features
-import { Button } from '@/components/ui/button';    // @/components/ui → src/components/ui
-import { Input } from '@/components/ui/input';      // shadcn Input
-import { Label } from '@/components/ui/label';      // shadcn Label
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'; // shadcn Card
-import { cn } from '@/lib/utils';                   // @/lib → src/lib
+import { useAuth } from '@/store/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/utils/utils';
+// ...existing code...
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
+    const { login } = useAuth();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
-        setLoading(true);
-
+        setIsSubmitting(true);
         try {
-            const data = await login({ username, password });
-            console.log('JWT token:', data.token);
+            await login(username, password);
             navigate('/');
         } catch (err) {
             setError(err instanceof Error ? err.message : 'Login failed');
         } finally {
-            setLoading(false);
+            setIsSubmitting(false);
         }
     }
 
@@ -63,8 +64,8 @@ export default function LoginPage() {
                         {error && (
                             <p className={cn('text-sm text-destructive')}>{error}</p>
                         )}
-                        <Button type="submit" disabled={loading} className="w-full">
-                            {loading ? 'Logging in...' : 'Login'}
+                        <Button type="submit" disabled={isSubmitting} className="w-full">
+                            {isSubmitting ? 'Logging in...' : 'Login'}
                         </Button>
                     </form>
                 </CardContent>
@@ -72,3 +73,4 @@ export default function LoginPage() {
         </div>
     );
 }
+// ...existing code...
