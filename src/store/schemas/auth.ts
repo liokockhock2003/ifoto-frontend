@@ -1,21 +1,21 @@
 import { z } from 'zod';
 
 // Schema for User (embedded in response/JWT)
-export const UserSchema = z.object({
-    id: z.string(), // Or z.number() if ID is numeric
+export const AuthResponseSchema = z.object({
+    accessToken: z.string(),
+    expiresIn: z.number(),
     username: z.string(),
     email: z.string().email(),
+    fullName: z.string(),
     roles: z.array(z.string()),
-    permissions: z.array(z.string()),
-    avatarUrl: z.string().url().optional(),
 });
 
 // Schema for full login response
-export const AuthResponseSchema = z.object({
-    accessToken: z.string(),
-    refreshToken: z.string(),
-    expiresIn: z.number(),
-    user: UserSchema,
+export const UserSchema = z.object({
+    username: z.string(),
+    email: z.string().email(),
+    fullName: z.string(),
+    roles: z.array(z.string()),
 });
 
 // Infer types
