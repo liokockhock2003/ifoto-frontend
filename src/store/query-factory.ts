@@ -1,7 +1,7 @@
 // src/store/queryFactory.ts
 import { queryOptions } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { invalidateQuery } from '@/store/queryClient';
+import { invalidateQuery } from '@/store/query-client';
 import { axios } from '@/utils/axios-instance';
 import { type ZodType } from 'zod';
 

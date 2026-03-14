@@ -1,38 +1,47 @@
-// ...existing code...
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/store/AuthContext';
+import { useLogin } from '@/store/queries/auth';
+import { setAccessToken } from '@/utils/axios-instance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/utils/utils';
-// ...existing code...
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
     const navigate = useNavigate();
-    const { login } = useAuth();
+    const loginMutation = useLogin();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
         setError('');
-        setIsSubmitting(true);
-        try {
-            await login(username, password);
-            navigate('/');
-        } catch (err) {
-            setError(err instanceof Error ? err.message : 'Login failed');
-        } finally {
-            setIsSubmitting(false);
-        }
+
+        loginMutation.mutate(
+            { username, password },
+            {
+                onSuccess(data) {
+                    // access token → memory only (never localStorage)
+                    setAccessToken(data.accessToken);
+                    // only non-sensitive user info persisted
+                    localStorage.setItem('user', JSON.stringify({
+                        username: data.username,
+                        email:    data.email,
+                        fullName: data.fullName,
+                        roles:    data.roles,
+                    }));
+                    navigate('/', { replace: true });
+                },
+                onError(err) {
+                    setError(err instanceof Error ? err.message : 'Login failed');
+                },
+            }
+        );
     }
 
     return (
-        <div className={cn('flex min-h-screen items-center justify-center bg-background')}>
+        <div className="flex min-h-screen items-center justify-center bg-background">
             <Card className="w-full max-w-sm">
                 <CardHeader>
                     <CardTitle className="text-2xl">Login</CardTitle>
@@ -62,10 +71,14 @@ export default function LoginPage() {
                             />
                         </div>
                         {error && (
-                            <p className={cn('text-sm text-destructive')}>{error}</p>
+                            <p className="text-sm text-destructive">{error}</p>
                         )}
-                        <Button type="submit" disabled={isSubmitting} className="w-full">
-                            {isSubmitting ? 'Logging in...' : 'Login'}
+                        <Button
+                            type="submit"
+                            disabled={loginMutation.isPending}
+                            className="w-full"
+                        >
+                            {loginMutation.isPending ? 'Logging in...' : 'Login'}
                         </Button>
                     </form>
                 </CardContent>
@@ -73,4 +86,3 @@ export default function LoginPage() {
         </div>
     );
 }
-// ...existing code...

@@ -1,28 +1,50 @@
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
-import App from '@/pages/App'
+import ProtectedRoute from '@/protected-route'
 import LoginPage from '@/pages/login'
 
-// Dummy placeholder page
 const ComingSoon = ({ title }: { title: string }) => (
-    <div className="flex flex-col items-center justify-center h-full gap-2 text-muted-foreground bg-background">
-        <h2 className="text-2xl font-semibold text-foreground">{title}</h2>
-        <p>This page is coming soon.</p>
-    </div>
+    <div className="p-8 text-2xl font-semibold">{title} — Coming Soon</div>
 )
 
 export const router = createBrowserRouter([
     {
+        path: '/login',
+        element: <LoginPage />,             // ← outside Layout, no AuthProvider needed
+    },
+    {
         path: '/',
-        element: <Layout />,
+        element: <Layout />,               // ← AuthProvider lives here
         children: [
-            { index: true, element: <App /> },
-            { path: 'login', element: <LoginPage /> },
-            { path: 'rent-equipment', element: <ComingSoon title="Rent Equipment" /> },
-            { path: 'manage-equipment', element: <ComingSoon title="Manage Equipment" /> },
-            { path: 'equipment-requests', element: <ComingSoon title="Equipment Requests" /> },
-            { path: 'equipment-returns', element: <ComingSoon title="Equipment Returns" /> },
-            { path: 'orders', element: <ComingSoon title="Orders" /> },
+            {
+                index: true,
+                element: <ProtectedRoute><ComingSoon title="Home" /></ProtectedRoute>,
+            },
+            {
+                path: 'rent-equipment',
+                element: <ProtectedRoute><ComingSoon title="Rent Equipment" /></ProtectedRoute>,
+            },
+            {
+                path: 'manage-equipment',
+                element: (
+                    <ProtectedRoute requiredRole="ROLE_ADMIN">
+                        <ComingSoon title="Manage Equipment" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'equipment-requests',
+                element: <ProtectedRoute><ComingSoon title="Equipment Requests" /></ProtectedRoute>,
+            },
+            {
+                path: 'equipment-returns',
+                element: <ProtectedRoute><ComingSoon title="Equipment Returns" /></ProtectedRoute>,
+            },
+            {
+                path: 'orders',
+                element: <ProtectedRoute><ComingSoon title="Orders" /></ProtectedRoute>,
+            },
+            { path: '*', element: <Navigate to="/" replace /> },
         ],
     },
 ])
