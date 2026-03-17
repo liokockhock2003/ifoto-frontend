@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
 import ProtectedRoute from '@/protected-route'
 import LoginPage from '@/pages/login'
+import RegisterPage from '@/pages/register'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl font-semibold">{title} — Coming Soon</div>
@@ -11,6 +12,10 @@ export const router = createBrowserRouter([
     {
         path: '/login',
         element: <LoginPage />,             // ← outside Layout, no AuthProvider needed
+    },
+    {
+        path: '/register',
+        element: <RegisterPage />,
     },
     {
         path: '/',
