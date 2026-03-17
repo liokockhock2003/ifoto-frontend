@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
-import { useLogin } from '@/store/queries/auth';
+import { toast } from 'sonner';
+import { isAuthApiError, useLogin } from '@/store/queries/auth';
 import { setAccessToken } from '@/utils/axios-instance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,13 +12,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
     const navigate = useNavigate();
     const loginMutation = useLogin();
 
     async function handleSubmit(e: React.FormEvent) {
         e.preventDefault();
-        setError('');
 
         loginMutation.mutate(
             { username, password },
@@ -27,14 +27,17 @@ export default function LoginPage() {
                     // only non-sensitive user info persisted
                     localStorage.setItem('user', JSON.stringify({
                         username: data.username,
-                        email:    data.email,
+                        email: data.email,
                         fullName: data.fullName,
-                        roles:    data.roles,
+                        roles: data.roles,
                     }));
-                    navigate('/', { replace: true });
+                    toast.success('Login successful');
+                    setTimeout(() => {
+                        navigate('/', { replace: true });
+                    }, 700);
                 },
                 onError(err) {
-                    setError(err instanceof Error ? err.message : 'Login failed');
+                    toast.error(isAuthApiError(err) ? err.message : 'Login failed');
                 },
             }
         );
@@ -70,9 +73,6 @@ export default function LoginPage() {
                                 required
                             />
                         </div>
-                        {error && (
-                            <p className="text-sm text-destructive">{error}</p>
-                        )}
                         <Button
                             type="submit"
                             disabled={loginMutation.isPending}
@@ -80,6 +80,12 @@ export default function LoginPage() {
                         >
                             {loginMutation.isPending ? 'Logging in...' : 'Login'}
                         </Button>
+                        <p className="text-center text-sm text-muted-foreground">
+                            Don&apos;t have an account?{' '}
+                            <Link to="/register" className="font-medium text-foreground underline underline-offset-4">
+                                Register
+                            </Link>
+                        </p>
                     </form>
                 </CardContent>
             </Card>
