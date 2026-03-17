@@ -38,6 +38,7 @@ export default function LoginPage() {
                 },
                 onError(err) {
                     toast.error(isAuthApiError(err) ? err.message : 'Login failed');
+                    console.error("meow ror");
                 },
             }
         );

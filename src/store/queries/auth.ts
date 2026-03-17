@@ -95,7 +95,7 @@ function normalizeLoginError(err: unknown): AuthApiError {
 
 // ── Plain async functions (reusable outside hooks) ────────────────────────────
 export async function refreshTokenApi(): Promise<AuthResponse> {
-    const res = await axios.post('/api/v1/auth/refresh');
+    const res = await axios.post('/api/v1/auth/refresh', undefined, { skipAuthRefresh: true });
     return AuthResponseSchema.parse(res.data);
 }
 
@@ -104,6 +104,7 @@ export function useLogin() {
     const mutation = authQuery.customMutation<{ username: string; password: string }>({
         urlSuffix: '/login',
         inputSchema: z.object({ username: z.string(), password: z.string() }),
+        requestConfig: { skipAuthRefresh: true },
     });
 
     return useMutation<AuthResponse, AuthApiError, { username: string; password: string }>({
@@ -124,6 +125,7 @@ export function useRegister() {
         urlSuffix: '/register',
         inputSchema: RegisterPayloadSchema,
         responseSchema: RegisterResponseSchema,
+        requestConfig: { skipAuthRefresh: true },
     });
 
     return useMutation<RegisterResponse, AuthApiError, RegisterPayload>({
