@@ -1,4 +1,16 @@
-import axios from 'axios';
+import axios, { type InternalAxiosRequestConfig } from 'axios';
+
+declare module 'axios' {
+    interface AxiosRequestConfig {
+        skipAuthRefresh?: boolean;
+        _retry?: boolean;
+    }
+}
+
+type AuthInternalRequestConfig = InternalAxiosRequestConfig & {
+    skipAuthRefresh?: boolean;
+    _retry?: boolean;
+};
 
 const api = axios.create({
     baseURL: import.meta.env.VITE_API_URL ?? 'http://localhost:8080',
@@ -47,7 +59,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        const original = error.config;
+        const original = error.config as AuthInternalRequestConfig;
+
+        // Caller explicitly opts out from refresh flow (e.g. login/register/refresh)
+        if (original?.skipAuthRefresh) {
+            return Promise.reject(error);
+        }
 
         // only handle 401, and only once per request (_retry flag)
         if (error.response?.status !== 401 || original._retry) {
@@ -70,7 +87,7 @@ api.interceptors.response.use(
 
         try {
             // call refresh endpoint — withCredentials set at instance level
-            const res = await api.post('/api/v1/auth/refresh');
+            const res = await api.post('/api/v1/auth/refresh', undefined, { skipAuthRefresh: true });
             const newToken = res.data.accessToken as string;
 
             setAccessToken(newToken);
