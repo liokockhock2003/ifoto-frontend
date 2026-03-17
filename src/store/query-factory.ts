@@ -1,5 +1,6 @@
 // src/store/queryFactory.ts
 import { queryOptions } from '@tanstack/react-query';
+import { type AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 import { invalidateQuery } from '@/store/query-client';
 import { axios } from '@/utils/axios-instance';
@@ -24,22 +25,23 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
     baseUrl = `/api/${model}`,
 ) {
     // ── URL / key helpers (plain functions, no self-reference) ────────────────
-    const qk    = ()                  => [model];
-    const lists  = (filters?: TFilters) => [...qk(), 'list', filters];
-    const details = (id: number)        => [...qk(), 'detail', `${id}`];
-    const createUrl = (id?: number)    => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
+    const qk = () => [model];
+    const lists = (filters?: TFilters) => [...qk(), 'list', filters];
+    const details = (id: number) => [...qk(), 'detail', `${id}`];
+    const createUrl = (id?: number) => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
 
     // ── Axios method dispatcher (avoids indexing the full AxiosInstance) ───────
     const dispatch = (
         method: 'get' | 'post' | 'patch' | 'delete',
         url: string,
         body?: unknown,
+        config?: AxiosRequestConfig,
     ) => {
         switch (method) {
-            case 'get':    return axios.get(url);
-            case 'post':   return axios.post(url, body);
-            case 'patch':  return axios.patch(url, body);
-            case 'delete': return axios.delete(url);
+            case 'get': return axios.get(url, config);
+            case 'post': return axios.post(url, body, config);
+            case 'patch': return axios.patch(url, body, config);
+            case 'delete': return axios.delete(url, config);
         }
     };
 
@@ -108,6 +110,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
             urlSuffix: string;                                  // e.g. '/login', '/refresh'
             responseSchema?: ZodType<TModel>;                 // defaults to schemas.single
             inputSchema?: ZodType<TInput>;                    // optional input validation
+            requestConfig?: AxiosRequestConfig;
             toastMsg?: string;
             onSuccess?: (data: TModel) => void;
         }) {
@@ -116,14 +119,15 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                 urlSuffix,
                 responseSchema = schemas.single,
                 inputSchema,
+                requestConfig,
                 toastMsg,
-                onSuccess = () => {},
+                onSuccess = () => { },
             } = options;
 
             return {
                 mutationFn: async (input: TInput) => {
                     const validatedInput = inputSchema ? inputSchema.parse(input) : input;
-                    const res = await dispatch(method, `${baseUrl}${urlSuffix}`, validatedInput);
+                    const res = await dispatch(method, `${baseUrl}${urlSuffix}`, validatedInput, requestConfig);
                     return responseSchema.parse(res.data);
                 },
                 onSuccess: (data: TModel) => {
@@ -142,7 +146,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
         }) {
             const {
                 type,
-                onSuccess = () => {},
+                onSuccess = () => { },
                 urlManipulation = (u: string) => u,
                 toastMsg: description,
             } = _action;
@@ -155,10 +159,10 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                     type MutationMethod = 'get' | 'post' | 'patch' | 'delete';
                     const [method, extendedUrl, body] = (
                         {
-                            create:          ['post',   '',                         others    ],
-                            edit:            ['patch',  `/${id ?? ''}`,             others    ],
-                            delete:          ['delete', `/${id ?? ''}`,             undefined ],
-                            'soft-delete':   ['patch',  `/${id ?? ''}/soft-delete`, undefined ],
+                            create: ['post', '', others],
+                            edit: ['patch', `/${id ?? ''}`, others],
+                            delete: ['delete', `/${id ?? ''}`, undefined],
+                            'soft-delete': ['patch', `/${id ?? ''}/soft-delete`, undefined],
                         } as Record<string, [MutationMethod, string, unknown]>
                     )[type];
 
