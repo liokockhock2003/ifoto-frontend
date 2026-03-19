@@ -1,4 +1,3 @@
-// src/store/queryFactory.ts
 import { queryOptions } from '@tanstack/react-query';
 import { type AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
@@ -32,7 +31,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
 
     // ── Axios method dispatcher (avoids indexing the full AxiosInstance) ───────
     const dispatch = (
-        method: 'get' | 'post' | 'patch' | 'delete',
+        method: 'get' | 'post' | 'put' | 'patch' | 'delete',
         url: string,
         body?: unknown,
         config?: AxiosRequestConfig,
@@ -40,6 +39,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
         switch (method) {
             case 'get': return axios.get(url, config);
             case 'post': return axios.post(url, body, config);
+            case 'put': return axios.put(url, body, config);
             case 'patch': return axios.patch(url, body, config);
             case 'delete': return axios.delete(url, config);
         }
@@ -81,6 +81,49 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
             };
         },
 
+        // ── Custom list query (for paginated or non-array list shapes) ─────
+        customList<TResponse>(options: {
+            responseSchema: ZodType<TResponse>;
+            urlSuffix?: string;
+            queryKeySuffix?: string;
+            filtersSchema?: ZodType<TFilters>;
+            requestConfig?: AxiosRequestConfig;
+            onSuccess?: (data: TResponse) => TResponse | Promise<TResponse>;
+            onError?: (error: unknown) => void;
+            urlManipulation?: (url: string) => string;
+        }) {
+            const {
+                responseSchema,
+                urlSuffix = '',
+                queryKeySuffix = 'custom-list',
+                filtersSchema,
+                requestConfig,
+                onSuccess = (data) => data,
+                onError = (error) => console.error(error),
+                urlManipulation = (url) => url,
+            } = options;
+
+            return (filters?: TFilters) => {
+                const validatedFilters = filtersSchema
+                    ? filtersSchema.parse(filters)
+                    : schemas.filters?.parse(filters) ?? filters;
+                const url = urlManipulation(`${createUrl()}${urlSuffix}`);
+
+                return queryOptions({
+                    queryKey: [...qk(), queryKeySuffix, validatedFilters],
+                    queryFn: async () => {
+                        try {
+                            const res = await axios.get(url, { params: validatedFilters, ...requestConfig });
+                            return onSuccess(responseSchema.parse(res.data));
+                        } catch (error) {
+                            onError(error);
+                            throw error;
+                        }
+                    },
+                });
+            };
+        },
+
         // ── Detail query ──────────────────────────────────────────────────────
         detail(id: number, options?: QueryHandlerOptions<TModel>) {
             const action: Required<QueryHandlerOptions<TModel>> = {
@@ -106,13 +149,14 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
 
         // ── Custom mutation (arbitrary URL/method, still uses schema + toast) ──
         customMutation<TInput = TPayload>(options: {
-            method?: 'post' | 'get' | 'patch' | 'delete';
-            urlSuffix: string;                                  // e.g. '/login', '/refresh'
+            method?: 'post' | 'get' | 'put' | 'patch' | 'delete';
+            urlSuffix: string | ((input: TInput) => string);   // e.g. '/login', '/refresh'
             responseSchema?: ZodType<TModel>;                 // defaults to schemas.single
             inputSchema?: ZodType<TInput>;                    // optional input validation
             requestConfig?: AxiosRequestConfig;
             toastMsg?: string;
-            onSuccess?: (data: TModel) => void;
+            onSuccess?: (data: TModel, input: TInput) => void;
+            invalidateKeys?: (data: TModel, input: TInput) => unknown[][];
         }) {
             const {
                 method = 'post',
@@ -122,17 +166,27 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                 requestConfig,
                 toastMsg,
                 onSuccess = () => { },
+                invalidateKeys,
             } = options;
 
             return {
                 mutationFn: async (input: TInput) => {
                     const validatedInput = inputSchema ? inputSchema.parse(input) : input;
-                    const res = await dispatch(method, `${baseUrl}${urlSuffix}`, validatedInput, requestConfig);
+                    const resolvedUrlSuffix = typeof urlSuffix === 'function'
+                        ? urlSuffix(validatedInput)
+                        : urlSuffix;
+                    const res = await dispatch(method, `${baseUrl}${resolvedUrlSuffix}`, validatedInput, requestConfig);
                     return responseSchema.parse(res.data);
                 },
-                onSuccess: (data: TModel) => {
+                onSuccess: (data: TModel, variables: TInput) => {
                     if (toastMsg) toast(toastMsg);
-                    onSuccess(data);
+
+                    const keysToInvalidate = invalidateKeys?.(data, variables);
+                    if (keysToInvalidate && keysToInvalidate.length > 0) {
+                        invalidateQuery(...keysToInvalidate);
+                    }
+
+                    onSuccess(data, variables);
                 },
             };
         },

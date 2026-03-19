@@ -8,7 +8,6 @@ import {
     type RegisterPayload,
     type RegisterResponse,
 } from '@/store/schemas/register';
-import { axios } from '@/utils/axios-instance';
 import { z } from 'zod';
 
 const authQuery = QueryFactory<AuthResponse, unknown, { username: string; password: string }>(
@@ -93,12 +92,6 @@ function normalizeLoginError(err: unknown): AuthApiError {
     return new AuthApiError(extractApiErrorMessage(err));
 }
 
-// ── Plain async functions (reusable outside hooks) ────────────────────────────
-export async function refreshTokenApi(): Promise<AuthResponse> {
-    const res = await axios.post('/api/v1/auth/refresh', undefined, { skipAuthRefresh: true });
-    return AuthResponseSchema.parse(res.data);
-}
-
 // ── Login ─────────────────────────────────────────────────────────────────────
 export function useLogin() {
     const mutation = authQuery.customMutation<{ username: string; password: string }>({
@@ -140,11 +133,14 @@ export function useRegister() {
     });
 }
 
-// ── Refresh token ─────────────────────────────────────────────────────────────
-export function useRefreshToken() {
-    return useMutation({
-        mutationFn: refreshTokenApi,    // reuses the same plain function
+// ── Plain async functions (reusable outside hooks) ────────────────────────────
+export async function refreshTokenApi(): Promise<AuthResponse> {
+    const refreshMutation = authQuery.customMutation<void>({
+        urlSuffix: '/refresh',
+        responseSchema: AuthResponseSchema,
+        requestConfig: { skipAuthRefresh: true },
     });
+    return refreshMutation.mutationFn(undefined);
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────

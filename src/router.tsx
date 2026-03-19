@@ -3,6 +3,7 @@ import Layout from '@/components/Layout'
 import ProtectedRoute from '@/protected-route'
 import LoginPage from '@/pages/login'
 import RegisterPage from '@/pages/register'
+import UserManagementMainPage from '@/pages/UserManagement/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl font-semibold">{title} — Coming Soon</div>
@@ -34,6 +35,14 @@ export const router = createBrowserRouter([
                 element: (
                     <ProtectedRoute requiredRole="ROLE_ADMIN">
                         <ComingSoon title="Manage Equipment" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'user-management',
+                element: (
+                    <ProtectedRoute requiredRole="ROLE_ADMIN">
+                        <UserManagementMainPage />
                     </ProtectedRoute>
                 ),
             },
