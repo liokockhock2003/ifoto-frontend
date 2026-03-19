@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom'
-import { Camera, ChevronUp, User2, Settings, LogOut } from 'lucide-react'
+import { ChevronUp, User2, Settings, LogOut } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -29,10 +29,10 @@ export function AppSidebar() {
             {/* ── Header: Logo ── */}
             <SidebarHeader className="px-4 py-5 transition-all group-data-[collapsible=icon]:px-2">
                 <div className="flex items-center gap-2">
-                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary text-primary-foreground shrink-0">
-                        <Camera size={16} />
+                    <div className="flex items-center justify-center text-primary-foreground shrink-0">
+                        <img src="/kfk_logo_2.svg" alt="KFK logo" className="w-18 h-18 object-contain transition-all group-data-[collapsible=icon]:w-8" />
                     </div>
-                    <span className="flex text-lg font-bold tracking-tight group-data-[collapsible=icon]:hidden">iFoto</span>
+                    <span className="flex text-2xl font-bold tracking-tight text-[#800000] group-data-[collapsible=icon]:hidden">IFoto</span>
                 </div>
             </SidebarHeader>
 
