@@ -12,7 +12,7 @@ const ComingSoon = ({ title }: { title: string }) => (
 export const router = createBrowserRouter([
     {
         path: '/login',
-        element: <LoginPage />,             // ← outside Layout, no AuthProvider needed
+        element: <LoginPage />,
     },
     {
         path: '/register',
@@ -20,20 +20,16 @@ export const router = createBrowserRouter([
     },
     {
         path: '/',
-        element: <Layout />,               // ← AuthProvider lives here
+        element: <Layout />,
         children: [
             {
                 index: true,
                 element: <ProtectedRoute><ComingSoon title="Home" /></ProtectedRoute>,
             },
             {
-                path: 'rent-equipment',
-                element: <ProtectedRoute><ComingSoon title="Rent Equipment" /></ProtectedRoute>,
-            },
-            {
                 path: 'manage-equipment',
                 element: (
-                    <ProtectedRoute requiredRole="ROLE_ADMIN">
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
                         <ComingSoon title="Manage Equipment" />
                     </ProtectedRoute>
                 ),
@@ -41,22 +37,50 @@ export const router = createBrowserRouter([
             {
                 path: 'user-management',
                 element: (
-                    <ProtectedRoute requiredRole="ROLE_ADMIN">
+                    <ProtectedRoute allowedRoles={["ROLE_ADMIN"]}>
                         <UserManagementMainPage />
                     </ProtectedRoute>
                 ),
             },
             {
                 path: 'equipment-requests',
-                element: <ProtectedRoute><ComingSoon title="Equipment Requests" /></ProtectedRoute>,
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
+                        <ComingSoon title="Equipment Requests" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'equipment-rent',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
+                        <ComingSoon title="Equipment Rent" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'event-management',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_HIGH_COMMITTEE"]}>
+                        <ComingSoon title="Event Management" />
+                    </ProtectedRoute>
+                ),
             },
             {
                 path: 'equipment-returns',
-                element: <ProtectedRoute><ComingSoon title="Equipment Returns" /></ProtectedRoute>,
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE", "ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
+                        <ComingSoon title="Equipment Returns" />
+                    </ProtectedRoute>
+                ),
             },
             {
-                path: 'orders',
-                element: <ProtectedRoute><ComingSoon title="Orders" /></ProtectedRoute>,
+                path: 'reporting-dashboard',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
+                        <ComingSoon title="Reporting Dashboard" />
+                    </ProtectedRoute>
+                ),
             },
             { path: '*', element: <Navigate to="/" replace /> },
         ],

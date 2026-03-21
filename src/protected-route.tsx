@@ -3,10 +3,10 @@ import { useAuth } from '@/store/auth-context';
 
 interface Props {
     children: React.ReactNode;
-    requiredRole?: string;
+    allowedRoles?: string[];
 }
 
-export default function ProtectedRoute({ children, requiredRole }: Props) {
+export default function ProtectedRoute({ children, allowedRoles }: Props) {
     const { isAuthenticated, isLoading, hasRole } = useAuth();
 
     // still restoring session — show spinner instead of blank/redirect flash
@@ -16,11 +16,11 @@ export default function ProtectedRoute({ children, requiredRole }: Props) {
         </div>
     );
 
-    // not logged in → login page
     if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-    // logged in but missing required role → home
-    if (requiredRole && !hasRole(requiredRole)) return <Navigate to="/" replace />;
+    if (allowedRoles && allowedRoles.length > 0 && !allowedRoles.some((role) => hasRole(role))) {
+        return <Navigate to="/" replace />;
+    }
 
     return <>{children}</>;
 }
