@@ -1,5 +1,6 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { ChevronUp, User2, Settings, LogOut } from 'lucide-react'
+import { Check, ChevronUp, LogOut, Settings, User2 } from 'lucide-react'
+import { toast } from 'sonner'
 import {
     Sidebar,
     SidebarContent,
@@ -17,24 +18,48 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { menuItems } from '@/routerMenuItems'
 import { useAuth } from '@/store/auth-context'
+import { useSwitchActiveRole } from '@/store/queries/auth'
 
 export function AppSidebar() {
-    const { user, logout } = useAuth()
+    const { user, logout, hasRole, updateUserRoles } = useAuth()
     const location = useLocation()
-    const userRoles = user?.roles ?? []
+    const switchRoleMutation = useSwitchActiveRole()
     const sidebarItems = menuItems.filter((item) => {
         if (!item.allowedRoles || item.allowedRoles.length === 0) {
             return true
         }
 
-        return item.allowedRoles.some((role) => userRoles.includes(role))
+        return item.allowedRoles.some((role) => hasRole(role))
     })
 
-    const roleSummary = userRoles.length > 0 ? userRoles.join(', ') : 'No roles assigned'
+    const roleSummary = user?.activeRole ?? 'No active role'
+    const availableRoles = user?.roles ?? []
+
+    async function handleSwitchRole(roleName: string) {
+        if (!user || roleName === user.activeRole || switchRoleMutation.isPending) {
+            return
+        }
+
+        try {
+            const result = await switchRoleMutation.mutateAsync({
+                username: user.username,
+                roleName,
+            })
+
+            updateUserRoles(result.roles, result.activeRole)
+            toast.success(`Active role switched to ${result.activeRole}`)
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to switch active role'
+            toast.error(message)
+        }
+    }
 
     return (
         <Sidebar collapsible="icon" variant='floating' className='bg-background'>
@@ -119,6 +144,33 @@ export function AppSidebar() {
                                     <Settings className="mr-2 size-4" />
                                     Settings
                                 </DropdownMenuItem>
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger inset>
+                                        Switch role
+                                    </DropdownMenuSubTrigger>
+                                    <DropdownMenuSubContent>
+                                        {availableRoles.length > 0 ? (
+                                            availableRoles.map((role) => {
+                                                const isCurrent = user?.activeRole === role
+
+                                                return (
+                                                    <DropdownMenuItem
+                                                        key={role}
+                                                        onClick={() => handleSwitchRole(role)}
+                                                        disabled={isCurrent || switchRoleMutation.isPending}
+                                                    >
+                                                        <Check className={isCurrent ? 'mr-2 size-4 opacity-100' : 'mr-2 size-4 opacity-0'} />
+                                                        <span>{role}</span>
+                                                    </DropdownMenuItem>
+                                                )
+                                            })
+                                        ) : (
+                                            <DropdownMenuItem disabled>
+                                                No roles available
+                                            </DropdownMenuItem>
+                                        )}
+                                    </DropdownMenuSubContent>
+                                </DropdownMenuSub>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"

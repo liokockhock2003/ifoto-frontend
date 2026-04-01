@@ -1,8 +1,10 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
 import ProtectedRoute from '@/protected-route'
-import LoginPage from '@/pages/login'
-import RegisterPage from '@/pages/register'
+import LoginPage from '@/pages/Auth/login'
+import RegisterPage from '@/pages/Auth/register'
+import ForgotPasswordPage from '@/pages/Auth/forgot-password'
+import ResetPasswordPage from '@/pages/Auth/reset-password'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
@@ -17,6 +19,14 @@ export const router = createBrowserRouter([
     {
         path: '/register',
         element: <RegisterPage />,
+    },
+    {
+        path: '/forgot-password',
+        element: <ForgotPasswordPage />,
+    },
+    {
+        path: '/reset-password',
+        element: <ResetPasswordPage />,
     },
     {
         path: '/',

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -15,7 +15,7 @@ export default function LoginPage() {
     const navigate = useNavigate();
     const loginMutation = useLogin();
 
-    async function handleSubmit(e: React.FormEvent) {
+    async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
 
         loginMutation.mutate(
@@ -30,6 +30,7 @@ export default function LoginPage() {
                         email: data.email,
                         fullName: data.fullName,
                         roles: data.roles,
+                        activeRole: data.activeRole,
                     }));
                     toast.success('Login successful');
                     setTimeout(() => {
@@ -64,7 +65,15 @@ export default function LoginPage() {
                             />
                         </div>
                         <div className="flex flex-col gap-1">
-                            <Label htmlFor="password">Password</Label>
+                            <div className="flex items-center justify-between">
+                                <Label htmlFor="password">Password</Label>
+                                <Link
+                                    to="/forgot-password"
+                                    className="text-xs font-medium text-foreground/80 underline underline-offset-4 hover:text-foreground"
+                                >
+                                    Forgot password?
+                                </Link>
+                            </div>
                             <Input
                                 id="password"
                                 type="password"
