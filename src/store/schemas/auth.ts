@@ -10,7 +10,7 @@ export const AuthResponseSchema = z.object({
     accessToken: z.string(),
     expiresIn: z.number(),
     username: z.string(),
-    email: z.email(),
+    email: z.string().email(),
     fullName: z.string(),
     roles: z.array(RoleSchema),
     activeRole: RoleSchema,
@@ -19,13 +19,14 @@ export const AuthResponseSchema = z.object({
 // Schema for full login response
 export const UserSchema = z.object({
     username: z.string(),
-    email: z.email(),
+    email: z.string().email(),
     fullName: z.string(),
     roles: z.array(RoleSchema),
     activeRole: RoleSchema,
 });
 
-export const SwitchActiveRolePayloadSchema = z.object({
+export const SwitchActiveRoleInputSchema = z.object({
+    username: z.string().min(1),
     roleName: RoleSchema,
 });
 
@@ -39,7 +40,7 @@ export const SwitchActiveRoleResponseSchema = z.object({
 });
 
 export const ForgotPasswordPayloadSchema = z.object({
-    email: z.email(),
+    email: z.string().email(),
 });
 
 export const ForgotPasswordResponseSchema = z.union([
@@ -64,7 +65,7 @@ export const ResetPasswordResponseSchema = z.union([
 // Infer types
 export type User = z.infer<typeof UserSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
-export type SwitchActiveRolePayload = z.infer<typeof SwitchActiveRolePayloadSchema>;
+export type SwitchActiveRoleInput = z.infer<typeof SwitchActiveRoleInputSchema>;
 export type SwitchActiveRoleResponse = z.infer<typeof SwitchActiveRoleResponseSchema>;
 export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordPayloadSchema>;
 export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
