@@ -7,14 +7,14 @@ import {
     ForgotPasswordResponseSchema,
     ResetPasswordPayloadSchema,
     ResetPasswordResponseSchema,
-    SwitchActiveRolePayloadSchema,
+    SwitchActiveRoleInputSchema,
     SwitchActiveRoleResponseSchema,
     type AuthResponse,
     type ForgotPasswordPayload,
     type ForgotPasswordResponse,
     type ResetPasswordPayload,
     type ResetPasswordResponse,
-    type SwitchActiveRolePayload,
+    type SwitchActiveRoleInput,
     type SwitchActiveRoleResponse,
 } from '@/store/schemas/auth';
 import {
@@ -82,15 +82,10 @@ const userRoleQuery = QueryFactory<
     {
         single: SwitchActiveRoleResponseSchema,
         list: SwitchActiveRoleResponseSchema.array(),
-        payload: z.object({
-            username: z.string().min(1),
-            roleName: SwitchActiveRolePayloadSchema.shape.roleName,
-        }),
+        payload: SwitchActiveRoleInputSchema,
     },
     '/api/v1/users'
 );
-
-type SwitchActiveRoleInput = SwitchActiveRolePayload & { username: string };
 
 export type RegisterFieldErrors = {
     username?: string;
@@ -220,10 +215,7 @@ export function useSwitchActiveRole() {
     const mutation = userRoleQuery.customMutation<SwitchActiveRoleInput>({
         method: 'patch',
         urlSuffix: ({ username }) => `/${encodeURIComponent(username)}/active-role`,
-        inputSchema: z.object({
-            username: z.string().min(1),
-            roleName: SwitchActiveRolePayloadSchema.shape.roleName,
-        }),
+        inputSchema: SwitchActiveRoleInputSchema,
         responseSchema: SwitchActiveRoleResponseSchema,
     });
 
