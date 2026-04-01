@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { isAuthApiError, useRegister } from '@/store/queries/auth';
@@ -21,7 +21,7 @@ export default function RegisterPage() {
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
 
-    function handleSubmit(e: React.FormEvent) {
+    function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
         setError('');
         setFieldErrors({});

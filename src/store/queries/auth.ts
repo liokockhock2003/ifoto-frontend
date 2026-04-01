@@ -1,7 +1,22 @@
 import { useMutation } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { QueryFactory } from '@/store/query-factory';
-import { AuthResponseSchema, type AuthResponse } from '@/store/schemas/auth';
+import {
+    AuthResponseSchema,
+    ForgotPasswordPayloadSchema,
+    ForgotPasswordResponseSchema,
+    ResetPasswordPayloadSchema,
+    ResetPasswordResponseSchema,
+    SwitchActiveRolePayloadSchema,
+    SwitchActiveRoleResponseSchema,
+    type AuthResponse,
+    type ForgotPasswordPayload,
+    type ForgotPasswordResponse,
+    type ResetPasswordPayload,
+    type ResetPasswordResponse,
+    type SwitchActiveRolePayload,
+    type SwitchActiveRoleResponse,
+} from '@/store/schemas/auth';
 import {
     RegisterPayloadSchema,
     RegisterResponseSchema,
@@ -29,6 +44,53 @@ const registerQuery = QueryFactory<RegisterResponse, unknown, RegisterPayload>(
     },
     '/api/v1'
 );
+
+const forgotPasswordQuery = QueryFactory<
+    ForgotPasswordResponse,
+    unknown,
+    ForgotPasswordPayload
+>(
+    'forgot-password',
+    {
+        single: ForgotPasswordResponseSchema,
+        list: ForgotPasswordResponseSchema.array(),
+        payload: ForgotPasswordPayloadSchema,
+    },
+    '/api/v1/auth'
+);
+
+const resetPasswordQuery = QueryFactory<
+    ResetPasswordResponse,
+    unknown,
+    ResetPasswordPayload
+>(
+    'reset-password',
+    {
+        single: ResetPasswordResponseSchema,
+        list: ResetPasswordResponseSchema.array(),
+        payload: ResetPasswordPayloadSchema,
+    },
+    '/api/v1/auth'
+);
+
+const userRoleQuery = QueryFactory<
+    SwitchActiveRoleResponse,
+    unknown,
+    SwitchActiveRoleInput
+>(
+    'user-role',
+    {
+        single: SwitchActiveRoleResponseSchema,
+        list: SwitchActiveRoleResponseSchema.array(),
+        payload: z.object({
+            username: z.string().min(1),
+            roleName: SwitchActiveRolePayloadSchema.shape.roleName,
+        }),
+    },
+    '/api/v1/users'
+);
+
+type SwitchActiveRoleInput = SwitchActiveRolePayload & { username: string };
 
 export type RegisterFieldErrors = {
     username?: string;
@@ -128,6 +190,71 @@ export function useRegister() {
                 return await mutation.mutationFn(input);
             } catch (err) {
                 throw normalizeRegisterError(err);
+            }
+        },
+    });
+}
+
+export function useSendForgotPasswordLink() {
+    const mutation = forgotPasswordQuery.customMutation<ForgotPasswordPayload>({
+        method: 'post',
+        urlSuffix: '/forgot-password',
+        inputSchema: ForgotPasswordPayloadSchema,
+        responseSchema: ForgotPasswordResponseSchema,
+        requestConfig: { skipAuthRefresh: true },
+    });
+
+    return useMutation<ForgotPasswordResponse, AuthApiError, ForgotPasswordPayload>({
+        ...mutation,
+        mutationFn: async (input) => {
+            try {
+                return await mutation.mutationFn(input);
+            } catch (err) {
+                throw new AuthApiError(extractApiErrorMessage(err));
+            }
+        },
+    });
+}
+
+export function useSwitchActiveRole() {
+    const mutation = userRoleQuery.customMutation<SwitchActiveRoleInput>({
+        method: 'patch',
+        urlSuffix: ({ username }) => `/${encodeURIComponent(username)}/active-role`,
+        inputSchema: z.object({
+            username: z.string().min(1),
+            roleName: SwitchActiveRolePayloadSchema.shape.roleName,
+        }),
+        responseSchema: SwitchActiveRoleResponseSchema,
+    });
+
+    return useMutation<SwitchActiveRoleResponse, AuthApiError, SwitchActiveRoleInput>({
+        ...mutation,
+        mutationFn: async (input) => {
+            try {
+                return await mutation.mutationFn(input);
+            } catch (err) {
+                throw new AuthApiError(extractApiErrorMessage(err));
+            }
+        },
+    });
+}
+
+export function useResetPassword() {
+    const mutation = resetPasswordQuery.customMutation<ResetPasswordPayload>({
+        method: 'post',
+        urlSuffix: '/reset-password',
+        inputSchema: ResetPasswordPayloadSchema,
+        responseSchema: ResetPasswordResponseSchema,
+        requestConfig: { skipAuthRefresh: true },
+    });
+
+    return useMutation<ResetPasswordResponse, AuthApiError, ResetPasswordPayload>({
+        ...mutation,
+        mutationFn: async (input) => {
+            try {
+                return await mutation.mutationFn(input);
+            } catch (err) {
+                throw new AuthApiError(extractApiErrorMessage(err));
             }
         },
     });

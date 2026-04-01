@@ -3,7 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useLogin, useLogout, refreshTokenApi } from '@/store/queries/auth';
 import { setAccessToken, setOnUnauthenticated } from '@/utils/axios-instance';
-import type { User } from '@/store/schemas/auth';
+import { UserSchema, type User } from '@/store/schemas/auth';
 
 interface AuthContextType {
     user: User | null;
@@ -12,6 +12,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     hasRole: (role: string) => boolean;
+    updateUserRoles: (roles: string[], activeRole: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,6 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const loginMutation = useLogin();
     const logoutMutation = useLogout();
     const navigate = useNavigate();
+
+    const buildUser = (input: {
+        username: string;
+        email: string;
+        fullName: string;
+        roles: string[];
+        activeRole: string;
+    }): User => UserSchema.parse(input);
 
     // ── Register redirect callback for 401 interceptor ────────────────────────
     useEffect(() => {
@@ -46,19 +55,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         async function restoreSession() {
             const userData = localStorage.getItem('user');
             if (userData) {
+                let rawStoredUser: unknown;
+                try {
+                    rawStoredUser = JSON.parse(userData);
+                } catch {
+                    localStorage.removeItem('user');
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+
+                const parsedStoredUser = UserSchema.safeParse(rawStoredUser);
+                if (!parsedStoredUser.success) {
+                    localStorage.removeItem('user');
+                    setUser(null);
+                    setIsLoading(false);
+                    return;
+                }
+
                 try {
                     // httpOnly cookie sent automatically — requires backend CORS:
                     // Access-Control-Allow-Origin: http://localhost:5173  (exact, not *)
                     // Access-Control-Allow-Credentials: true
                     const data = await refreshTokenApi();
                     setAccessToken(data.accessToken);
-                    setUser(JSON.parse(userData) as User);
+                    const refreshedUser = buildUser({
+                        username: data.username,
+                        email: data.email,
+                        fullName: data.fullName,
+                        roles: data.roles,
+                        activeRole: data.activeRole,
+                    });
+                    setUser(refreshedUser);
+                    localStorage.setItem('user', JSON.stringify(refreshedUser));
                 } catch {
                     // refresh failed (CORS / cookie missing / expired)
                     // still restore user state from localStorage so the UI doesn't
                     // flash to /login — the first protected API call will re-trigger
                     // the 401 → refresh flow via the axios interceptor
-                    setUser(JSON.parse(userData) as User);
+                    setUser(parsedStoredUser.data);
                 }
             }
             setIsLoading(false);
@@ -74,12 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // access token in memory only
         setAccessToken(data.accessToken);
 
-        const user: User = {
+        const user = buildUser({
             username: data.username,
             email: data.email,
             fullName: data.fullName,
             roles: data.roles,
-        };
+            activeRole: data.activeRole,
+        });
 
         setUser(user);
         // only non-sensitive user profile in localStorage (no tokens)
@@ -100,7 +136,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // ── Role helper ────────────────────────────────────────────────────────────
-    const hasRole = (role: string) => user?.roles.includes(role) ?? false;
+    const hasRole = (role: string) => user?.activeRole === role;
+
+    const updateUserRoles = (roles: string[], activeRole: string) => {
+        setUser((prev) => {
+            if (!prev) return prev;
+
+            const nextUser = buildUser({
+                ...prev,
+                roles,
+                activeRole,
+            });
+
+            localStorage.setItem('user', JSON.stringify(nextUser));
+            return nextUser;
+        });
+    };
 
     return (
         <AuthContext.Provider value={{
@@ -110,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             logout,
             hasRole,
+            updateUserRoles,
         }}>
             {children}
         </AuthContext.Provider>
