@@ -1,6 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
 import { QueryFactory } from '@/store/query-factory';
+import { extractApiErrorMessage } from '@/utils/api-error';
 import {
     AuthResponseSchema,
     ForgotPasswordPayloadSchema,
@@ -89,49 +90,6 @@ export function isAuthApiError(err: unknown): err is AuthApiError {
     return err instanceof AuthApiError;
 }
 
-function extractApiErrorMessage(err: unknown): string {
-    if (isAxiosError(err)) {
-        const data = err.response?.data;
-        if (typeof data === 'string') return data;
-
-        if (data && typeof data === 'object' && 'message' in data) {
-            const message = (data as { message?: unknown }).message;
-            if (typeof message === 'string') return message;
-        }
-
-        if (typeof err.message === 'string' && err.message.trim().length > 0) {
-            return err.message;
-        }
-    }
-
-    if (err instanceof Error && err.message.trim().length > 0) {
-        return err.message;
-    }
-
-    return 'Request failed';
-}
-
-function mapRegisterFieldErrors(message: string): RegisterFieldErrors {
-    const normalized = message.toLowerCase();
-    return {
-        username: normalized.includes('username already exists') ? 'Username already exists' : undefined,
-        email: normalized.includes('email already exists') ? 'Email already exists' : undefined,
-    };
-}
-
-function normalizeRegisterError(err: unknown): AuthApiError {
-    const message = extractApiErrorMessage(err);
-    return new AuthApiError(message, mapRegisterFieldErrors(message));
-}
-
-function normalizeLoginError(err: unknown): AuthApiError {
-    if (isAxiosError(err) && err.response?.status === 401) {
-        return new AuthApiError('Wrong username or password');
-    }
-
-    return new AuthApiError(extractApiErrorMessage(err));
-}
-
 // ── Login ─────────────────────────────────────────────────────────────────────
 export function useLogin() {
     const mutation = authQuery.customMutation<{ username: string; password: string }>({
@@ -146,7 +104,11 @@ export function useLogin() {
             try {
                 return await mutation.mutationFn(input);
             } catch (err) {
-                throw normalizeLoginError(err);
+                throw new AuthApiError(
+                    isAxiosError(err) && err.response?.status === 401
+                        ? 'Wrong username or password'
+                        : extractApiErrorMessage(err)
+                );
             }
         },
     });
@@ -167,7 +129,12 @@ export function useRegister() {
             try {
                 return await mutation.mutationFn(input);
             } catch (err) {
-                throw normalizeRegisterError(err);
+                const message = extractApiErrorMessage(err);
+                const normalized = message.toLowerCase();
+                throw new AuthApiError(message, {
+                    username: normalized.includes('username already exists') ? 'Username already exists' : undefined,
+                    email: normalized.includes('email already exists') ? 'Email already exists' : undefined,
+                });
             }
         },
     });

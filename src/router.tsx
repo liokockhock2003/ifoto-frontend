@@ -8,7 +8,7 @@ import ResetPasswordPage from '@/pages/Auth/reset-password'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
-    <div className="p-8 text-2xl font-semibold">{title} — Coming Soon</div>
+    <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
 )
 
 export const router = createBrowserRouter([
@@ -63,7 +63,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-rent',
                 element: (
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
                         <ComingSoon title="Equipment Rent" />
                     </ProtectedRoute>
                 ),
@@ -79,7 +79,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-returns',
                 element: (
-                    <ProtectedRoute>
+                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
                         <ComingSoon title="Return Rented Equipment" />
                     </ProtectedRoute>
                 ),
@@ -95,7 +95,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-booking-management',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
                         <ComingSoon title="Equipment Booking Management" />
                     </ProtectedRoute>
                 ),
