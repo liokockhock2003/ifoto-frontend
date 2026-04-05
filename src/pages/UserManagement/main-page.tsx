@@ -34,6 +34,10 @@ function SearchInput() {
     };
 
     useEffect(() => {
+        setValue(filters.search ?? '');
+    }, [filters.search]);
+
+    useEffect(() => {
         return () => {
             if (debounceRef.current) clearTimeout(debounceRef.current);
         };
