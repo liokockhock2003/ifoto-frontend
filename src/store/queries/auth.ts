@@ -7,15 +7,11 @@ import {
     ForgotPasswordResponseSchema,
     ResetPasswordPayloadSchema,
     ResetPasswordResponseSchema,
-    SwitchActiveRoleInputSchema,
-    SwitchActiveRoleResponseSchema,
     type AuthResponse,
     type ForgotPasswordPayload,
     type ForgotPasswordResponse,
     type ResetPasswordPayload,
     type ResetPasswordResponse,
-    type SwitchActiveRoleInput,
-    type SwitchActiveRoleResponse,
 } from '@/store/schemas/auth';
 import {
     RegisterPayloadSchema,
@@ -73,19 +69,6 @@ const resetPasswordQuery = QueryFactory<
     '/api/v1/auth'
 );
 
-const userRoleQuery = QueryFactory<
-    SwitchActiveRoleResponse,
-    unknown,
-    SwitchActiveRoleInput
->(
-    'user-role',
-    {
-        single: SwitchActiveRoleResponseSchema,
-        list: SwitchActiveRoleResponseSchema.array(),
-        payload: SwitchActiveRoleInputSchema,
-    },
-    '/api/v1/users'
-);
 
 export type RegisterFieldErrors = {
     username?: string;
@@ -200,26 +183,6 @@ export function useSendForgotPasswordLink() {
     });
 
     return useMutation<ForgotPasswordResponse, AuthApiError, ForgotPasswordPayload>({
-        ...mutation,
-        mutationFn: async (input) => {
-            try {
-                return await mutation.mutationFn(input);
-            } catch (err) {
-                throw new AuthApiError(extractApiErrorMessage(err));
-            }
-        },
-    });
-}
-
-export function useSwitchActiveRole() {
-    const mutation = userRoleQuery.customMutation<SwitchActiveRoleInput>({
-        method: 'patch',
-        urlSuffix: ({ username }) => `/${encodeURIComponent(username)}/active-role`,
-        inputSchema: SwitchActiveRoleInputSchema,
-        responseSchema: SwitchActiveRoleResponseSchema,
-    });
-
-    return useMutation<SwitchActiveRoleResponse, AuthApiError, SwitchActiveRoleInput>({
         ...mutation,
         mutationFn: async (input) => {
             try {

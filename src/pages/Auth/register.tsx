@@ -1,4 +1,4 @@
-import { useState, type SyntheticEvent } from 'react';
+import { useState, useRef, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { isAuthApiError, useRegister } from '@/store/queries/auth';
@@ -17,7 +17,21 @@ export default function RegisterPage() {
     const [password, setPassword] = useState('');
     const [fullName, setFullName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
-    const [profilePictureUrl, setProfilePictureUrl] = useState('');
+    const [profilePicture, setprofilePicture] = useState('');
+    const [profilePicturePreview, setProfilePicturePreview] = useState('');
+    const fileInputRef = useRef<HTMLInputElement>(null);
+
+    function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            const base64 = reader.result as string;
+            setprofilePicture(base64);
+            setProfilePicturePreview(base64);
+        };
+        reader.readAsDataURL(file);
+    }
     const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
 
@@ -26,6 +40,11 @@ export default function RegisterPage() {
         setError('');
         setFieldErrors({});
 
+        if (!profilePicture) {
+            setError('Please upload a profile picture.');
+            return;
+        }
+
         registerMutation.mutate(
             {
                 username,
@@ -33,7 +52,7 @@ export default function RegisterPage() {
                 password,
                 fullName,
                 phoneNumber,
-                profilePictureUrl,
+                profilePicture,
             },
             {
                 onSuccess() {
@@ -139,15 +158,28 @@ export default function RegisterPage() {
                         </div>
 
                         <div className="flex flex-col gap-1">
-                            <Label htmlFor="profilePictureUrl">Profile picture URL</Label>
-                            <Input
-                                id="profilePictureUrl"
-                                type="url"
-                                value={profilePictureUrl}
-                                onChange={e => setProfilePictureUrl(e.target.value)}
-                                placeholder="https://example.com/avatar.png"
-                                required
+                            <Label>Profile picture</Label>
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleFileChange}
                             />
+                            <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => fileInputRef.current?.click()}
+                            >
+                                {profilePicturePreview ? 'Change photo' : 'Upload photo'}
+                            </Button>
+                            {profilePicturePreview && (
+                                <img
+                                    src={profilePicturePreview}
+                                    alt="Profile preview"
+                                    className="mt-1 h-20 w-20 rounded-full object-cover"
+                                />
+                            )}
                         </div>
 
                         <Button

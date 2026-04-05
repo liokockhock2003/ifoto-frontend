@@ -1,6 +1,5 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { Check, ChevronUp, LogOut, Settings, User2 } from 'lucide-react'
-import { toast } from 'sonner'
+import { ChevronUp, LogOut, Settings, User2 } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -18,48 +17,24 @@ import {
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuSeparator,
-    DropdownMenuSub,
-    DropdownMenuSubContent,
-    DropdownMenuSubTrigger,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { menuItems } from '@/routerMenuItems'
+import { menuGroups } from '@/routerMenuItems'
 import { useAuth } from '@/store/auth-context'
-import { useSwitchActiveRole } from '@/store/queries/auth'
 
 export function AppSidebar() {
-    const { user, logout, hasRole, updateUserRoles } = useAuth()
+    const { user, logout, hasRole } = useAuth()
     const location = useLocation()
-    const switchRoleMutation = useSwitchActiveRole()
-    const sidebarItems = menuItems.filter((item) => {
-        if (!item.allowedRoles || item.allowedRoles.length === 0) {
-            return true
-        }
 
-        return item.allowedRoles.some((role) => hasRole(role))
-    })
-
-    const roleSummary = user?.activeRole ?? 'No active role'
-    const availableRoles = user?.roles ?? []
-
-    async function handleSwitchRole(roleName: string) {
-        if (!user || roleName === user.activeRole || switchRoleMutation.isPending) {
-            return
-        }
-
-        try {
-            const result = await switchRoleMutation.mutateAsync({
-                username: user.username,
-                roleName,
-            })
-
-            updateUserRoles(result.roles, result.activeRole)
-            toast.success(`Active role switched to ${result.activeRole}`)
-        } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to switch active role'
-            toast.error(message)
-        }
-    }
+    const visibleGroups = menuGroups
+        .map((group) => ({
+            ...group,
+            items: group.items.filter((item) => {
+                if (!item.allowedRoles || item.allowedRoles.length === 0) return true
+                return item.allowedRoles.some((role) => hasRole(role))
+            }),
+        }))
+        .filter((group) => group.items.length > 0)
 
     return (
         <Sidebar collapsible="icon" variant='floating' className='bg-background'>
@@ -73,48 +48,56 @@ export function AppSidebar() {
                 </div>
             </SidebarHeader>
 
-            {/* ── Content: Nav group ── */}
+            {/* ── Content: Nav groups ── */}
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel className='text-primary font-semibold mb-2'>Main Menu</SidebarGroupLabel>
-                    <SidebarGroupContent className='pl-2 group-data-[collapsible=icon]:p-0'>
-                        <SidebarMenu className='gap-2'>
-                            {sidebarItems.length > 0 ? (
-                                sidebarItems.map(({ to, label, icon: Icon }) => {
-                                    const isActive = !!matchPath({ path: to, end: true }, location.pathname)
+                {visibleGroups.length > 0 ? (
+                    visibleGroups.map((group) => (
+                        <SidebarGroup key={group.label}>
+                            <SidebarGroupLabel className='text-primary font-semibold mb-2'>
+                                {group.label}
+                            </SidebarGroupLabel>
+                            <SidebarGroupContent className='pl-2 group-data-[collapsible=icon]:p-0'>
+                                <SidebarMenu className='gap-2'>
+                                    {group.items.map(({ to, label, icon: Icon }) => {
+                                        const isActive = !!matchPath({ path: to, end: true }, location.pathname)
 
-                                    return (
-                                        <SidebarMenuItem key={to}>
-                                            <SidebarMenuButton
-                                                asChild
-                                                tooltip={label}
-                                                isActive={isActive}
-                                                className={isActive
-                                                    ? 'transition-all bg-muted text-primary hover:bg-muted hover:text-primary'
-                                                    : 'transition-all text-sidebar-foreground/70 hover:bg-muted hover:text-sidebar-foreground'}
-                                            >
-                                                <NavLink
-                                                    to={to}
-                                                    end
-                                                    className="flex items-center gap-4 rounded-lg"
+                                        return (
+                                            <SidebarMenuItem key={to}>
+                                                <SidebarMenuButton
+                                                    asChild
+                                                    tooltip={label}
+                                                    isActive={isActive}
+                                                    className={isActive
+                                                        ? 'transition-all bg-muted text-primary hover:bg-muted hover:text-primary'
+                                                        : 'transition-all text-sidebar-foreground/70 hover:bg-muted hover:text-sidebar-foreground'}
                                                 >
-                                                    <Icon size={18} />
-                                                    <span>{label}</span>
-                                                </NavLink>
-                                            </SidebarMenuButton>
-                                        </SidebarMenuItem>
-                                    )
-                                })
-                            ) : (
-                                <SidebarMenuItem>
-                                    <div className="px-3 py-2 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
-                                        No menu available for your current role.
-                                    </div>
-                                </SidebarMenuItem>
-                            )}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                                                    <NavLink
+                                                        to={to}
+                                                        end
+                                                        className="flex items-center gap-4 rounded-lg"
+                                                    >
+                                                        <Icon size={18} />
+                                                        <span>{label}</span>
+                                                    </NavLink>
+                                                </SidebarMenuButton>
+                                            </SidebarMenuItem>
+                                        )
+                                    })}
+                                </SidebarMenu>
+                            </SidebarGroupContent>
+                        </SidebarGroup>
+                    ))
+                ) : (
+                    <SidebarGroup>
+                        <SidebarGroupContent>
+                            <SidebarMenuItem>
+                                <div className="px-3 py-2 text-sm text-muted-foreground group-data-[collapsible=icon]:hidden">
+                                    No menu available for your current role.
+                                </div>
+                            </SidebarMenuItem>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                )}
             </SidebarContent>
 
             {/* ── Footer: Account ── */}
@@ -124,13 +107,16 @@ export function AppSidebar() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="h-auto justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-1!" tooltip="Account">
-                                    <div className="flex items-center justify-center rounded-full bg-muted group-data-[collapsible=icon]:p-0">
-                                        <User2 />
+                                    <div className="flex items-center justify-center rounded-full bg-muted overflow-hidden shrink-0 size-8 group-data-[collapsible=icon]:p-0">
+                                        {user?.profilePicture ? (
+                                            <img src={user.profilePicture} alt={user.fullName ?? user.username} className="size-full object-cover" />
+                                        ) : (
+                                            <User2 className="size-4" />
+                                        )}
                                     </div>
                                     <div className="flex flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
                                         <span className="text-sm font-medium">{user?.fullName ?? user?.username}</span>
                                         <span className="text-xs text-muted-foreground">{user?.email}</span>
-                                        <span className="mt-1 line-clamp-1 text-[10px] text-muted-foreground/80">{roleSummary}</span>
                                     </div>
                                     <ChevronUp className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                                 </SidebarMenuButton>
@@ -144,33 +130,6 @@ export function AppSidebar() {
                                     <Settings className="mr-2 size-4" />
                                     Settings
                                 </DropdownMenuItem>
-                                <DropdownMenuSub>
-                                    <DropdownMenuSubTrigger inset>
-                                        Switch role
-                                    </DropdownMenuSubTrigger>
-                                    <DropdownMenuSubContent>
-                                        {availableRoles.length > 0 ? (
-                                            availableRoles.map((role) => {
-                                                const isCurrent = user?.activeRole === role
-
-                                                return (
-                                                    <DropdownMenuItem
-                                                        key={role}
-                                                        onClick={() => handleSwitchRole(role)}
-                                                        disabled={isCurrent || switchRoleMutation.isPending}
-                                                    >
-                                                        <Check className={isCurrent ? 'mr-2 size-4 opacity-100' : 'mr-2 size-4 opacity-0'} />
-                                                        <span>{role}</span>
-                                                    </DropdownMenuItem>
-                                                )
-                                            })
-                                        ) : (
-                                            <DropdownMenuItem disabled>
-                                                No roles available
-                                            </DropdownMenuItem>
-                                        )}
-                                    </DropdownMenuSubContent>
-                                </DropdownMenuSub>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem
                                     className="text-destructive focus:text-destructive"

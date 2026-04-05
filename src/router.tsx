@@ -63,7 +63,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-rent',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
+                    <ProtectedRoute>
                         <ComingSoon title="Equipment Rent" />
                     </ProtectedRoute>
                 ),
@@ -79,8 +79,32 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-returns',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE", "ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
-                        <ComingSoon title="Equipment Returns" />
+                    <ProtectedRoute>
+                        <ComingSoon title="Return Rented Equipment" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'equipment-request-returns',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
+                        <ComingSoon title="Return Requested Equipment" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'equipment-booking-management',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
+                        <ComingSoon title="Equipment Booking Management" />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'equipment-return-management',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                        <ComingSoon title="Equipment Return Management" />
                     </ProtectedRoute>
                 ),
             },

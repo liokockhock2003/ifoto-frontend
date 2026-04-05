@@ -1,7 +1,14 @@
 import { useState } from 'react';
 import type { Row } from '@tanstack/react-table';
+import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { User } from '@/store/schemas/user';
 
 import { UserDeleteDialog } from './dialog-delete';
@@ -18,23 +25,28 @@ export function UserTableRowActions({ row }: UserTableRowActionsProps) {
 
     return (
         <>
-            <div className="flex items-center gap-2">
-                <Button type="button" size="sm" variant="outline">
-                    View
-                </Button>
-                <Button type="button" size="sm" variant="outline" onClick={() => setOpenEditDialog(true)}>
-                    Edit
-                </Button>
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    disabled={disabled}
-                    onClick={() => setOpenDeleteDialog(true)}
-                >
-                    Delete
-                </Button>
-            </div>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button type="button" size="icon" variant="ghost">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open actions</span>
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setOpenEditDialog(true)}>
+                        <Pencil className="mr-2 h-4 w-4" />
+                        Edit
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                        disabled={disabled}
+                        onClick={() => setOpenDeleteDialog(true)}
+                        className="text-destructive focus:text-destructive"
+                    >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
 
             <UserEditDialog
                 open={openEditDialog}

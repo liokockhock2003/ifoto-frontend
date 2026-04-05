@@ -30,7 +30,6 @@ export default function LoginPage() {
                         email: data.email,
                         fullName: data.fullName,
                         roles: data.roles,
-                        activeRole: data.activeRole,
                     }));
                     toast.success('Login successful');
                     setTimeout(() => {

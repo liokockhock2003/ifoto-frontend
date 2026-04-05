@@ -12,7 +12,6 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     hasRole: (role: string) => boolean;
-    updateUserRoles: (roles: string[], activeRole: string) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -30,7 +29,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         email: string;
         fullName: string;
         roles: string[];
-        activeRole: string;
+        profilePicture?: string | null;
     }): User => UserSchema.parse(input);
 
     // ── Register redirect callback for 401 interceptor ────────────────────────
@@ -84,7 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                         email: data.email,
                         fullName: data.fullName,
                         roles: data.roles,
-                        activeRole: data.activeRole,
+                        profilePicture: data.profilePicture,
                     });
                     setUser(refreshedUser);
                     localStorage.setItem('user', JSON.stringify(refreshedUser));
@@ -114,7 +113,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             email: data.email,
             fullName: data.fullName,
             roles: data.roles,
-            activeRole: data.activeRole,
+            profilePicture: data.profilePicture,
         });
 
         setUser(user);
@@ -136,22 +135,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // ── Role helper ────────────────────────────────────────────────────────────
-    const hasRole = (role: string) => user?.activeRole === role;
-
-    const updateUserRoles = (roles: string[], activeRole: string) => {
-        setUser((prev) => {
-            if (!prev) return prev;
-
-            const nextUser = buildUser({
-                ...prev,
-                roles,
-                activeRole,
-            });
-
-            localStorage.setItem('user', JSON.stringify(nextUser));
-            return nextUser;
-        });
-    };
+    const hasRole = (role: string) => user?.roles.includes(role) ?? false;
 
     return (
         <AuthContext.Provider value={{
@@ -161,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             logout,
             hasRole,
-            updateUserRoles,
         }}>
             {children}
         </AuthContext.Provider>
