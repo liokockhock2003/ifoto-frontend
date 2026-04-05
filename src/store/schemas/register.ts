@@ -14,7 +14,7 @@ export const RegisterPayloadSchema = z.object({
     password: z.string().min(8),
     fullName: z.string().min(1),
     phoneNumber: z.string().min(1),
-    profilePictureUrl: z.string().url(),
+    profilePicture: z.string().min(1),
 });
 
 // Response body for 201 Created from POST /api/v1/register

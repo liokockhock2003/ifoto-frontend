@@ -1,20 +1,42 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Lock, Unlock, X } from 'lucide-react';
+import { Check, Info, Lock, X } from 'lucide-react';
 import { toast } from 'sonner';
-
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import type { User } from '@/store/schemas/user';
 import { useUpdateUser } from '@/store/queries/user';
+import { getRoleLabel } from '@/constants/roles';
 
-const ROLE_OPTIONS = [
-    'ROLE_ADMIN',
-    'ROLE_CLUB_MEMBER',
-    'ROLE_EQUIPMENT_COMMITTEE',
-    'ROLE_EVENT_COMMITTEE',
-    'ROLE_GUEST',
-    'ROLE_HIGH_COMMITTEE',
-];
+/**
+ * Roles that automatically imply ROLE_CLUB_MEMBER membership.
+ */
+const IMPLIES_CLUB_MEMBER = ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_COMMITTEE'] as const;
+
+/**
+ * Event Committee requires at least one of these to also be selected.
+ */
+const EVENT_COMMITTEE_REQUIRES_ONE_OF = ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'] as const;
+
+const ROLE_GROUPS = [
+    {
+        label: 'Committee Roles',
+        description: 'Admin, High Committee and Equipment Committee automatically include Club Member.',
+        roles: ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_COMMITTEE'],
+    },
+    {
+        label: 'Membership Type',
+        description: 'Club Member and Guest are mutually exclusive. Club Member is auto-included when a committee role that implies it is selected.',
+        roles: ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
+    },
+    {
+        label: 'Event Committee',
+        description: 'Event Committee is independent and must be paired with either Club Member or Guest.',
+        roles: ['ROLE_EVENT_COMMITTEE'],
+    },
+] as const;
 
 type UserEditDialogProps = {
     open: boolean;
@@ -37,23 +59,57 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
         setLocked(initialLocked);
     }, [initialLocked, initialRoles, open]);
 
-    const normalizedInitialRoles = useMemo(
-        () => [...initialRoles].sort().join(','),
-        [initialRoles],
-    );
-    const normalizedSelectedRoles = useMemo(
-        () => [...selectedRoles].sort().join(','),
-        [selectedRoles],
-    );
+    const normalizedInitialRoles = useMemo(() => [...initialRoles].sort().join(','), [initialRoles]);
+    const normalizedSelectedRoles = useMemo(() => [...selectedRoles].sort().join(','), [selectedRoles]);
 
-    const hasChanges = !!user && (normalizedSelectedRoles !== normalizedInitialRoles || locked !== initialLocked);
+    const clubMemberImplied = IMPLIES_CLUB_MEMBER.some((r) => selectedRoles.includes(r));
+
+    const eventCommitteeSelected = selectedRoles.includes('ROLE_EVENT_COMMITTEE');
+    const eventCommitteeValid =
+        !eventCommitteeSelected ||
+        EVENT_COMMITTEE_REQUIRES_ONE_OF.some((r) => selectedRoles.includes(r));
+
+    const hasChanges =
+        !!user && (normalizedSelectedRoles !== normalizedInitialRoles || locked !== initialLocked);
+
+    const canSave =
+        !!user &&
+        hasChanges &&
+        !updateUserMutation.isPending &&
+        selectedRoles.length > 0 &&
+        eventCommitteeValid;
 
     function toggleRole(role: string) {
         setSelectedRoles((prev) => {
+            let next: string[];
             if (prev.includes(role)) {
-                return prev.filter((item) => item !== role);
+                next = prev.filter((r) => r !== role);
+            } else {
+                next = [...prev, role];
             }
-            return [...prev, role];
+
+            // Enforce: Club Member and Guest are mutually exclusive
+            if (role === 'ROLE_CLUB_MEMBER' && next.includes('ROLE_CLUB_MEMBER')) {
+                next = next.filter((r) => r !== 'ROLE_GUEST');
+            } else if (role === 'ROLE_GUEST' && next.includes('ROLE_GUEST')) {
+                next = next.filter((r) => r !== 'ROLE_CLUB_MEMBER');
+            }
+
+            // Enforce: High Committee and Equipment Committee are mutually exclusive
+            if (role === 'ROLE_HIGH_COMMITTEE' && next.includes('ROLE_HIGH_COMMITTEE')) {
+                next = next.filter((r) => r !== 'ROLE_EQUIPMENT_COMMITTEE');
+            } else if (role === 'ROLE_EQUIPMENT_COMMITTEE' && next.includes('ROLE_EQUIPMENT_COMMITTEE')) {
+                next = next.filter((r) => r !== 'ROLE_HIGH_COMMITTEE');
+            }
+
+            // Enforce: selecting an implication role auto-adds Club Member and removes Guest
+            const needsClubMember = IMPLIES_CLUB_MEMBER.some((r) => next.includes(r));
+            if (needsClubMember) {
+                if (!next.includes('ROLE_CLUB_MEMBER')) next = [...next, 'ROLE_CLUB_MEMBER'];
+                next = next.filter((r) => r !== 'ROLE_GUEST');
+            }
+
+            return next;
         });
     }
 
@@ -61,6 +117,10 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
         if (!user) return;
         if (selectedRoles.length === 0) {
             toast.error('Please select at least one role.');
+            return;
+        }
+        if (!eventCommitteeValid) {
+            toast.error('Event Committee must be paired with Club Member or Guest.');
             return;
         }
 
@@ -83,86 +143,126 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
     if (!open) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg">
-                <CardHeader>
-                    <CardTitle>Edit User</CardTitle>
-                    <CardDescription>
-                        Update role and account lock status for {user?.username ?? 'selected user'}.
-                    </CardDescription>
-                </CardHeader>
+        <TooltipProvider>
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                <Card className="w-full max-w-lg">
+                    <CardHeader>
+                        <CardTitle>Edit User</CardTitle>
+                        <CardDescription>
+                            Update role and account lock status for{' '}
+                            <span className="font-medium text-foreground">
+                                {user?.username ?? 'selected user'}
+                            </span>
+                            .
+                        </CardDescription>
+                    </CardHeader>
 
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium text-foreground">User Roles (multiple)</p>
-                        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                            {ROLE_OPTIONS.map((role) => {
-                                const isSelected = selectedRoles.includes(role);
+                    <CardContent className="space-y-6">
+                        {/* Role groups */}
+                        {ROLE_GROUPS.map((group) => (
+                            <div key={group.label} className="space-y-2">
+                                <div className="flex items-center gap-1.5">
+                                    <p className="text-sm font-medium text-foreground">{group.label}</p>
+                                    <Tooltip>
+                                        <TooltipTrigger asChild>
+                                            <Info className="h-3.5 w-3.5 cursor-help text-muted-foreground" />
+                                        </TooltipTrigger>
+                                        <TooltipContent side="right" className="max-w-56 text-xs">
+                                            {group.description}
+                                        </TooltipContent>
+                                    </Tooltip>
+                                </div>
 
-                                return (
-                                    <Button
-                                        key={role}
-                                        type="button"
-                                        variant={isSelected ? 'default' : 'outline'}
-                                        className="justify-between"
-                                        onClick={() => toggleRole(role)}
-                                    >
-                                        <span className="truncate text-left">{role}</span>
-                                        {isSelected ? <Check className="ml-2 h-4 w-4" /> : null}
-                                    </Button>
-                                );
-                            })}
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                                    {group.roles.map((role) => {
+                                        const isSelected = selectedRoles.includes(role);
+                                        const isForced =
+                                            role === 'ROLE_CLUB_MEMBER' && clubMemberImplied;
+
+                                        return (
+                                            <Tooltip key={role}>
+                                                <TooltipTrigger asChild>
+                                                    <Button
+                                                        type="button"
+                                                        variant={isSelected ? 'default' : 'outline'}
+                                                        className="justify-between"
+                                                        disabled={isForced}
+                                                        onClick={() => !isForced && toggleRole(role)}
+                                                    >
+                                                        <span className="truncate text-left">
+                                                            {getRoleLabel(role)}
+                                                        </span>
+                                                        {isForced ? (
+                                                            <Lock className="ml-2 h-3.5 w-3.5 opacity-60" />
+                                                        ) : isSelected ? (
+                                                            <Check className="ml-2 h-4 w-4" />
+                                                        ) : null}
+                                                    </Button>
+                                                </TooltipTrigger>
+                                                {isForced && (
+                                                    <TooltipContent side="top" className="text-xs">
+                                                        Auto-included by Admin, High Committee, or Equipment Committee
+                                                    </TooltipContent>
+                                                )}
+                                            </Tooltip>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Event Committee constraint warning */}
+                                {(group.roles as readonly string[]).includes('ROLE_EVENT_COMMITTEE') &&
+                                    eventCommitteeSelected &&
+                                    !eventCommitteeValid && (
+                                        <p className="text-xs text-destructive">
+                                            Event Committee must also have Club Member or Guest selected.
+                                        </p>
+                                    )}
+                            </div>
+                        ))}
+
+                        {/* Account Status */}
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">Account Status</p>
+                            <div className="flex items-center gap-2">
+                                <Switch
+                                    checked={!locked}
+                                    onCheckedChange={(checked) => setLocked(!checked)}
+                                />
+                                <div>
+                                    {locked ? (
+                                        <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
+                                            Inactive
+                                        </Badge>
+                                    ) : (
+                                        <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
+                                            Active
+                                        </Badge>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                        <p className="text-xs text-muted-foreground">
-                            Selected: {selectedRoles.length > 0 ? selectedRoles.join(', ') : 'None'}
-                        </p>
-                    </div>
+                    </CardContent>
 
-                    <div className="space-y-2">
-                        <p className="text-sm font-medium text-foreground">Lock/Unlock Account</p>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant={locked ? 'default' : 'outline'}
-                                className="flex-1"
-                                onClick={() => setLocked(true)}
-                            >
-                                <Lock className="mr-2 h-4 w-4" />
-                                Lock
-                            </Button>
-                            <Button
-                                type="button"
-                                variant={!locked ? 'default' : 'outline'}
-                                className="flex-1"
-                                onClick={() => setLocked(false)}
-                            >
-                                <Unlock className="mr-2 h-4 w-4" />
-                                Unlock
-                            </Button>
-                        </div>
-                    </div>
-                </CardContent>
-
-                <CardFooter className="justify-end gap-2">
-                    <Button
-                        type="button"
-                        variant="outline"
-                        disabled={updateUserMutation.isPending}
-                        onClick={() => onOpenChange(false)}
-                    >
-                        <X className="mr-2 h-4 w-4" />
-                        Cancel
-                    </Button>
-                    <Button
-                        type="button"
-                        onClick={() => void handleSave()}
-                        disabled={!user || !hasChanges || updateUserMutation.isPending || selectedRoles.length === 0}
-                    >
-                        {updateUserMutation.isPending ? 'Saving...' : 'Save'}
-                    </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                    <CardFooter className="justify-end gap-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            disabled={updateUserMutation.isPending}
+                            onClick={() => onOpenChange(false)}
+                        >
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel
+                        </Button>
+                        <Button
+                            type="button"
+                            onClick={() => void handleSave()}
+                            disabled={!canSave}
+                        >
+                            {updateUserMutation.isPending ? 'Saving...' : 'Save'}
+                        </Button>
+                    </CardFooter>
+                </Card>
+            </div>
+        </TooltipProvider>
     );
 }
-

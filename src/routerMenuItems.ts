@@ -1,8 +1,11 @@
 import {
     BarChart3,
+    CalendarCheck,
     CalendarCog,
     ClipboardList,
     Package,
+    PackageCheck,
+    RotateCcw,
     ShoppingCart,
     Undo2,
     UserCog,
@@ -11,7 +14,6 @@ import type { LucideIcon } from 'lucide-react'
 
 export type AppRole =
     | 'ROLE_ADMIN'
-    | 'ROLE_CLUB_MEMBER'
     | 'ROLE_EQUIPMENT_COMMITTEE'
     | 'ROLE_EVENT_COMMITTEE'
     | 'ROLE_GUEST'
@@ -24,47 +26,88 @@ export interface MenuItem {
     allowedRoles?: AppRole[]
 }
 
-export const menuItems: MenuItem[] = [
+export interface MenuGroup {
+    label: string
+    items: MenuItem[]
+}
+
+export const menuGroups: MenuGroup[] = [
     {
-        to: '/manage-equipment',
-        label: 'Manage Equipment',
-        icon: Package,
-        allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+        label: 'Equipment Rental',
+        items: [
+            {
+                to: '/equipment-rent',
+                label: 'Equipment Rental',
+                icon: ShoppingCart,
+            },
+            {
+                to: '/equipment-returns',
+                label: 'Return Rented Equipment',
+                icon: Undo2,
+            },
+        ],
     },
     {
-        to: '/user-management',
-        label: 'User Management',
-        icon: UserCog,
-        allowedRoles: ['ROLE_ADMIN'],
+        label: 'Equipment Request',
+        items: [
+            {
+                to: '/equipment-requests',
+                label: 'Equipment Request',
+                icon: ClipboardList,
+                allowedRoles: ['ROLE_EVENT_COMMITTEE'],
+            },
+            {
+                to: '/equipment-request-returns',
+                label: 'Return Requested Equipment',
+                icon: RotateCcw,
+                allowedRoles: ['ROLE_EVENT_COMMITTEE'],
+            },
+        ],
     },
     {
-        to: '/equipment-requests',
-        label: 'Equipment Requests',
-        icon: ClipboardList,
-        allowedRoles: ['ROLE_EVENT_COMMITTEE'],
+        label: 'Admin Dashboard',
+        items: [
+            {
+                to: '/user-management',
+                label: 'User Management',
+                icon: UserCog,
+                allowedRoles: ['ROLE_ADMIN'],
+            },
+        ],
     },
     {
-        to: '/equipment-rent',
-        label: 'Equipment Rent',
-        icon: ShoppingCart,
-        allowedRoles: ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
-    },
-    {
-        to: '/event-management',
-        label: 'Event Management',
-        icon: CalendarCog,
-        allowedRoles: ['ROLE_HIGH_COMMITTEE'],
-    },
-    {
-        to: '/equipment-returns',
-        label: 'Equipment Returns',
-        icon: Undo2,
-        allowedRoles: ['ROLE_EVENT_COMMITTEE', 'ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
-    },
-    {
-        to: '/reporting-dashboard',
-        label: 'Reporting Dashboard',
-        icon: BarChart3,
-        allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE', 'ROLE_HIGH_COMMITTEE'],
+        label: 'Management',
+        items: [
+            {
+                to: '/event-management',
+                label: 'Event Management',
+                icon: CalendarCog,
+                allowedRoles: ['ROLE_HIGH_COMMITTEE'],
+            },
+            {
+                to: '/manage-equipment',
+                label: 'Inventory Management',
+                icon: Package,
+                allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+            },
+            {
+                to: '/equipment-booking-management',
+                label: 'Equipment Booking Management',
+                icon: CalendarCheck,
+                allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+            },
+            {
+                to: '/equipment-return-management',
+                label: 'Equipment Return Management',
+                icon: PackageCheck,
+                allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+            },
+            {
+                to: '/reporting-dashboard',
+                label: 'Reporting Dashboard',
+                icon: BarChart3,
+                allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE', 'ROLE_HIGH_COMMITTEE'],
+            },
+        ],
     },
 ]

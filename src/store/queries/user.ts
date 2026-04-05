@@ -1,4 +1,5 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
 import { z } from 'zod';
 
 import { QueryFactory } from '@/store/query-factory';
@@ -73,6 +74,17 @@ const deleteUserMutation = userDeleteQuery.customMutation<DeleteUserPayload>({
     invalidateKeys: () => [usersKeys.all],
 });
 
+function extractApiErrorMessage(err: unknown): string {
+    if (isAxiosError(err)) {
+        const data = err.response?.data;
+        if (typeof data === 'object' && data !== null && 'message' in data && typeof data.message === 'string') {
+            return data.message;
+        }
+        return err.message;
+    }
+    return err instanceof Error ? err.message : 'An unexpected error occurred';
+}
+
 export const usersKeys = {
     all: usersQuery.qk(),
     list: (filters?: Partial<UserListFilters>) => ['users', 'page', UserListFiltersSchema.parse(filters ?? {})] as const,
@@ -88,11 +100,29 @@ export function useUsers(filters?: Partial<UserListFilters>) {
 }
 
 export function useUpdateUser() {
-    return useMutation<UpdateUserResponse, Error, UpdateUserPayload>(updateUserMutation);
+    return useMutation<UpdateUserResponse, Error, UpdateUserPayload>({
+        ...updateUserMutation,
+        mutationFn: async (input) => {
+            try {
+                return await updateUserMutation.mutationFn(input);
+            } catch (err) {
+                throw new Error(extractApiErrorMessage(err));
+            }
+        },
+    });
 }
 
 export function useDeleteUser() {
-    return useMutation<UpdateUserResponse, Error, DeleteUserPayload>(deleteUserMutation);
+    return useMutation<UpdateUserResponse, Error, DeleteUserPayload>({
+        ...deleteUserMutation,
+        mutationFn: async (input) => {
+            try {
+                return await deleteUserMutation.mutationFn(input);
+            } catch (err) {
+                throw new Error(extractApiErrorMessage(err));
+            }
+        },
+    });
 }
 
 // Backward-compatible aliases for existing UI wiring.
