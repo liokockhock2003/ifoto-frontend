@@ -20,10 +20,27 @@ export default function RegisterPage() {
     const [profilePicture, setprofilePicture] = useState('');
     const [profilePicturePreview, setProfilePicturePreview] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const [error, setError] = useState('');
+    const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
+
+    const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        if (!ALLOWED_TYPES.includes(file.type)) {
+            setError('Only JPEG, PNG, and WebP images are allowed.');
+            e.target.value = '';
+            return;
+        }
+        if (file.size > MAX_SIZE_BYTES) {
+            setError('Image must be smaller than 5 MB.');
+            e.target.value = '';
+            return;
+        }
+
         const reader = new FileReader();
         reader.onload = () => {
             const base64 = reader.result as string;
@@ -32,8 +49,6 @@ export default function RegisterPage() {
         };
         reader.readAsDataURL(file);
     }
-    const [error, setError] = useState('');
-    const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
 
     function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -162,7 +177,7 @@ export default function RegisterPage() {
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept="image/*"
+                                accept="image/jpeg,image/png,image/webp"
                                 className="hidden"
                                 onChange={handleFileChange}
                             />
