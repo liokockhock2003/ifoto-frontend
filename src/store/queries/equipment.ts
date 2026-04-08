@@ -6,6 +6,8 @@ import {
     type EquipmentListResponse,
 } from '@/store/schemas/equipment';
 
+const EQUIPMENT_LIST_QUERY_KEY_SUFFIX = 'list' as const;
+
 const equipmentQuery = QueryFactory(
     'equipment',
     {
@@ -17,12 +19,12 @@ const equipmentQuery = QueryFactory(
 
 const equipmentListQuery = equipmentQuery.customList<EquipmentListResponse>({
     responseSchema: EquipmentListResponseSchema,
-    queryKeySuffix: 'list',
+    queryKeySuffix: EQUIPMENT_LIST_QUERY_KEY_SUFFIX,
 });
 
 export const equipmentKeys = {
     all: equipmentQuery.qk(),
-    list: () => [...equipmentQuery.qk(), 'list'] as const,
+    list: () => [...equipmentQuery.qk(), EQUIPMENT_LIST_QUERY_KEY_SUFFIX] as const,
 };
 
 export function useEquipmentList() {
