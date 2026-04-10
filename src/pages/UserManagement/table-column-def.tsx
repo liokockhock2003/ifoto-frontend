@@ -47,13 +47,9 @@ export const userTableColumns: ColumnDef<User, any>[] = [
         cell: (info) => {
             const isLocked = info.getValue();
             return isLocked ? (
-                <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-                    Inactive
-                </Badge>
+                <Badge variant="outline" className="badge-danger">Inactive</Badge>
             ) : (
-                <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                    Active
-                </Badge>
+                <Badge variant="outline" className="badge-success">Active</Badge>
             );
         },
     }),
