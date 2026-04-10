@@ -78,7 +78,7 @@ const createMainEquipmentMutation = mainEquipmentQuery.customMutation<MainEquipm
     method: 'post',
     urlSuffix: '',
     inputSchema: MainEquipmentPayloadSchema,
-    responseSchema: z.any(),  // server returns empty body on POST
+    responseSchema: MainEquipmentSchema,
     toastMsg: 'Equipment added successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
@@ -87,7 +87,7 @@ const updateMainEquipmentMutation = mainEquipmentQuery.customMutation<MainEquipm
     method: 'put',
     urlSuffix: (input) => `/${input.mainEquipmentId}`,
     inputSchema: MainEquipmentUpdatePayloadSchema,
-    responseSchema: z.any(),  // server returns empty body on PUT
+    responseSchema: MainEquipmentSchema,
     toastMsg: 'Equipment updated successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
@@ -105,7 +105,7 @@ const createSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
     method: 'post',
     urlSuffix: '',
     inputSchema: SubEquipmentPayloadSchema,
-    responseSchema: z.any(),  // server returns empty body on POST
+    responseSchema: SubEquipmentSchema,
     toastMsg: 'Sub-equipment added successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
@@ -114,7 +114,7 @@ const updateSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
     method: 'put',
     urlSuffix: (input) => `/${input.subEquipmentId}`,
     inputSchema: SubEquipmentUpdatePayloadSchema,
-    responseSchema: z.any(),  // server returns empty body on PUT
+    responseSchema: SubEquipmentSchema,
     toastMsg: 'Sub-equipment updated successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
