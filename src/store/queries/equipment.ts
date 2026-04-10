@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, type UseMutationOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { QueryFactory } from '@/store/query-factory';
@@ -79,7 +79,6 @@ const createMainEquipmentMutation = mainEquipmentQuery.customMutation<MainEquipm
     urlSuffix: '',
     inputSchema: MainEquipmentPayloadSchema,
     responseSchema: MainEquipmentSchema,
-    toastMsg: 'Equipment added successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -88,7 +87,6 @@ const updateMainEquipmentMutation = mainEquipmentQuery.customMutation<MainEquipm
     urlSuffix: (input) => `/${input.mainEquipmentId}`,
     inputSchema: MainEquipmentUpdatePayloadSchema,
     responseSchema: MainEquipmentSchema,
-    toastMsg: 'Equipment updated successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -97,7 +95,6 @@ const deleteMainEquipmentMutation = mainEquipmentQuery.customMutation<MainEquipm
     urlSuffix: (input) => `/${input.mainEquipmentId}`,
     inputSchema: mainEquipmentDeletePayloadSchema,
     responseSchema: z.any(),  // server returns empty body on DELETE
-    toastMsg: 'Equipment deleted successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -106,7 +103,6 @@ const createSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
     urlSuffix: '',
     inputSchema: SubEquipmentPayloadSchema,
     responseSchema: SubEquipmentSchema,
-    toastMsg: 'Sub-equipment added successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -115,7 +111,6 @@ const updateSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
     urlSuffix: (input) => `/${input.subEquipmentId}`,
     inputSchema: SubEquipmentUpdatePayloadSchema,
     responseSchema: SubEquipmentSchema,
-    toastMsg: 'Sub-equipment updated successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -124,7 +119,6 @@ const deleteSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
     urlSuffix: (input) => `/${input.subEquipmentId}`,
     inputSchema: subEquipmentDeletePayloadSchema,
     responseSchema: z.any(),  // server returns empty body on DELETE
-    toastMsg: 'Sub-equipment deleted successfully',
     invalidateKeys: () => [[...equipmentKeys.list()]],
 });
 
@@ -170,11 +164,11 @@ export function useUpdateMainEquipment() {
 }
 
 export function useDeleteMainEquipment() {
-    return useMutation<MainEquipment, Error, MainEquipmentDeletePayload>({
-        ...deleteMainEquipmentMutation,
+    return useMutation<void, Error, MainEquipmentDeletePayload>({
+        ...(deleteMainEquipmentMutation as unknown as UseMutationOptions<void, Error, MainEquipmentDeletePayload>),
         mutationFn: async (input) => {
             try {
-                return await deleteMainEquipmentMutation.mutationFn(input);
+                await deleteMainEquipmentMutation.mutationFn(input);
             } catch (err) {
                 throw new Error(extractApiErrorMessage(err));
             }
@@ -211,11 +205,11 @@ export function useUpdateSubEquipment() {
 }
 
 export function useDeleteSubEquipment() {
-    return useMutation<SubEquipment, Error, SubEquipmentDeletePayload>({
-        ...deleteSubEquipmentMutation,
+    return useMutation<void, Error, SubEquipmentDeletePayload>({
+        ...(deleteSubEquipmentMutation as unknown as UseMutationOptions<void, Error, SubEquipmentDeletePayload>),
         mutationFn: async (input) => {
             try {
-                return await deleteSubEquipmentMutation.mutationFn(input);
+                await deleteSubEquipmentMutation.mutationFn(input);
             } catch (err) {
                 throw new Error(extractApiErrorMessage(err));
             }

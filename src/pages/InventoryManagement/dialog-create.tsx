@@ -57,11 +57,11 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, onCreated }: Mai
     async function handleSubmit() {
         try {
             await mutation.mutateAsync(form);
-            toast.success('Main equipment added');
+            toast.success('Main Equipment added');
             onCreated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to add equipment');
+            toast.error(error instanceof Error ? error.message : 'Failed to add Main Equipment');
         }
     }
 
@@ -168,11 +168,11 @@ export function SubEquipmentCreateDialog({ open, onOpenChange, onCreated }: SubE
     async function handleSubmit() {
         try {
             await mutation.mutateAsync(form);
-            toast.success('Sub-equipment added');
+            toast.success('Sub-Equipment added');
             onCreated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to add sub-equipment');
+            toast.error(error instanceof Error ? error.message : 'Failed to add Sub-Equipment');
         }
     }
 

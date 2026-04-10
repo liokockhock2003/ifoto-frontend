@@ -221,7 +221,7 @@ export function DataTable<TData, TValue>({
             </Card>
 
             {showPagination && (
-                <Pagination className='justify-end'>
+                <Pagination className='justify-start'>
                     <PaginationContent>
                         <PaginationItem>
                             <PaginationPrevious

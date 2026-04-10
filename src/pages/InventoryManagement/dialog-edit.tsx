@@ -68,11 +68,11 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('Equipment updated');
+            toast.success('A Main Equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to update equipment');
+            toast.error(error instanceof Error ? error.message : 'Failed to update Main Equipment');
         }
     }
 
@@ -190,11 +190,11 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('Sub-equipment updated');
+            toast.success('A Sub-Equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to update sub-equipment');
+            toast.error(error instanceof Error ? error.message : 'Failed to update Sub-Equipment');
         }
     }
 
