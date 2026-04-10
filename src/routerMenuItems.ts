@@ -88,7 +88,7 @@ export const menuGroups: MenuGroup[] = [
                 allowedRoles: ['ROLE_HIGH_COMMITTEE'],
             },
             {
-                to: '/manage-equipment',
+                to: '/manage-inventory',
                 label: 'Inventory Management',
                 icon: Package,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],

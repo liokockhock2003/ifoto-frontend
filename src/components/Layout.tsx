@@ -11,7 +11,7 @@ export default function Layout() {
                 <AppSidebar />                  {/* ← can now call useAuth() */}
                 <SidebarInset>
                     <header className="flex items-center justify-between px-4 py-2 border-b">
-                        <SidebarTrigger />
+                        <SidebarTrigger className='text-muted-foreground' />
                         <ModeToggle />
                     </header>
                     <main className="flex-1 p-6">

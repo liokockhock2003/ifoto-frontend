@@ -6,6 +6,7 @@ import RegisterPage from '@/pages/Auth/register'
 import ForgotPasswordPage from '@/pages/Auth/forgot-password'
 import ResetPasswordPage from '@/pages/Auth/reset-password'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
+import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
@@ -37,10 +38,10 @@ export const router = createBrowserRouter([
                 element: <ProtectedRoute><ComingSoon title="Home" /></ProtectedRoute>,
             },
             {
-                path: 'manage-equipment',
+                path: 'manage-inventory',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <ComingSoon title="Manage Equipment" />
+                        <InventoryManagementMainPage />
                     </ProtectedRoute>
                 ),
             },
