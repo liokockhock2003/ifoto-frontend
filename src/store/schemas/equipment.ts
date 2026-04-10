@@ -28,6 +28,26 @@ export const EquipmentListResponseSchema = z.object({
     subEquipment: z.array(SubEquipmentSchema),
 });
 
+// ── Payload schemas (no id — used for create & update request bodies) ─────────
+
+export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true });
+export const MainEquipmentUpdatePayloadSchema = MainEquipmentPayloadSchema.extend({
+    mainEquipmentId: z.number().int().positive(),
+});
+
+export const SubEquipmentPayloadSchema = SubEquipmentSchema.omit({ subEquipmentId: true });
+export const SubEquipmentUpdatePayloadSchema = SubEquipmentPayloadSchema.extend({
+    subEquipmentId: z.number().int().positive(),
+});
+
+// ── Types ─────────────────────────────────────────────────────────────────────
+
 export type MainEquipment = z.infer<typeof MainEquipmentSchema>;
+export type MainEquipmentPayload = z.infer<typeof MainEquipmentPayloadSchema>;
+export type MainEquipmentUpdatePayload = z.infer<typeof MainEquipmentUpdatePayloadSchema>;
+
 export type SubEquipment = z.infer<typeof SubEquipmentSchema>;
+export type SubEquipmentPayload = z.infer<typeof SubEquipmentPayloadSchema>;
+export type SubEquipmentUpdatePayload = z.infer<typeof SubEquipmentUpdatePayloadSchema>;
+
 export type EquipmentListResponse = z.infer<typeof EquipmentListResponseSchema>;
