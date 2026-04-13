@@ -7,6 +7,7 @@ import ForgotPasswordPage from '@/pages/Auth/forgot-password'
 import ResetPasswordPage from '@/pages/Auth/reset-password'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
+import EventManagementMainPage from '@/pages/EventManagement/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
@@ -73,7 +74,7 @@ export const router = createBrowserRouter([
                 path: 'event-management',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_HIGH_COMMITTEE"]}>
-                        <ComingSoon title="Event Management" />
+                        <EventManagementMainPage />
                     </ProtectedRoute>
                 ),
             },

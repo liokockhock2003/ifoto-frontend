@@ -1,0 +1,133 @@
+import { useEffect, useState } from 'react';
+import { X } from 'lucide-react';
+import { toast } from 'sonner';
+
+import { Button } from '@/components/ui/button';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { CommitteeUserSelect } from '@/components/committee-user-select';
+import { useCreateEvent } from '@/store/queries/event';
+import type { CreateEventPayload } from '@/store/schemas/event';
+
+type EventCreateDialogProps = {
+    open: boolean;
+    onOpenChange: (open: boolean) => void;
+};
+
+const defaultForm = (): CreateEventPayload => ({
+    eventName: '',
+    description: '',
+    startDate: '',
+    endDate: '',
+    location: '',
+    isActive: true,
+    committeeUserIds: [],
+});
+
+export function EventCreateDialog({ open, onOpenChange }: EventCreateDialogProps) {
+    const mutation = useCreateEvent();
+    const [form, setForm] = useState<CreateEventPayload>(defaultForm);
+
+    useEffect(() => {
+        if (open) setForm(defaultForm());
+    }, [open]);
+
+    const set =
+        (field: keyof CreateEventPayload) =>
+        (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+            setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    const canSubmit =
+        !mutation.isPending &&
+        form.eventName.trim() !== '' &&
+        form.startDate !== '' &&
+        form.endDate !== '' &&
+        form.location.trim() !== '';
+
+    async function handleSubmit() {
+        try {
+            await mutation.mutateAsync(form);
+            onOpenChange(false);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Failed to create event');
+        }
+    }
+
+    if (!open) return null;
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
+                <CardHeader>
+                    <CardTitle>Create Event</CardTitle>
+                    <CardDescription>Fill in the details for the new event.</CardDescription>
+                </CardHeader>
+
+                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <div className="space-y-1 sm:col-span-2">
+                        <Label>Event Name</Label>
+                        <Input
+                            placeholder="e.g. Night Photography Workshop"
+                            value={form.eventName}
+                            onChange={set('eventName')}
+                        />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>Start Date</Label>
+                        <Input type="date" value={form.startDate} onChange={set('startDate')} />
+                    </div>
+                    <div className="space-y-1">
+                        <Label>End Date</Label>
+                        <Input type="date" value={form.endDate} onChange={set('endDate')} />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                        <Label>Location</Label>
+                        <Input
+                            placeholder="e.g. Titiwangsa Lake Garden, KL"
+                            value={form.location}
+                            onChange={set('location')}
+                        />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                        <Label>Description</Label>
+                        <Input
+                            placeholder="Optional description"
+                            value={form.description ?? ''}
+                            onChange={set('description')}
+                        />
+                    </div>
+                    <div className="space-y-1 sm:col-span-2">
+                        <Label>Committee Members</Label>
+                        <CommitteeUserSelect
+                            value={form.committeeUserIds}
+                            onChange={(ids) => setForm((prev) => ({ ...prev, committeeUserIds: ids }))}
+                        />
+                    </div>
+                </CardContent>
+
+                <CardFooter className="justify-end gap-2">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        disabled={mutation.isPending}
+                        onClick={() => onOpenChange(false)}
+                    >
+                        <X className="mr-2 h-4 w-4" />
+                        Cancel
+                    </Button>
+                    <Button type="button" disabled={!canSubmit} onClick={() => void handleSubmit()}>
+                        {mutation.isPending ? 'Creating...' : 'Create Event'}
+                    </Button>
+                </CardFooter>
+            </Card>
+        </div>
+    );
+}
