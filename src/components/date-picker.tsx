@@ -47,7 +47,7 @@ export function DatePicker({
                     {selected ? format(selected, 'PPP') : placeholder}
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 rounded-2xl border-none" align="start">
                 <Calendar
                     mode="single"
                     selected={selected}
@@ -55,7 +55,7 @@ export function DatePicker({
                         onChange(date ? format(date, 'yyyy-MM-dd') : '');
                         setOpen(false);
                     }}
-                    className="rounded-lg border w-54"
+                    className="border rounded-2xl w-54"
                     autoFocus
                 />
             </PopoverContent>

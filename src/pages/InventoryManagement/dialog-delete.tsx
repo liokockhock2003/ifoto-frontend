@@ -72,7 +72,7 @@ export function MainEquipmentDeleteDialog({ open, onOpenChange, equipment, onDel
                         disabled={!equipment || mutation.isPending}
                         onClick={() => void handleDelete()}
                     >
-                        {/* <Trash2 className="mr-2 h-4 w-4" /> */}
+                        <Trash2 className="mr-2 h-4 w-4" />
                         {mutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
                 </DialogFooter>

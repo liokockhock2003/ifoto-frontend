@@ -15,8 +15,7 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
+    DropdownMenuItem,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
@@ -130,11 +129,15 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
-                                <DropdownMenuRadioGroup value={form.condition} onValueChange={setVal('condition')}>
-                                    {CONDITIONS.map((c) => (
-                                        <DropdownMenuRadioItem key={c} value={c}>{c}</DropdownMenuRadioItem>
-                                    ))}
-                                </DropdownMenuRadioGroup>
+                                {CONDITIONS.map((c) => (
+                                    <DropdownMenuItem
+                                        key={c}
+                                        className={c === form.condition ? 'bg-accent' : ''}
+                                        onSelect={() => setVal('condition')(c)}
+                                    >
+                                        {c}
+                                    </DropdownMenuItem>
+                                ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </Field>
@@ -148,11 +151,15 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
-                                <DropdownMenuRadioGroup value={form.status} onValueChange={setVal('status')}>
-                                    {STATUSES.map((s) => (
-                                        <DropdownMenuRadioItem key={s} value={s}>{s}</DropdownMenuRadioItem>
-                                    ))}
-                                </DropdownMenuRadioGroup>
+                                {STATUSES.map((s) => (
+                                    <DropdownMenuItem
+                                        key={s}
+                                        className={s === form.status ? 'bg-accent' : ''}
+                                        onSelect={() => setVal('status')(s)}
+                                    >
+                                        {s}
+                                    </DropdownMenuItem>
+                                ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </Field>
