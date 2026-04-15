@@ -1,11 +1,26 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuRadioGroup,
+    DropdownMenuRadioItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useUpdateMainEquipment, useUpdateSubEquipment } from '@/store/queries/equipment';
 import type {
     MainEquipment,
@@ -14,13 +29,13 @@ import type {
     SubEquipmentUpdatePayload,
 } from '@/store/schemas/equipment';
 
+import { useInventoryManagementContext } from './context';
+import { SUB_KIND_CONFIG, subKindFromType } from './provider';
+
 // ── Shared ────────────────────────────────────────────────────────────────────
 
 const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
 const STATUSES = ['Available', 'In Use', 'Maintenance', 'Unavailable'] as const;
-
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
 
 // ── Main Equipment Edit Dialog ─────────────────────────────────────────────────
 
@@ -53,13 +68,16 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
     }, [equipment, open]);
 
     const set = (field: keyof MainEquipmentUpdatePayload) =>
-        (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        (e: React.ChangeEvent<HTMLInputElement>) =>
             setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    const setVal = (field: keyof MainEquipmentUpdatePayload) =>
+        (value: string) =>
+            setForm((prev) => ({ ...prev, [field]: value }));
 
     const canSubmit =
         !mutation.isPending &&
         !!equipment &&
-        form.equipmentType.trim() !== '' &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
         form.serialNumber.trim() !== '';
@@ -76,67 +94,84 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <CardHeader>
-                    <CardTitle>Edit Main Equipment</CardTitle>
-                    <CardDescription>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle>Edit {equipment?.equipmentType || 'Main Equipment'}</DialogTitle>
+                    <DialogDescription>
                         Updating{' '}
                         <span className="font-medium text-foreground">
                             {equipment ? `${equipment.brand} ${equipment.model}` : '—'}
                         </span>
-                    </CardDescription>
-                </CardHeader>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                        <Label>Equipment Type</Label>
-                        <Input value={form.equipmentType} onChange={set('equipmentType')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Brand</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field>
+                        <FieldLabel>Brand</FieldLabel>
                         <Input value={form.brand} onChange={set('brand')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Model</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Model</FieldLabel>
                         <Input value={form.model} onChange={set('model')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Serial Number</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Serial Number</FieldLabel>
                         <Input value={form.serialNumber} onChange={set('serialNumber')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Condition</Label>
-                        <select className={selectClass} value={form.condition} onChange={set('condition')}>
-                            {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Status</Label>
-                        <select className={selectClass} value={form.status} onChange={set('status')}>
-                            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Notes</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Condition</FieldLabel>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
+                                    {form.condition}
+                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
+                                <DropdownMenuRadioGroup value={form.condition} onValueChange={setVal('condition')}>
+                                    {CONDITIONS.map((c) => (
+                                        <DropdownMenuRadioItem key={c} value={c}>{c}</DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Status</FieldLabel>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
+                                    {form.status}
+                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
+                                <DropdownMenuRadioGroup value={form.status} onValueChange={setVal('status')}>
+                                    {STATUSES.map((s) => (
+                                        <DropdownMenuRadioItem key={s} value={s}>{s}</DropdownMenuRadioItem>
+                                    ))}
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Notes</FieldLabel>
                         <Input value={form.notes} onChange={set('notes')} />
-                    </div>
-                </CardContent>
+                    </Field>
+                </div>
 
-                <CardFooter className="justify-end gap-2">
-                    <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
+                <DialogFooter>
+                    <Button className='text-muted-foreground' type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
                     <Button type="button" disabled={!canSubmit} onClick={() => void handleSave()}>
                         {mutation.isPending ? 'Saving...' : 'Save'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -153,8 +188,8 @@ function toSubForm(equipment: SubEquipment | null): SubEquipmentUpdatePayload {
     return {
         subEquipmentId: equipment?.subEquipmentId ?? 0,
         equipmentType: equipment?.equipmentType ?? '',
-        brand: equipment?.brand ?? '',
-        model: equipment?.model ?? '',
+        cameraModel: equipment?.cameraModel ?? [],
+        brand: equipment?.brand ?? null,
         capacity: equipment?.capacity ?? 1,
         totalQuantity: equipment?.totalQuantity ?? 1,
         usedQuantity: equipment?.usedQuantity ?? 0,
@@ -171,6 +206,18 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
         setForm(toSubForm(equipment));
     }, [equipment, open]);
 
+    const kind = subKindFromType(equipment?.type);
+    const config = kind ? SUB_KIND_CONFIG[kind] : {};
+    const { cameras } = useInventoryManagementContext();
+
+    const toggleCameraModel = (model: string) =>
+        setForm((prev) => ({
+            ...prev,
+            cameraModel: prev.cameraModel?.includes(model)
+                ? prev.cameraModel.filter((m) => m !== model)
+                : [...(prev.cameraModel ?? []), model],
+        }));
+
     const setStr = (field: keyof SubEquipmentUpdatePayload) =>
         (e: React.ChangeEvent<HTMLInputElement>) =>
             setForm((prev) => ({ ...prev, [field]: e.target.value }));
@@ -181,10 +228,7 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
 
     const canSubmit =
         !mutation.isPending &&
-        !!equipment &&
-        (form.equipmentType as string).trim() !== '' &&
-        (form.brand as string).trim() !== '' &&
-        (form.model as string).trim() !== '';
+        !!equipment;
 
     async function handleSave() {
         if (!equipment) return;
@@ -198,66 +242,99 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <CardHeader>
-                    <CardTitle>Edit Sub-Equipment</CardTitle>
-                    <CardDescription>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle>Edit {equipment?.equipmentType || 'Sub Equipment'}</DialogTitle>
+                    <DialogDescription>
                         Updating{' '}
                         <span className="font-medium text-foreground">
-                            {equipment ? `${equipment.brand} ${equipment.model}` : '—'}
+                            {equipment ? `${equipment.equipmentType}${equipment.brand ? ` — ${equipment.brand}` : ''}` : '—'}
                         </span>
-                    </CardDescription>
-                </CardHeader>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                        <Label>Equipment Type</Label>
-                        <Input value={form.equipmentType} onChange={setStr('equipmentType')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Brand</Label>
-                        <Input value={form.brand} onChange={setStr('brand')} />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Model</Label>
-                        <Input value={form.model} onChange={setStr('model')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Capacity</Label>
-                        <Input type="number" min={1} value={form.capacity} onChange={setNum('capacity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Total Quantity</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {config.equipmentTypeLabel && (
+                        <Field className="sm:col-span-2">
+                            <FieldLabel>{config.equipmentTypeLabel}</FieldLabel>
+                            <Input
+                                placeholder={config.placeholder}
+                                value={form.equipmentType}
+                                onChange={setStr('equipmentType')}
+                            />
+                        </Field>
+                    )}
+
+                    {config.showCameraModel && (
+                        <Field className="sm:col-span-2">
+                            <FieldLabel>Camera Model</FieldLabel>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full justify-between font-normal text-muted-foreground"
+                                    >
+                                        <span className="truncate">
+                                            {form.cameraModel?.length
+                                                ? form.cameraModel.join(', ')
+                                                : 'Select camera models...'}
+                                        </span>
+                                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-full min-w-(--radix-dropdown-menu-trigger-width)">
+                                    {cameras.map((camera) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={camera.mainEquipmentId}
+                                            checked={form.cameraModel?.includes(camera.model) ?? false}
+                                            onCheckedChange={() => toggleCameraModel(camera.model)}
+                                            onSelect={(e) => e.preventDefault()}
+                                        >
+                                            {camera.model}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Field>
+                    )}
+
+                    {config.showCapacity && (
+                        <Field>
+                            <FieldLabel>Capacity (GB)</FieldLabel>
+                            <Input type="number" min={1} value={form.capacity} onChange={setNum('capacity')} />
+                        </Field>
+                    )}
+
+                    <Field>
+                        <FieldLabel>Total Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Used Quantity</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Used Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.usedQuantity} onChange={setNum('usedQuantity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Available Quantity</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Available Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.availableQuantity} onChange={setNum('availableQuantity')} />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Notes</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Notes</FieldLabel>
                         <Input value={form.notes} onChange={setStr('notes')} />
-                    </div>
-                </CardContent>
+                    </Field>
+                </div>
 
-                <CardFooter className="justify-end gap-2">
-                    <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
+                <DialogFooter>
+                    <Button className='text-muted-foreground' type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
                     <Button type="button" disabled={!canSubmit} onClick={() => void handleSave()}>
                         {mutation.isPending ? 'Saving...' : 'Save'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
