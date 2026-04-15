@@ -11,6 +11,15 @@ export type InventoryManagementContextValue = {
     subEquipment: SubEquipment[];
     data?: EquipmentListResponse;
 
+    cameras: MainEquipment[];
+    lenses: MainEquipment[];
+    batteryCameras: SubEquipment[];
+    chargerBatteries: SubEquipment[];
+    speedlights: SubEquipment[];
+    sdCfCards: SubEquipment[];
+    tripods: SubEquipment[];
+    lainLain: SubEquipment[];
+
     totalMainEquipment: number;
     totalSubEquipment: number;
 

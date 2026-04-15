@@ -1,18 +1,18 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
+import { DatePicker } from '@/components/date-picker';
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-} from '@/components/ui/card';
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { CommitteeUserSelect } from '@/components/committee-user-select';
 import { useCreateEvent } from '@/store/queries/event';
 import type { CreateEventPayload } from '@/store/schemas/event';
@@ -45,6 +45,10 @@ export function EventCreateDialog({ open, onOpenChange }: EventCreateDialogProps
         (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             setForm((prev) => ({ ...prev, [field]: e.target.value }));
 
+    const setVal = (field: keyof CreateEventPayload) =>
+        (value: string) =>
+            setForm((prev) => ({ ...prev, [field]: value }));
+
     const canSubmit =
         !mutation.isPending &&
         form.eventName.trim() !== '' &&
@@ -61,73 +65,71 @@ export function EventCreateDialog({ open, onOpenChange }: EventCreateDialogProps
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <CardHeader>
-                    <CardTitle>Create Event</CardTitle>
-                    <CardDescription>Fill in the details for the new event.</CardDescription>
-                </CardHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle>Create Event</DialogTitle>
+                    <DialogDescription>Fill in the details for the new event.</DialogDescription>
+                </DialogHeader>
 
-                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Event Name</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Event Name</FieldLabel>
                         <Input
                             placeholder="e.g. Night Photography Workshop"
                             value={form.eventName}
                             onChange={set('eventName')}
                         />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Start Date</Label>
-                        <Input type="date" value={form.startDate} onChange={set('startDate')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>End Date</Label>
-                        <Input type="date" value={form.endDate} onChange={set('endDate')} />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Location</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Start Date</FieldLabel>
+                        <DatePicker value={form.startDate} onChange={setVal('startDate')} />
+                    </Field>
+                    <Field>
+                        <FieldLabel>End Date</FieldLabel>
+                        <DatePicker value={form.endDate} onChange={setVal('endDate')} />
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Location</FieldLabel>
                         <Input
                             placeholder="e.g. Titiwangsa Lake Garden, KL"
                             value={form.location}
                             onChange={set('location')}
                         />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Description</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Description</FieldLabel>
                         <Input
                             placeholder="Optional description"
                             value={form.description ?? ''}
                             onChange={set('description')}
                         />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Committee Members</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Committee Members</FieldLabel>
                         <CommitteeUserSelect
                             value={form.committeeUserIds}
                             onChange={(ids) => setForm((prev) => ({ ...prev, committeeUserIds: ids }))}
                         />
-                    </div>
-                </CardContent>
+                    </Field>
+                </div>
 
-                <CardFooter className="justify-end gap-2">
+                <DialogFooter>
                     <Button
+                        className="text-muted-foreground"
                         type="button"
                         variant="outline"
                         disabled={mutation.isPending}
                         onClick={() => onOpenChange(false)}
                     >
-                        <X className="mr-2 h-4 w-4" />
                         Cancel
                     </Button>
                     <Button type="button" disabled={!canSubmit} onClick={() => void handleSubmit()}>
                         {mutation.isPending ? 'Creating...' : 'Create Event'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

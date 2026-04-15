@@ -25,11 +25,7 @@ const statusBadgeClass: Record<string, string> = {
 
 const mainColumnHelper = createColumnHelper<MainEquipment>();
 
-export const mainEquipmentColumns: ColumnDef<MainEquipment, any>[] = [
-    mainColumnHelper.accessor('equipmentType', {
-        header: 'Type',
-        cell: (info) => info.getValue(),
-    }),
+const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
     mainColumnHelper.accessor('brand', {
         header: 'Brand',
         cell: (info) => info.getValue(),
@@ -79,23 +75,21 @@ export const mainEquipmentColumns: ColumnDef<MainEquipment, any>[] = [
     }),
 ];
 
+export const cameraColumns: ColumnDef<MainEquipment, any>[] = mainEquipmentBaseColumns;
+
+export const lensColumns: ColumnDef<MainEquipment, any>[] = [
+    mainColumnHelper.accessor('lensType', {
+        header: 'Lens Type',
+        cell: (info) => info.getValue() ?? '—',
+    }),
+    ...mainEquipmentBaseColumns,
+];
+
 // ── Sub Equipment columns ─────────────────────────────────────────────────────
 
 const subColumnHelper = createColumnHelper<SubEquipment>();
 
-export const subEquipmentColumns: ColumnDef<SubEquipment, any>[] = [
-    subColumnHelper.accessor('equipmentType', {
-        header: 'Type',
-        cell: (info) => info.getValue(),
-    }),
-    subColumnHelper.accessor('brand', {
-        header: 'Brand',
-        cell: (info) => info.getValue(),
-    }),
-    subColumnHelper.accessor('model', {
-        header: 'Model',
-        cell: (info) => info.getValue(),
-    }),
+const subEquipmentQuantityColumns: ColumnDef<SubEquipment, any>[] = [
     subColumnHelper.accessor('totalQuantity', {
         header: 'Total',
         cell: (info) => info.getValue(),
@@ -126,4 +120,68 @@ export const subEquipmentColumns: ColumnDef<SubEquipment, any>[] = [
         header: 'Actions',
         cell: ({ row }) => <SubEquipmentRowActions row={row} />,
     }),
+];
+
+export const subEquipmentColumns: ColumnDef<SubEquipment, any>[] = [
+    subColumnHelper.accessor('equipmentType', {
+        header: 'Category',
+        cell: (info) => info.getValue(),
+    }),
+    subColumnHelper.accessor('brand', {
+        header: 'Brand',
+        cell: (info) => info.getValue() ?? <span className="text-muted-foreground">—</span>,
+    }),
+    ...subEquipmentQuantityColumns,
+];
+
+const cameraModelColumn: ColumnDef<SubEquipment, any> = subColumnHelper.accessor('cameraModel', {
+    header: 'Camera Model',
+    cell: (info) => {
+        const models = info.getValue();
+        if (!models?.length) return <span className="text-muted-foreground">—</span>;
+        return (
+            <div className="flex flex-wrap gap-1">
+                {models.map((m: string) => (
+                    <Badge key={m} variant="outline">{m}</Badge>
+                ))}
+            </div>
+        );
+    },
+});
+
+export const batteryColumns: ColumnDef<SubEquipment, any>[] = [
+    subColumnHelper.accessor('equipmentType', {
+        header: 'Brand',
+        cell: (info) => info.getValue(),
+    }),
+    cameraModelColumn,
+    ...subEquipmentQuantityColumns,
+];
+
+export const speedlightColumns: ColumnDef<SubEquipment, any>[] = [
+    ...subEquipmentQuantityColumns,
+];
+
+export const sdCfCardColumns: ColumnDef<SubEquipment, any>[] = [
+    subColumnHelper.accessor('equipmentType', {
+        header: 'Type',
+        cell: (info) => info.getValue(),
+    }),
+    subColumnHelper.accessor('capacity', {
+        header: 'Capacity (GB)',
+        cell: (info) => info.getValue(),
+    }),
+    ...subEquipmentQuantityColumns,
+];
+
+export const tripodColumns: ColumnDef<SubEquipment, any>[] = [
+    ...subEquipmentQuantityColumns,
+];
+
+export const lainLainColumns: ColumnDef<SubEquipment, any>[] = [
+    subColumnHelper.accessor('equipmentType', {
+        header: 'Item',
+        cell: (info) => info.getValue(),
+    }),
+    ...subEquipmentQuantityColumns,
 ];

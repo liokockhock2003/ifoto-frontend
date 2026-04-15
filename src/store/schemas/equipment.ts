@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const MainEquipmentSchema = z.object({
     mainEquipmentId: z.number().int().nonnegative(),
     equipmentType: z.string(),
+    lensType: z.string().nullish(),
     brand: z.string(),
     model: z.string(),
     serialNumber: z.string(),
@@ -13,9 +14,10 @@ export const MainEquipmentSchema = z.object({
 
 export const SubEquipmentSchema = z.object({
     subEquipmentId: z.number().int().nonnegative(),
+    type: z.string().optional(),
     equipmentType: z.string(),
-    brand: z.string(),
-    model: z.string(),
+    cameraModel: z.array(z.string()).optional(),
+    brand: z.string().nullable(),
     capacity: z.number().int().nonnegative(),
     totalQuantity: z.number().int().nonnegative(),
     usedQuantity: z.number().int().nonnegative(),
