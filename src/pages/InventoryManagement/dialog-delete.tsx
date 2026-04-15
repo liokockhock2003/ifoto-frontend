@@ -1,10 +1,19 @@
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useDeleteMainEquipment, useDeleteSubEquipment } from '@/store/queries/equipment';
 import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+
+import { MAIN_EQUIPMENT_CONFIG, SUB_KIND_CONFIG, subKindFromType } from './provider';
 
 // ── Main Equipment Delete Dialog ───────────────────────────────────────────────
 
@@ -30,31 +39,31 @@ export function MainEquipmentDeleteDialog({ open, onOpenChange, equipment, onDel
         }
     }
 
-    if (!open) return null;
-
-    const label = equipment ? `${equipment.brand} ${equipment.model}` : '—';
+    const mainKind = (Object.keys(MAIN_EQUIPMENT_CONFIG) as (keyof typeof MAIN_EQUIPMENT_CONFIG)[])
+        .find((key) => MAIN_EQUIPMENT_CONFIG[key].equipmentType === equipment?.equipmentType);
+    const typeLabel = mainKind ? MAIN_EQUIPMENT_CONFIG[mainKind].label : (equipment?.equipmentType ?? '');
+    const label = equipment
+        ? `${typeLabel} — ${equipment.brand} ${equipment.model}`.trim()
+        : '—';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-600">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
                         Confirm Deletion
-                    </CardTitle>
-                    <CardDescription>
+                    </DialogTitle>
+                    <DialogDescription>
                         This action cannot be undone. You are about to permanently delete{' '}
                         <span className="font-medium text-foreground">{label}</span>.
-                    </CardDescription>
-                </CardHeader>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Please confirm you want to continue.</p>
-                </CardContent>
+                <p className="text-sm text-muted-foreground">Please confirm you want to continue.</p>
 
-                <CardFooter className="justify-end gap-2">
+                <DialogFooter>
                     <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
                         Cancel
                     </Button>
                     <Button
@@ -66,9 +75,9 @@ export function MainEquipmentDeleteDialog({ open, onOpenChange, equipment, onDel
                         <Trash2 className="mr-2 h-4 w-4" />
                         {mutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
@@ -96,31 +105,32 @@ export function SubEquipmentDeleteDialog({ open, onOpenChange, equipment, onDele
         }
     }
 
-    if (!open) return null;
-
-    const label = equipment ? `${equipment.brand} ${equipment.model}` : '—';
+    const kind = subKindFromType(equipment?.type);
+    const config = kind ? SUB_KIND_CONFIG[kind] : {};
+    const label = equipment
+        ? config.equipmentTypeLabel
+            ? `${config.equipmentTypeLabel}: ${equipment.equipmentType}`
+            : (equipment.type ?? equipment.equipmentType)
+        : '—';
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-600">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
                         Confirm Deletion
-                    </CardTitle>
-                    <CardDescription>
+                    </DialogTitle>
+                    <DialogDescription>
                         This action cannot be undone. You are about to permanently delete{' '}
                         <span className="font-medium text-foreground">{label}</span>.
-                    </CardDescription>
-                </CardHeader>
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">Please confirm you want to continue.</p>
-                </CardContent>
+                <p className="text-sm text-muted-foreground">Please confirm you want to continue.</p>
 
-                <CardFooter className="justify-end gap-2">
+                <DialogFooter>
                     <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
                         Cancel
                     </Button>
                     <Button
@@ -132,8 +142,8 @@ export function SubEquipmentDeleteDialog({ open, onOpenChange, equipment, onDele
                         <Trash2 className="mr-2 h-4 w-4" />
                         {mutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

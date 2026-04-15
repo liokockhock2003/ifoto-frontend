@@ -1,5 +1,5 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { ChevronUp, LogOut, Settings, User2 } from 'lucide-react'
+import { ChevronsUpDown, LogOut, Settings, User2 } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -114,11 +114,11 @@ export function AppSidebar() {
                                             <User2 className="size-4" />
                                         )}
                                     </div>
-                                    <div className="flex flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
-                                        <span className="text-sm font-medium">{user?.fullName ?? user?.username}</span>
-                                        <span className="text-xs text-muted-foreground">{user?.email}</span>
+                                    <div className="flex min-w-0 flex-1 flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
+                                        <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                                     </div>
-                                    <ChevronUp className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                                    <ChevronsUpDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent side="top" align="start" className="w-56">

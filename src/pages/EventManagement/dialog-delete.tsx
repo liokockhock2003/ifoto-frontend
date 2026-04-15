@@ -10,29 +10,25 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useDeleteUser } from '@/store/queries/user';
-import type { User } from '@/store/schemas/user';
+import { useDeleteEvent } from '@/store/queries/event';
+import type { Event } from '@/store/schemas/event';
 
-type UserDeleteDialogProps = {
+type EventDeleteDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
-    user: User | null;
-    onDeleted?: () => void;
+    event: Event | null;
 };
 
-export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDeleteDialogProps) {
-    const deleteUserMutation = useDeleteUser();
+export function EventDeleteDialog({ open, onOpenChange, event }: EventDeleteDialogProps) {
+    const mutation = useDeleteEvent();
 
     async function handleDelete() {
-        if (!user) return;
+        if (!event) return;
         try {
-            await deleteUserMutation.mutateAsync({ username: user.username });
-            toast.success(`Deleted ${user.username}`);
-            onDeleted?.();
+            await mutation.mutateAsync({ id: event.eventId });
             onOpenChange(false);
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete user';
-            toast.error(message);
+            toast.error(error instanceof Error ? error.message : 'Failed to delete event');
         }
     }
 
@@ -45,8 +41,8 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
                         Confirm Deletion
                     </DialogTitle>
                     <DialogDescription>
-                        This action cannot be undone. You are about to permanently delete user{' '}
-                        <span className="font-medium text-foreground">{user?.username ?? '—'}</span>.
+                        This action cannot be undone. You are about to permanently delete{' '}
+                        <span className="font-medium text-foreground">{event?.eventName ?? '—'}</span>.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -57,7 +53,7 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
                         className="text-muted-foreground"
                         type="button"
                         variant="outline"
-                        disabled={deleteUserMutation.isPending}
+                        disabled={mutation.isPending}
                         onClick={() => onOpenChange(false)}
                     >
                         Cancel
@@ -65,11 +61,11 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
                     <Button
                         type="button"
                         variant="destructive"
-                        disabled={!user || deleteUserMutation.isPending}
+                        disabled={!event || mutation.isPending}
                         onClick={() => void handleDelete()}
                     >
                         <Trash2 className="mr-2 h-4 w-4" />
-                        {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
+                        {mutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
                 </DialogFooter>
             </DialogContent>

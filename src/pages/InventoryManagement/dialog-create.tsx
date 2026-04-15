@@ -1,32 +1,50 @@
 import { useEffect, useState } from 'react';
-import { X } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
+    DropdownMenu,
+    DropdownMenuCheckboxItem,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { useCreateMainEquipment, useCreateSubEquipment } from '@/store/queries/equipment';
 import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/equipment';
+
+import { useInventoryManagementContext } from './context';
+import { MAIN_EQUIPMENT_CONFIG, SUB_EQUIPMENT_CONFIG, SUB_EQUIPMENT_KEYS, SUB_KIND_CONFIG, type SubKindConfig } from './provider';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
 const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
 const STATUSES = ['Available', 'In Use', 'Maintenance', 'Unavailable'] as const;
 
-const selectClass =
-    'h-9 w-full rounded-md border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring';
-
 // ── Main Equipment Create Dialog ───────────────────────────────────────────────
+
+type MainEquipmentKind = keyof typeof MAIN_EQUIPMENT_CONFIG;
 
 type MainEquipmentCreateDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    equipmentKind: MainEquipmentKind;
     onCreated?: () => void;
 };
 
-const defaultMainForm = (): MainEquipmentPayload => ({
-    equipmentType: '',
+const defaultMainForm = (kind: MainEquipmentKind): MainEquipmentPayload => ({
+    equipmentType: MAIN_EQUIPMENT_CONFIG[kind].label,
+    lensType: '',
     brand: '',
     model: '',
     serialNumber: '',
@@ -35,21 +53,24 @@ const defaultMainForm = (): MainEquipmentPayload => ({
     notes: '',
 });
 
-export function MainEquipmentCreateDialog({ open, onOpenChange, onCreated }: MainEquipmentCreateDialogProps) {
+export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, onCreated }: MainEquipmentCreateDialogProps) {
     const mutation = useCreateMainEquipment();
-    const [form, setForm] = useState<MainEquipmentPayload>(defaultMainForm);
+    const [form, setForm] = useState<MainEquipmentPayload>(() => defaultMainForm(equipmentKind));
 
     useEffect(() => {
-        if (open) setForm(defaultMainForm());
-    }, [open]);
+        if (open) setForm(defaultMainForm(equipmentKind));
+    }, [open, equipmentKind]);
 
     const set = (field: keyof MainEquipmentPayload) =>
-        (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+        (e: React.ChangeEvent<HTMLInputElement>) =>
             setForm((prev) => ({ ...prev, [field]: e.target.value }));
+
+    const setVal = (field: keyof MainEquipmentPayload) =>
+        (value: string) =>
+            setForm((prev) => ({ ...prev, [field]: value }));
 
     const canSubmit =
         !mutation.isPending &&
-        form.equipmentType.trim() !== '' &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
         form.serialNumber.trim() !== '';
@@ -57,85 +78,126 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, onCreated }: Mai
     async function handleSubmit() {
         try {
             await mutation.mutateAsync(form);
-            toast.success('Main Equipment added');
+            toast.success(`${MAIN_EQUIPMENT_CONFIG[equipmentKind].label} added`);
             onCreated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to add Main Equipment');
+            toast.error(error instanceof Error ? error.message : `Failed to add ${MAIN_EQUIPMENT_CONFIG[equipmentKind].label}`);
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <CardHeader>
-                    <CardTitle>Add Main Equipment</CardTitle>
-                    <CardDescription>Fill in the details for the new equipment item.</CardDescription>
-                </CardHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle className='text-muted-foreground'>Add {MAIN_EQUIPMENT_CONFIG[equipmentKind].label}</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details for the new {MAIN_EQUIPMENT_CONFIG[equipmentKind].label.toLowerCase()}.
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                        <Label>Equipment Type</Label>
-                        <Input placeholder="e.g. Camera Body" value={form.equipmentType} onChange={set('equipmentType')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Brand</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {equipmentKind === 'lenses' && (
+                        <Field className="sm:col-span-2">
+                            <FieldLabel>Lens Type</FieldLabel>
+                            <Input placeholder="e.g. PRIME" value={form.lensType ?? ''} onChange={set('lensType')} />
+                        </Field>
+                    )}
+                    <Field>
+                        <FieldLabel>Brand</FieldLabel>
                         <Input placeholder="e.g. Sony" value={form.brand} onChange={set('brand')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Model</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Model</FieldLabel>
                         <Input placeholder="e.g. A7 IV" value={form.model} onChange={set('model')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Serial Number</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Serial Number</FieldLabel>
                         <Input placeholder="e.g. SN-SONY-A7IV-001" value={form.serialNumber} onChange={set('serialNumber')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Condition</Label>
-                        <select className={selectClass} value={form.condition} onChange={set('condition')}>
-                            {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
-                        </select>
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Status</Label>
-                        <select className={selectClass} value={form.status} onChange={set('status')}>
-                            {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                        </select>
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Notes</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Condition</FieldLabel>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
+                                    {form.condition}
+                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
+                                {CONDITIONS.map((c) => (
+                                    <DropdownMenuItem
+                                        key={c}
+                                        className={c === form.condition ? 'bg-accent' : ''}
+                                        onSelect={() => setVal('condition')(c)}
+                                    >
+                                        {c}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Status</FieldLabel>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
+                                    {form.status}
+                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
+                                {STATUSES.map((s) => (
+                                    <DropdownMenuItem
+                                        key={s}
+                                        className={s === form.status ? 'bg-accent' : ''}
+                                        onSelect={() => setVal('status')(s)}
+                                    >
+                                        {s}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Notes</FieldLabel>
                         <Input placeholder="Optional notes" value={form.notes} onChange={set('notes')} />
-                    </div>
-                </CardContent>
+                    </Field>
+                </div>
 
-                <CardFooter className="justify-end gap-2">
-                    <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
+                <DialogFooter>
+                    <Button className='text-muted-foreground' type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
                     <Button type="button" disabled={!canSubmit} onClick={() => void handleSubmit()}>
-                        {mutation.isPending ? 'Adding...' : 'Add Equipment'}
+                        {mutation.isPending ? 'Adding...' : `Add ${MAIN_EQUIPMENT_CONFIG[equipmentKind].label}`}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
 
 // ── Sub Equipment Create Dialog ────────────────────────────────────────────────
 
+type SubEquipmentKind = keyof typeof SUB_EQUIPMENT_CONFIG;
+
+
 type SubEquipmentCreateDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    equipmentKind: SubEquipmentKind;
     onCreated?: () => void;
 };
 
-const defaultSubForm = (): SubEquipmentPayload => ({
+const toSafeSubKind = (kind: string): SubEquipmentKind =>
+    kind in SUB_EQUIPMENT_CONFIG ? (kind as SubEquipmentKind) : SUB_EQUIPMENT_KEYS[0];
+
+const defaultSubForm = (kind: SubEquipmentKind): SubEquipmentPayload => ({
+    type: SUB_EQUIPMENT_CONFIG[kind].typeValue,
     equipmentType: '',
-    brand: '',
-    model: '',
+    cameraModel: [],
+    brand: null,
     capacity: 1,
     totalQuantity: 1,
     usedQuantity: 0,
@@ -143,13 +205,16 @@ const defaultSubForm = (): SubEquipmentPayload => ({
     notes: '',
 });
 
-export function SubEquipmentCreateDialog({ open, onOpenChange, onCreated }: SubEquipmentCreateDialogProps) {
+export function SubEquipmentCreateDialog({ open, onOpenChange, equipmentKind, onCreated }: SubEquipmentCreateDialogProps) {
     const mutation = useCreateSubEquipment();
-    const [form, setForm] = useState<SubEquipmentPayload>(defaultSubForm);
+    const { cameras } = useInventoryManagementContext();
+    const [form, setForm] = useState<SubEquipmentPayload>(() => defaultSubForm(toSafeSubKind(equipmentKind)));
 
     useEffect(() => {
-        if (open) setForm(defaultSubForm());
-    }, [open]);
+        if (open) setForm(defaultSubForm(toSafeSubKind(equipmentKind)));
+    }, [open, equipmentKind]);
+
+    const config: SubKindConfig = SUB_KIND_CONFIG[equipmentKind] ?? {};
 
     const setStr = (field: keyof SubEquipmentPayload) =>
         (e: React.ChangeEvent<HTMLInputElement>) =>
@@ -159,78 +224,119 @@ export function SubEquipmentCreateDialog({ open, onOpenChange, onCreated }: SubE
         (e: React.ChangeEvent<HTMLInputElement>) =>
             setForm((prev) => ({ ...prev, [field]: Number(e.target.value) }));
 
+    const toggleCameraModel = (model: string) =>
+        setForm((prev) => ({
+            ...prev,
+            cameraModel: prev.cameraModel?.includes(model)
+                ? prev.cameraModel.filter((m) => m !== model)
+                : [...(prev.cameraModel ?? []), model],
+        }));
+
     const canSubmit =
         !mutation.isPending &&
-        (form.equipmentType as string).trim() !== '' &&
-        (form.brand as string).trim() !== '' &&
-        (form.model as string).trim() !== '';
+        (!config.equipmentTypeLabel || form.equipmentType.trim() !== '');
 
     async function handleSubmit() {
         try {
             await mutation.mutateAsync(form);
-            toast.success('Sub-Equipment added');
+            toast.success(`${SUB_EQUIPMENT_CONFIG[equipmentKind]?.label} added`);
             onCreated?.();
             onOpenChange(false);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Failed to add Sub-Equipment');
+            toast.error(error instanceof Error ? error.message : `Failed to add ${SUB_EQUIPMENT_CONFIG[equipmentKind]?.label}`);
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-lg overflow-y-auto max-h-[90vh]">
-                <CardHeader>
-                    <CardTitle>Add Sub-Equipment</CardTitle>
-                    <CardDescription>Fill in the details for the new sub-equipment item.</CardDescription>
-                </CardHeader>
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle>Add {SUB_EQUIPMENT_CONFIG[equipmentKind]?.label}</DialogTitle>
+                    <DialogDescription>
+                        Fill in the details for the new {SUB_EQUIPMENT_CONFIG[equipmentKind]?.label.toLowerCase()}.
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <div className="space-y-1">
-                        <Label>Equipment Type</Label>
-                        <Input placeholder="e.g. Lens" value={form.equipmentType} onChange={setStr('equipmentType')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Brand</Label>
-                        <Input placeholder="e.g. Sony" value={form.brand} onChange={setStr('brand')} />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Model</Label>
-                        <Input placeholder="e.g. FE 24-70mm f/2.8 GM" value={form.model} onChange={setStr('model')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Capacity</Label>
-                        <Input type="number" min={1} value={form.capacity} onChange={setNum('capacity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Total Quantity</Label>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {config.equipmentTypeLabel && (
+                        <Field className="sm:col-span-2">
+                            <FieldLabel>{config.equipmentTypeLabel}</FieldLabel>
+                            <Input
+                                placeholder={config.placeholder}
+                                value={form.equipmentType}
+                                onChange={setStr('equipmentType')}
+                            />
+                        </Field>
+                    )}
+
+                    {config.showCameraModel && (
+                        <Field className="sm:col-span-2">
+                            <FieldLabel>Camera Model</FieldLabel>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full justify-between font-normal"
+                                    >
+                                        <span className="truncate">
+                                            {form.cameraModel?.length
+                                                ? form.cameraModel.join(', ')
+                                                : 'Select camera models...'}
+                                        </span>
+                                        <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="w-full min-w-(--radix-dropdown-menu-trigger-width)">
+                                    {cameras.map((camera) => (
+                                        <DropdownMenuCheckboxItem
+                                            key={camera.mainEquipmentId}
+                                            checked={form.cameraModel?.includes(camera.model) ?? false}
+                                            onCheckedChange={() => toggleCameraModel(camera.model)}
+                                            onSelect={(e) => e.preventDefault()}
+                                        >
+                                            {camera.model}
+                                        </DropdownMenuCheckboxItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </Field>
+                    )}
+
+                    {config.showCapacity && (
+                        <Field>
+                            <FieldLabel>Capacity (GB)</FieldLabel>
+                            <Input type="number" min={1} value={form.capacity} onChange={setNum('capacity')} />
+                        </Field>
+                    )}
+
+                    <Field>
+                        <FieldLabel>Total Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Used Quantity</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Used Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.usedQuantity} onChange={setNum('usedQuantity')} />
-                    </div>
-                    <div className="space-y-1">
-                        <Label>Available Quantity</Label>
+                    </Field>
+                    <Field>
+                        <FieldLabel>Available Quantity</FieldLabel>
                         <Input type="number" min={0} value={form.availableQuantity} onChange={setNum('availableQuantity')} />
-                    </div>
-                    <div className="space-y-1 sm:col-span-2">
-                        <Label>Notes</Label>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Notes</FieldLabel>
                         <Input placeholder="Optional notes" value={form.notes} onChange={setStr('notes')} />
-                    </div>
-                </CardContent>
+                    </Field>
+                </div>
 
-                <CardFooter className="justify-end gap-2">
-                    <Button type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
-                        <X className="mr-2 h-4 w-4" />
+                <DialogFooter>
+                    <Button className='text-muted-foreground' type="button" variant="outline" disabled={mutation.isPending} onClick={() => onOpenChange(false)}>
                         Cancel
                     </Button>
                     <Button type="button" disabled={!canSubmit} onClick={() => void handleSubmit()}>
-                        {mutation.isPending ? 'Adding...' : 'Add Sub-Equipment'}
+                        {mutation.isPending ? 'Adding...' : `Add ${SUB_EQUIPMENT_CONFIG[equipmentKind]?.label}`}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }
