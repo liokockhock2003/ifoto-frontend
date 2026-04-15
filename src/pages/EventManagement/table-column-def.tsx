@@ -7,8 +7,11 @@ import { EventRowActions } from './table-row-actions';
 
 const col = createColumnHelper<Event>();
 
-function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString('en-MY', {
+function formatDate(iso: string | undefined | null) {
+    if (!iso) return '—';
+    const date = new Date(iso);
+    if (isNaN(date.getTime())) return '—';
+    return date.toLocaleDateString('en-MY', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',

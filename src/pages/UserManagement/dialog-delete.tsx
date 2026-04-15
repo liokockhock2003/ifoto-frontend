@@ -1,10 +1,17 @@
-import { AlertTriangle, Trash2, X } from 'lucide-react';
+import { AlertTriangle, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import type { User } from '@/store/schemas/user';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { useDeleteUser } from '@/store/queries/user';
+import type { User } from '@/store/schemas/user';
 
 type UserDeleteDialogProps = {
     open: boolean;
@@ -18,7 +25,6 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
 
     async function handleDelete() {
         if (!user) return;
-
         try {
             await deleteUserMutation.mutateAsync({ username: user.username });
             toast.success(`Deleted ${user.username}`);
@@ -30,35 +36,30 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
         }
     }
 
-    if (!open) return null;
-
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-            <Card className="w-full max-w-md">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-red-600">
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-md text-muted-foreground">
+                <DialogHeader>
+                    <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
                         Confirm Deletion
-                    </CardTitle>
-                    <CardDescription>
-                        This action cannot be undone. You are about to permanently delete user {user?.username ?? ''}.
-                    </CardDescription>
-                </CardHeader>
+                    </DialogTitle>
+                    <DialogDescription>
+                        This action cannot be undone. You are about to permanently delete user{' '}
+                        <span className="font-medium text-foreground">{user?.username ?? '—'}</span>.
+                    </DialogDescription>
+                </DialogHeader>
 
-                <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                        Please confirm you want to continue.
-                    </p>
-                </CardContent>
+                <p className="text-sm text-muted-foreground">Please confirm you want to continue.</p>
 
-                <CardFooter className="justify-end gap-2">
+                <DialogFooter>
                     <Button
+                        className="text-muted-foreground"
                         type="button"
                         variant="outline"
                         disabled={deleteUserMutation.isPending}
                         onClick={() => onOpenChange(false)}
                     >
-                        <X className="mr-2 h-4 w-4" />
                         Cancel
                     </Button>
                     <Button
@@ -70,8 +71,8 @@ export function UserDeleteDialog({ open, onOpenChange, user, onDeleted }: UserDe
                         <Trash2 className="mr-2 h-4 w-4" />
                         {deleteUserMutation.isPending ? 'Deleting...' : 'Delete'}
                     </Button>
-                </CardFooter>
-            </Card>
-        </div>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 }

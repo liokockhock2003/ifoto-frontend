@@ -1,13 +1,21 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Check, Info, Lock, X } from 'lucide-react';
+import { Check, Info, Lock } from 'lucide-react';
 import { toast } from 'sonner';
+
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import { Switch } from '@/components/ui/switch';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import type { User } from '@/store/schemas/user';
 import { useUpdateUser } from '@/store/queries/user';
+import type { User } from '@/store/schemas/user';
 import { getRoleLabel } from '@/constants/roles';
 
 /**
@@ -140,24 +148,22 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
         }
     }
 
-    if (!open) return null;
-
     return (
         <TooltipProvider>
-            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-                <Card className="w-full max-w-lg">
-                    <CardHeader>
-                        <CardTitle>Edit User</CardTitle>
-                        <CardDescription>
+            <Dialog open={open} onOpenChange={onOpenChange}>
+                <DialogContent className="sm:max-w-lg text-muted-foreground">
+                    <DialogHeader>
+                        <DialogTitle>Edit User</DialogTitle>
+                        <DialogDescription>
                             Update role and account lock status for{' '}
                             <span className="font-medium text-foreground">
                                 {user?.username ?? 'selected user'}
                             </span>
                             .
-                        </CardDescription>
-                    </CardHeader>
+                        </DialogDescription>
+                    </DialogHeader>
 
-                    <CardContent className="space-y-6">
+                    <div className="space-y-6">
                         {/* Role groups */}
                         {ROLE_GROUPS.map((group) => (
                             <div key={group.label} className="space-y-2">
@@ -241,16 +247,16 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                 </div>
                             </div>
                         </div>
-                    </CardContent>
+                    </div>
 
-                    <CardFooter className="justify-end gap-2">
+                    <DialogFooter>
                         <Button
+                            className="text-muted-foreground"
                             type="button"
                             variant="outline"
                             disabled={updateUserMutation.isPending}
                             onClick={() => onOpenChange(false)}
                         >
-                            <X className="mr-2 h-4 w-4" />
                             Cancel
                         </Button>
                         <Button
@@ -260,9 +266,9 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                         >
                             {updateUserMutation.isPending ? 'Saving...' : 'Save'}
                         </Button>
-                    </CardFooter>
-                </Card>
-            </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </TooltipProvider>
     );
 }
