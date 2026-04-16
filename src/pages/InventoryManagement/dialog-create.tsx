@@ -25,6 +25,7 @@ import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/
 
 import { useInventoryManagementContext } from './context';
 import { MAIN_EQUIPMENT_CONFIG, SUB_EQUIPMENT_CONFIG, SUB_EQUIPMENT_KEYS, SUB_KIND_CONFIG, type SubKindConfig } from './provider';
+import { QuantityFields } from './quantity-fields';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -310,18 +311,11 @@ export function SubEquipmentCreateDialog({ open, onOpenChange, equipmentKind, on
                         </Field>
                     )}
 
-                    <Field>
-                        <FieldLabel>Total Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Used Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.usedQuantity} onChange={setNum('usedQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Available Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.availableQuantity} onChange={setNum('availableQuantity')} />
-                    </Field>
+                    <QuantityFields
+                        className="sm:col-span-2"
+                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
+                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
+                    />
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
                         <Input placeholder="Optional notes" value={form.notes} onChange={setStr('notes')} />
