@@ -14,7 +14,7 @@ import type { LucideIcon } from 'lucide-react'
 
 export type AppRole =
     | 'ROLE_ADMIN'
-    | 'ROLE_CLUB_MEMBER'
+    | 'ROLE_STUDENT'
     | 'ROLE_EQUIPMENT_COMMITTEE'
     | 'ROLE_EVENT_COMMITTEE'
     | 'ROLE_GUEST'
@@ -40,13 +40,13 @@ export const menuGroups: MenuGroup[] = [
                 to: '/equipment-rent',
                 label: 'Equipment Rental',
                 icon: ShoppingCart,
-                allowedRoles: ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
+                allowedRoles: ['ROLE_STUDENT', 'ROLE_GUEST'],
             },
             {
                 to: '/equipment-returns',
                 label: 'Return Rented Equipment',
                 icon: Undo2,
-                allowedRoles: ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
+                allowedRoles: ['ROLE_STUDENT', 'ROLE_GUEST'],
             },
         ],
     },

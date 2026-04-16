@@ -1,6 +1,5 @@
 import { useState, type SyntheticEvent } from 'react';
-import { Link } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { isAuthApiError, useLogin } from '@/store/queries/auth';
 import { setAccessToken } from '@/utils/axios-instance';
@@ -8,15 +7,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [loginError, setLoginError] = useState('');
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const registered = searchParams.get('registered') === 'true';
     const loginMutation = useLogin();
 
     async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
+        setLoginError('');
 
         loginMutation.mutate(
             { username, password },
@@ -37,8 +41,9 @@ export default function LoginPage() {
                     }, 700);
                 },
                 onError(err) {
-                    toast.error(isAuthApiError(err) ? err.message : 'Login failed');
-                    console.error("meow ror");
+                    const message = isAuthApiError(err) ? err.message : 'Login failed';
+                    setLoginError(message);
+                    toast.error(message);
                 },
             }
         );
@@ -52,6 +57,19 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                        {registered && (
+                            <Alert>
+                                <AlertDescription>
+                                    Registration successful. Please verify your email before logging in.
+                                </AlertDescription>
+                            </Alert>
+                        )}
+
+                        {loginError && (
+                            <Alert variant="destructive">
+                                <AlertDescription>{loginError}</AlertDescription>
+                            </Alert>
+                        )}
                         <div className="flex flex-col gap-1">
                             <Label htmlFor="username">Username</Label>
                             <Input

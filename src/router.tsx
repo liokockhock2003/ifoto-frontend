@@ -5,6 +5,7 @@ import LoginPage from '@/pages/Auth/login'
 import RegisterPage from '@/pages/Auth/register'
 import ForgotPasswordPage from '@/pages/Auth/forgot-password'
 import ResetPasswordPage from '@/pages/Auth/reset-password'
+import VerifyEmailPage from '@/pages/Auth/verify-email'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
 import EventManagementMainPage from '@/pages/EventManagement/main-page'
@@ -29,6 +30,10 @@ export const router = createBrowserRouter([
     {
         path: '/reset-password',
         element: <ResetPasswordPage />,
+    },
+    {
+        path: '/verify-email',
+        element: <VerifyEmailPage />,
     },
     {
         path: '/',
@@ -65,7 +70,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-rent',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
+                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_GUEST"]}>
                         <ComingSoon title="Equipment Rent" />
                     </ProtectedRoute>
                 ),
@@ -81,7 +86,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-returns',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_CLUB_MEMBER", "ROLE_GUEST"]}>
+                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_GUEST"]}>
                         <ComingSoon title="Return Rented Equipment" />
                     </ProtectedRoute>
                 ),

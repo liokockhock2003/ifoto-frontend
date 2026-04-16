@@ -48,6 +48,11 @@ export const ResetPasswordResponseSchema = z.union([
     }),
 ]);
 
+export const VerifyEmailResponseSchema = z.union([
+    z.string().transform((message) => ({ message })),
+    z.object({ message: z.string() }),
+]);
+
 // Infer types
 export type User = z.infer<typeof UserSchema>;
 export type AuthResponse = z.infer<typeof AuthResponseSchema>;
@@ -55,3 +60,4 @@ export type ForgotPasswordPayload = z.infer<typeof ForgotPasswordPayloadSchema>;
 export type ForgotPasswordResponse = z.infer<typeof ForgotPasswordResponseSchema>;
 export type ResetPasswordPayload = z.infer<typeof ResetPasswordPayloadSchema>;
 export type ResetPasswordResponse = z.infer<typeof ResetPasswordResponseSchema>;
+export type VerifyEmailResponse = z.infer<typeof VerifyEmailResponseSchema>;
