@@ -1,5 +1,6 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { isAxiosError } from 'axios';
+import { axios as axiosInstance } from '@/utils/axios-instance';
 import { QueryFactory } from '@/store/query-factory';
 import { extractApiErrorMessage } from '@/utils/api-error';
 import {
@@ -8,11 +9,13 @@ import {
     ForgotPasswordResponseSchema,
     ResetPasswordPayloadSchema,
     ResetPasswordResponseSchema,
+    VerifyEmailResponseSchema,
     type AuthResponse,
     type ForgotPasswordPayload,
     type ForgotPasswordResponse,
     type ResetPasswordPayload,
     type ResetPasswordResponse,
+    type VerifyEmailResponse,
 } from '@/store/schemas/auth';
 import {
     RegisterPayloadSchema,
@@ -104,11 +107,17 @@ export function useLogin() {
             try {
                 return await mutation.mutationFn(input);
             } catch (err) {
-                throw new AuthApiError(
-                    isAxiosError(err) && err.response?.status === 401
-                        ? 'Wrong username or password'
-                        : extractApiErrorMessage(err)
-                );
+                if (isAxiosError(err)) {
+                    if (err.response?.status === 401) {
+                        throw new AuthApiError('Wrong username or password');
+                    }
+                    if (err.response?.status === 403) {
+                        throw new AuthApiError(
+                            err.response.data?.message ?? 'Email not verified. Please check your inbox.'
+                        );
+                    }
+                }
+                throw new AuthApiError(extractApiErrorMessage(err));
             }
         },
     });
@@ -190,6 +199,26 @@ export async function refreshTokenApi(): Promise<AuthResponse> {
         requestConfig: { skipAuthRefresh: true },
     });
     return refreshMutation.mutationFn(undefined);
+}
+
+// ── Verify Email ──────────────────────────────────────────────────────────────
+export function useVerifyEmail(token: string | null) {
+    return useQuery<VerifyEmailResponse, AuthApiError>({
+        queryKey: ['verify-email', token],
+        queryFn: async () => {
+            try {
+                const { data } = await axiosInstance.get('/api/v1/auth/verify-email', {
+                    params: { token },
+                    skipAuthRefresh: true,
+                });
+                return VerifyEmailResponseSchema.parse(data);
+            } catch (err) {
+                throw new AuthApiError(extractApiErrorMessage(err));
+            }
+        },
+        enabled: !!token,
+        retry: false,
+    });
 }
 
 // ── Logout ────────────────────────────────────────────────────────────────────
