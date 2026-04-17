@@ -70,7 +70,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-rent',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_GUEST"]}>
+                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
                         <ComingSoon title="Equipment Rent" />
                     </ProtectedRoute>
                 ),
@@ -86,7 +86,7 @@ export const router = createBrowserRouter([
             {
                 path: 'equipment-returns',
                 element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_GUEST"]}>
+                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
                         <ComingSoon title="Return Rented Equipment" />
                     </ProtectedRoute>
                 ),

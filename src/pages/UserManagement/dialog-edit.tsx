@@ -26,7 +26,7 @@ const IMPLIES_STUDENT = ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_CO
 /**
  * Event Committee requires at least one of these to also be selected.
  */
-const EVENT_COMMITTEE_REQUIRES_ONE_OF = ['ROLE_STUDENT', 'ROLE_GUEST'] as const;
+const EVENT_COMMITTEE_REQUIRES_ONE_OF = ['ROLE_STUDENT', 'ROLE_NON_STUDENT'] as const;
 
 const ROLE_GROUPS = [
     {
@@ -36,8 +36,8 @@ const ROLE_GROUPS = [
     },
     {
         label: 'Membership Type',
-        description: 'Student and Guest are mutually exclusive. Student is auto-included when a committee role that implies it is selected.',
-        roles: ['ROLE_STUDENT', 'ROLE_GUEST'],
+        description: 'Student and Non-student are mutually exclusive. Student is auto-included when a committee role that implies it is selected.',
+        roles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
     },
     {
         label: 'Event Committee',
@@ -98,8 +98,8 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
 
             // Enforce: Student and Guest are mutually exclusive
             if (role === 'ROLE_STUDENT' && next.includes('ROLE_STUDENT')) {
-                next = next.filter((r) => r !== 'ROLE_GUEST');
-            } else if (role === 'ROLE_GUEST' && next.includes('ROLE_GUEST')) {
+                next = next.filter((r) => r !== 'ROLE_NON_STUDENT');
+            } else if (role === 'ROLE_NON_STUDENT' && next.includes('ROLE_NON_STUDENT')) {
                 next = next.filter((r) => r !== 'ROLE_STUDENT');
             }
 
@@ -114,7 +114,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
             const needsClubMember = IMPLIES_STUDENT.some((r) => next.includes(r));
             if (needsClubMember) {
                 if (!next.includes('ROLE_STUDENT')) next = [...next, 'ROLE_STUDENT'];
-                next = next.filter((r) => r !== 'ROLE_GUEST');
+                next = next.filter((r) => r !== 'ROLE_NON_STUDENT');
             }
 
             return next;
@@ -128,7 +128,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
             return;
         }
         if (!eventCommitteeValid) {
-            toast.error('Event Committee must be paired with Student or Guest.');
+            toast.error('Event Committee must be paired with Student or Non-student.');
             return;
         }
 
@@ -226,7 +226,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                     eventCommitteeSelected &&
                                     !eventCommitteeValid && (
                                         <p className="text-xs text-destructive">
-                                            Event Committee must also have Student or Guest selected.
+                                            Event Committee must also have Student or Non-student selected.
                                         </p>
                                     )}
                             </div>
