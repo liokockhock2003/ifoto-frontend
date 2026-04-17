@@ -9,6 +9,7 @@ import VerifyEmailPage from '@/pages/Auth/verify-email'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
 import EventManagementMainPage from '@/pages/EventManagement/main-page'
+import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
@@ -45,11 +46,24 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'manage-inventory',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <InventoryManagementMainPage />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <InventoryManagementMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'rental-pricing',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <RentalPricingMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                ],
             },
             {
                 path: 'user-management',

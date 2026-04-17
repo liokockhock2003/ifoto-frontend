@@ -25,6 +25,7 @@ export interface MenuItem {
     label: string
     icon: LucideIcon
     allowedRoles?: AppRole[]
+    activePaths?: string[]
 }
 
 export interface MenuGroup {
@@ -92,6 +93,8 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Inventory Management',
                 icon: Package,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+                activePaths: ['/manage-inventory/rental-pricing'],
+                
             },
             {
                 to: '/equipment-booking-management',

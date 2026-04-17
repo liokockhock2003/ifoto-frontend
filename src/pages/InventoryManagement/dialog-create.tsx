@@ -21,6 +21,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useCreateMainEquipment, useCreateSubEquipment } from '@/store/queries/equipment';
+import { Switch } from '@/components/ui/switch';
 import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/equipment';
 
 import { useInventoryManagementContext } from './context';
@@ -52,6 +53,7 @@ const defaultMainForm = (kind: MainEquipmentKind): MainEquipmentPayload => ({
     condition: 'Good',
     status: 'Available',
     notes: '',
+    isForRent: false,
 });
 
 export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, onCreated }: MainEquipmentCreateDialogProps) {
@@ -159,6 +161,17 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                            <div>
+                                <FieldLabel>Available for Rent</FieldLabel>
+                            </div>
+                            <Switch
+                                checked={form.isForRent}
+                                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isForRent: checked }))}
+                            />
+                        </div>
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>

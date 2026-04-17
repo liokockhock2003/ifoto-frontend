@@ -21,6 +21,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useUpdateMainEquipment, useUpdateSubEquipment } from '@/store/queries/equipment';
+import { Switch } from '@/components/ui/switch';
 import type {
     MainEquipment,
     MainEquipmentUpdatePayload,
@@ -56,6 +57,7 @@ function toMainForm(equipment: MainEquipment | null): MainEquipmentUpdatePayload
         condition: equipment?.condition ?? 'Good',
         status: equipment?.status ?? 'Available',
         notes: equipment?.notes ?? '',
+        isForRent: equipment?.isForRent ?? false,
     };
 }
 
@@ -163,6 +165,17 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                            <div>
+                                <FieldLabel>Availability for Rent</FieldLabel>
+                            </div>
+                            <Switch
+                                checked={form.isForRent}
+                                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isForRent: checked }))}
+                            />
+                        </div>
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
