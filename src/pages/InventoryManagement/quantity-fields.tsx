@@ -20,19 +20,24 @@ export function QuantityFields({ value, onChange, className }: QuantityFieldsPro
     const availPct = totalQuantity > 0 ? (availableQuantity / totalQuantity) * 100 : 0;
     const usedPct  = totalQuantity > 0 ? (usedQuantity  / totalQuantity) * 100 : 0;
 
+    function parseQty(raw: string): number {
+        const n = Number(raw);
+        return isNaN(n) ? 0 : Math.max(0, Math.floor(n));
+    }
+
     function handleTotal(e: React.ChangeEvent<HTMLInputElement>) {
-        const total = Math.max(0, Number(e.target.value));
+        const total = parseQty(e.target.value);
         const used  = Math.min(usedQuantity, total);
         onChange({ totalQuantity: total, usedQuantity: used, availableQuantity: total - used });
     }
 
     function handleAvailable(e: React.ChangeEvent<HTMLInputElement>) {
-        const avail = Math.max(0, Math.min(totalQuantity, Number(e.target.value)));
+        const avail = Math.min(totalQuantity, parseQty(e.target.value));
         onChange({ totalQuantity, availableQuantity: avail, usedQuantity: totalQuantity - avail });
     }
 
     function handleUsed(e: React.ChangeEvent<HTMLInputElement>) {
-        const used = Math.max(0, Math.min(totalQuantity, Number(e.target.value)));
+        const used = Math.min(totalQuantity, parseQty(e.target.value));
         onChange({ totalQuantity, usedQuantity: used, availableQuantity: totalQuantity - used });
     }
 

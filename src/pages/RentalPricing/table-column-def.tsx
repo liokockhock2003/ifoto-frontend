@@ -33,7 +33,10 @@ function numCell(
             min={0}
             step={0.01}
             value={draftValue}
-            onChange={(e) => onUpdate(id, field, Number(e.target.value))}
+            onChange={(e) => {
+                    const n = Number(e.target.value);
+                    if (!isNaN(n)) onUpdate(id, field, n);
+                }}
             className="h-8 w-28 tabular-nums"
         />
     );
