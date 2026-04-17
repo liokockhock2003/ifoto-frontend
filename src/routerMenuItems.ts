@@ -17,7 +17,7 @@ export type AppRole =
     | 'ROLE_STUDENT'
     | 'ROLE_EQUIPMENT_COMMITTEE'
     | 'ROLE_EVENT_COMMITTEE'
-    | 'ROLE_GUEST'
+    | 'ROLE_NON_STUDENT'
     | 'ROLE_HIGH_COMMITTEE'
 
 export interface MenuItem {
@@ -25,6 +25,7 @@ export interface MenuItem {
     label: string
     icon: LucideIcon
     allowedRoles?: AppRole[]
+    activePaths?: string[]
 }
 
 export interface MenuGroup {
@@ -40,13 +41,13 @@ export const menuGroups: MenuGroup[] = [
                 to: '/equipment-rent',
                 label: 'Equipment Rental',
                 icon: ShoppingCart,
-                allowedRoles: ['ROLE_STUDENT', 'ROLE_GUEST'],
+                allowedRoles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
             },
             {
                 to: '/equipment-returns',
                 label: 'Return Rented Equipment',
                 icon: Undo2,
-                allowedRoles: ['ROLE_STUDENT', 'ROLE_GUEST'],
+                allowedRoles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
             },
         ],
     },
@@ -92,6 +93,8 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Inventory Management',
                 icon: Package,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+                activePaths: ['/manage-inventory/rental-pricing'],
+                
             },
             {
                 to: '/equipment-booking-management',

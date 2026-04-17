@@ -58,8 +58,10 @@ export function AppSidebar() {
                             </SidebarGroupLabel>
                             <SidebarGroupContent className='pl-2 group-data-[collapsible=icon]:p-0'>
                                 <SidebarMenu className='gap-2'>
-                                    {group.items.map(({ to, label, icon: Icon }) => {
-                                        const isActive = !!matchPath({ path: to, end: true }, location.pathname)
+                                    {group.items.map(({ to, label, icon: Icon, activePaths }) => {
+                                        const isActive =
+                                            !!matchPath({ path: to, end: true }, location.pathname) ||
+                                            (activePaths?.some((p) => !!matchPath({ path: p, end: true }, location.pathname)) ?? false)
 
                                         return (
                                             <SidebarMenuItem key={to}>

@@ -21,6 +21,7 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useUpdateMainEquipment, useUpdateSubEquipment } from '@/store/queries/equipment';
+import { Switch } from '@/components/ui/switch';
 import type {
     MainEquipment,
     MainEquipmentUpdatePayload,
@@ -30,6 +31,7 @@ import type {
 
 import { useInventoryManagementContext } from './context';
 import { SUB_KIND_CONFIG, subKindFromType } from './provider';
+import { QuantityFields } from './quantity-fields';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -55,6 +57,7 @@ function toMainForm(equipment: MainEquipment | null): MainEquipmentUpdatePayload
         condition: equipment?.condition ?? 'Good',
         status: equipment?.status ?? 'Available',
         notes: equipment?.notes ?? '',
+        isForRent: equipment?.isForRent ?? false,
     };
 }
 
@@ -162,6 +165,17 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                            <div>
+                                <FieldLabel>Availability for Rent</FieldLabel>
+                            </div>
+                            <Switch
+                                checked={form.isForRent}
+                                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isForRent: checked }))}
+                            />
+                        </div>
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
@@ -315,18 +329,11 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
                         </Field>
                     )}
 
-                    <Field>
-                        <FieldLabel>Total Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Used Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.usedQuantity} onChange={setNum('usedQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Available Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.availableQuantity} onChange={setNum('availableQuantity')} />
-                    </Field>
+                    <QuantityFields
+                        className="sm:col-span-2"
+                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
+                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
+                    />
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
                         <Input value={form.notes} onChange={setStr('notes')} />
