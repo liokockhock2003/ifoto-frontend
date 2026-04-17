@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, type UseMutationOptions } from '@tanstack/react-query';
 import { z } from 'zod';
 
 import { QueryFactory } from '@/store/query-factory';
@@ -50,7 +50,7 @@ export function useRentalPricingList() {
 
 export function useBulkUpdateRentalPricing() {
     return useMutation<unknown, Error, RentalPricingBulkUpdatePayload>({
-        ...bulkUpdateMutation,
+        ...(bulkUpdateMutation as unknown as UseMutationOptions<unknown, Error, RentalPricingBulkUpdatePayload>),
         mutationFn: async (input) => {
             try {
                 return await bulkUpdateMutation.mutationFn(input);
