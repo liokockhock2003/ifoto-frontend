@@ -17,7 +17,7 @@ export function AppBreadcrumb() {
     if (segments.length === 0) return null;
 
     return (
-        <Breadcrumb>
+        <Breadcrumb className='pl-6 text-muted-foreground'>
             <BreadcrumbList>
                 {segments.map((segment, index) => {
                     const href  = '/' + segments.slice(0, index + 1).join('/');
@@ -25,11 +25,13 @@ export function AppBreadcrumb() {
                     const isLast = index === segments.length - 1;
 
                     return (
-                        <li key={href} className="inline-flex items-center gap-1.5">
+                        <li key={href} className="inline-flex items-center gap-1.5 text-xs italic">
                             {index > 0 && <BreadcrumbSeparator />}
                             <BreadcrumbItem>
                                 {isLast ? (
-                                    <BreadcrumbPage>{label}</BreadcrumbPage>
+                                    <BreadcrumbPage>
+                                        {label}
+                                    </BreadcrumbPage>
                                 ) : (
                                     <BreadcrumbLink asChild>
                                         <Link to={href}>{label}</Link>
