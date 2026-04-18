@@ -44,11 +44,11 @@ function RentalPricingContent() {
         const items = all.map((item) => {
             const overrides = draft[item.id] ?? {};
             return {
-                category:          item.category,
-                memberType:        item.memberType,
-                rate1Day:          overrides.rate1Day          ?? item.rate1Day,
-                rate3Days:         overrides.rate3Days         ?? item.rate3Days,
-                ratePerDayExtra:   overrides.ratePerDayExtra   ?? item.ratePerDayExtra,
+                category: item.category,
+                memberType: item.memberType,
+                rate1Day: overrides.rate1Day ?? item.rate1Day,
+                rate3Days: overrides.rate3Days ?? item.rate3Days,
+                ratePerDayExtra: overrides.ratePerDayExtra ?? item.ratePerDayExtra,
                 latePenaltyPerDay: overrides.latePenaltyPerDay ?? item.latePenaltyPerDay,
             };
         });
@@ -64,8 +64,8 @@ function RentalPricingContent() {
     }
 
     const columns = useMemo(
-        () => createRentalPricingColumns(editMode, draft, updateDraft),
-        [editMode, draft, updateDraft],
+        () => createRentalPricingColumns(editMode, updateDraft),
+        [editMode, updateDraft],
     );
 
     return (
@@ -80,8 +80,8 @@ function RentalPricingContent() {
                         <BadgeDollarSign className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                        <h1 className="text-xl text-primary font-semibold tracking-tight">Rental Pricing</h1>
-                        <p className="text-sm text-muted-foreground">Manage equipment rental rates by member type</p>
+                        <h1 className="text-xl text-primary font-semibold tracking-tight">Photography Equipment Rental Pricing</h1>
+                        <p className="text-sm text-muted-foreground">Manage Photography Rental Pricing (Student & Non-Student Pricing)</p>
                     </div>
                 </div>
 
