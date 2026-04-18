@@ -1,12 +1,36 @@
 import { useState, useRef, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff, Pencil, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAuthApiError, useRegister } from '@/store/queries/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldError } from '@/components/ui/field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+
+// ── Password strength ─────────────────────────────────────────────────────────
+
+const PASSWORD_RULES = [
+    { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
+    { label: 'Uppercase letter',       test: (p: string) => /[A-Z]/.test(p) },
+    { label: 'Lowercase letter',       test: (p: string) => /[a-z]/.test(p) },
+    { label: 'Number',                 test: (p: string) => /[0-9]/.test(p) },
+    { label: 'Special character',      test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+] as const;
+
+const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'] as const;
+const STRENGTH_COLORS = ['', 'bg-red-500', 'bg-orange-400', 'bg-yellow-400', 'bg-emerald-400', 'bg-emerald-500'] as const;
+
+function getStrength(password: string): number {
+    if (!password) return 0;
+    return PASSWORD_RULES.filter(r => r.test(password)).length;
+}
+
+// ── Email validation ──────────────────────────────────────────────────────────
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+// ── Component ─────────────────────────────────────────────────────────────────
 
 export default function RegisterPage() {
     const navigate = useNavigate();
@@ -14,7 +38,10 @@ export default function RegisterPage() {
 
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
+    const [emailTouched, setEmailTouched] = useState(false);
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
+    const [passwordTouched, setPasswordTouched] = useState(false);
     const [fullName, setFullName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
     const [profilePicture, setprofilePicture] = useState('');
@@ -24,7 +51,11 @@ export default function RegisterPage() {
     const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
 
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
-    const MAX_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
+    const MAX_SIZE_BYTES = 5 * 1024 * 1024;
+
+    const passwordStrength = getStrength(password);
+    const emailInvalid = emailTouched && email.length > 0 && !EMAIL_RE.test(email);
+    const passwordWeak = passwordTouched && password.length > 0 && passwordStrength < 3;
 
     function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
         const file = e.target.files?.[0];
@@ -54,21 +85,15 @@ export default function RegisterPage() {
         e.preventDefault();
         setError('');
         setFieldErrors({});
+        setEmailTouched(true);
+        setPasswordTouched(true);
 
-        if (!profilePicture) {
-            setError('Please upload a profile picture.');
-            return;
-        }
+        if (!profilePicture) { setError('Please upload a profile picture.'); return; }
+        if (!EMAIL_RE.test(email)) return;
+        if (passwordStrength < 3) return;
 
         registerMutation.mutate(
-            {
-                username,
-                email,
-                password,
-                fullName,
-                phoneNumber,
-                profilePicture,
-            },
+            { username, email, password, fullName, phoneNumber, profilePicture },
             {
                 onSuccess() {
                     toast.success('Registration successful. Please check your email to verify your account.');
@@ -85,135 +110,166 @@ export default function RegisterPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
-            <Card className="w-full max-w-lg">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Create account</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        {error && (
-                            <Alert variant="destructive">
-                                <AlertDescription>{error}</AlertDescription>
-                            </Alert>
+        <div className="space-y-6 text-muted-foreground">
+            <div>
+                <h1 className="text-2xl font-bold text-foreground">Create account</h1>
+                <p className="mt-1 text-sm text-muted-foreground">Join IFoto to start managing equipment</p>
+            </div>
+
+            {/* Avatar picker */}
+            <div className="flex justify-center">
+                <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleFileChange}
+                />
+                <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="group relative size-24 rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                >
+                    <div className="size-full rounded-full overflow-hidden border-2 border-border bg-muted flex items-center justify-center">
+                        {profilePicturePreview ? (
+                            <img src={profilePicturePreview} alt="Profile preview" className="size-full object-cover" />
+                        ) : (
+                            <User className="size-10 text-muted-foreground/50" />
                         )}
+                    </div>
+                    <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Pencil className="size-6 text-white" />
+                    </div>
+                </button>
+            </div>
 
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={e => {
-                                    setUsername(e.target.value);
-                                    if (fieldErrors.username) {
-                                        setFieldErrors(prev => ({ ...prev, username: undefined }));
-                                    }
-                                }}
-                                placeholder="Choose a username"
-                                className={fieldErrors.username ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                required
-                            />
-                            {fieldErrors.username && <p className="text-sm text-destructive">{fieldErrors.username}</p>}
-                        </div>
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {error && (
+                    <Alert variant="destructive">
+                        <AlertDescription>{error}</AlertDescription>
+                    </Alert>
+                )}
 
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                                id="email"
-                                type="email"
-                                value={email}
-                                onChange={e => {
-                                    setEmail(e.target.value);
-                                    if (fieldErrors.email) {
-                                        setFieldErrors(prev => ({ ...prev, email: undefined }));
-                                    }
-                                }}
-                                placeholder="you@example.com"
-                                className={fieldErrors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-                                required
-                            />
-                            {fieldErrors.email && <p className="text-sm text-destructive">{fieldErrors.email}</p>}
-                        </div>
+                <Field>
+                    <Input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={e => {
+                            setUsername(e.target.value);
+                            if (fieldErrors.username) setFieldErrors(prev => ({ ...prev, username: undefined }));
+                        }}
+                        placeholder="Username"
+                        className={fieldErrors.username ? 'border-destructive focus-visible:ring-destructive' : ''}
+                        required
+                    />
+                    <FieldError errors={[{ message: fieldErrors.username }]} />
+                </Field>
 
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="password">Password</Label>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder="At least 8 characters"
-                                required
-                            />
-                        </div>
+                <Field>
+                    <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={e => {
+                            setEmail(e.target.value);
+                            if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
+                        }}
+                        onBlur={() => setEmailTouched(true)}
+                        placeholder="Email"
+                        className={emailInvalid || fieldErrors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
+                        required
+                    />
+                    {emailInvalid
+                        ? <FieldError errors={[{ message: 'Please enter a valid email address.' }]} />
+                        : <FieldError errors={[{ message: fieldErrors.email }]} />
+                    }
+                </Field>
 
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="fullName">Full name</Label>
-                            <Input
-                                id="fullName"
-                                type="text"
-                                value={fullName}
-                                onChange={e => setFullName(e.target.value)}
-                                placeholder="Your full name"
-                                required
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="phoneNumber">Phone number</Label>
-                            <Input
-                                id="phoneNumber"
-                                type="tel"
-                                value={phoneNumber}
-                                onChange={e => setPhoneNumber(e.target.value)}
-                                placeholder="+60123456789"
-                                required
-                            />
-                        </div>
-
-                        <div className="flex flex-col gap-1">
-                            <Label>Profile picture</Label>
-                            <input
-                                ref={fileInputRef}
-                                type="file"
-                                accept="image/jpeg,image/png,image/webp"
-                                className="hidden"
-                                onChange={handleFileChange}
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                onClick={() => fileInputRef.current?.click()}
-                            >
-                                {profilePicturePreview ? 'Change photo' : 'Upload photo'}
-                            </Button>
-                            {profilePicturePreview && (
-                                <img
-                                    src={profilePicturePreview}
-                                    alt="Profile preview"
-                                    className="mt-1 h-20 w-20 rounded-full object-cover"
-                                />
-                            )}
-                        </div>
-
-                        <Button
-                            type="submit"
-                            disabled={registerMutation.isPending}
-                            className="w-full"
+                <Field>
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            onBlur={() => setPasswordTouched(true)}
+                            placeholder="Password"
+                            className={`pr-10 ${passwordWeak ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                            tabIndex={-1}
                         >
-                            {registerMutation.isPending ? 'Creating account...' : 'Create account'}
-                        </Button>
+                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                    </div>
+                    {/* Strength bar */}
+                    {password.length > 0 && (
+                        <div className="space-y-1.5">
+                            <div className="flex gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => (
+                                    <div
+                                        key={i}
+                                        className={`h-1 flex-1 rounded-full transition-colors duration-300 ${i < passwordStrength ? STRENGTH_COLORS[passwordStrength] : 'bg-muted'}`}
+                                    />
+                                ))}
+                            </div>
+                            <p className={`text-xs font-medium ${passwordStrength < 3 ? 'text-destructive' : 'text-emerald-500'}`}>
+                                {STRENGTH_LABELS[passwordStrength]}
+                            </p>
+                            <ul className="space-y-0.5">
+                                {PASSWORD_RULES.map(rule => {
+                                    const passed = rule.test(password);
+                                    return (
+                                        <li key={rule.label} className={`text-xs flex items-center gap-1.5 ${passed ? 'text-emerald-500' : 'text-muted-foreground'}`}>
+                                            <span>{passed ? '✓' : '○'}</span>
+                                            {rule.label}
+                                        </li>
+                                    );
+                                })}
+                            </ul>
+                        </div>
+                    )}
+                    {passwordWeak && <FieldError errors={[{ message: 'Password is too weak. Aim for "Good" or stronger.' }]} />}
+                </Field>
 
-                        <p className="text-center text-sm text-muted-foreground">
-                            Already have an account?{' '}
-                            <Link to="/login" className="font-medium text-foreground underline underline-offset-4">
-                                Login
-                            </Link>
-                        </p>
-                    </form>
-                </CardContent>
-            </Card>
+                <Field>
+                    <Input
+                        id="fullName"
+                        type="text"
+                        value={fullName}
+                        onChange={e => setFullName(e.target.value)}
+                        placeholder="Full name"
+                        required
+                    />
+                </Field>
+
+                <Field>
+                    <Input
+                        id="phoneNumber"
+                        type="tel"
+                        value={phoneNumber}
+                        onChange={e => setPhoneNumber(e.target.value)}
+                        placeholder="Phone number"
+                        required
+                    />
+                </Field>
+
+                <Button type="submit" disabled={registerMutation.isPending} className="w-full">
+                    {registerMutation.isPending ? 'Creating account...' : 'Create account'}
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                    Already have an account?{' '}
+                    <Link to="/login" className="font-medium text-foreground underline underline-offset-4">
+                        Login
+                    </Link>
+                </p>
+            </form>
         </div>
     );
 }

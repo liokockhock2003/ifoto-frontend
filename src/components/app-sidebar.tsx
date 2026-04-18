@@ -1,5 +1,5 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { ChevronsUpDown, LogOut, Settings, User2 } from 'lucide-react'
+import { LogOut, User2 } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -12,13 +12,6 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { menuGroups } from '@/routerMenuItems'
 import { useAuth } from '@/store/auth-context'
 
@@ -42,9 +35,9 @@ export function AppSidebar() {
             <SidebarHeader className="transition-all group-data-[collapsible=icon]:px-2">
                 <div className="flex items-center gap-3 rounded-xl py-2">
                     <div className="flex items-center justify-center text-primary-foreground shrink-0">
-                        <img src="/kfk_logo_2.svg" alt="KFK logo" className="w-16 h-16 object-contain transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8" />
+                        <img src="/KFKLogo.svg" alt="KFK logo" className="w-16 h-16 object-contain transition-all group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:h-8" />
                     </div>
-                    <span className="flex text-2xl font-bold tracking-tight text-primary group-data-[collapsible=icon]:hidden">IFoto</span>
+                    <span className="flex text-2xl font-bold tracking-tight text-brand group-data-[collapsible=icon]:hidden">IFoto</span>
                 </div>
             </SidebarHeader>
 
@@ -106,42 +99,27 @@ export function AppSidebar() {
             <SidebarFooter className="px-2 py-4">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="h-auto justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-1!" tooltip="Account">
-                                    <div className="flex items-center justify-center rounded-full bg-muted overflow-hidden shrink-0 size-8 group-data-[collapsible=icon]:p-0">
-                                        {user?.profilePicture ? (
-                                            <img src={user.profilePicture} alt={user.fullName ?? user.username} className="size-full object-cover" />
-                                        ) : (
-                                            <User2 className="size-4" />
-                                        )}
-                                    </div>
-                                    <div className="flex min-w-0 flex-1 flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
-                                        <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
-                                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                                    </div>
-                                    <ChevronsUpDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side="top" align="start" className="w-56">
-                                <DropdownMenuItem>
-                                    <User2 className="mr-2 size-4" />
-                                    Profile
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Settings className="mr-2 size-4" />
-                                    Settings
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem
-                                    className="text-destructive focus:text-destructive"
-                                    onClick={() => logout()}
-                                >
-                                    <LogOut className="mr-2 size-4" />
-                                    Log out
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                        <div className="flex items-center gap-1">
+                            <SidebarMenuButton className="h-auto justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-0!">
+                                <div className="flex items-center justify-center rounded-full bg-muted overflow-hidden shrink-0 size-8 group-data-[collapsible=icon]:p-0">
+                                    {user?.profilePicture ? (
+                                        <img src={user.profilePicture} alt={user.fullName ?? user.username} className="size-full object-cover" />
+                                    ) : (
+                                        <User2 className="size-4" />
+                                    )}
+                                </div>
+                                <div className="flex min-w-0 flex-1 flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
+                                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                                </div>
+                            </SidebarMenuButton>
+                            <button
+                                onClick={() => logout()}
+                                className="shrink-0 p-2.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group-data-[collapsible=icon]:hidden"
+                            >
+                                <LogOut className="size-4" />
+                            </button>
+                        </div>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

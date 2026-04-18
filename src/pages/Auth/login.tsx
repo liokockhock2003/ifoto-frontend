@@ -1,17 +1,18 @@
 import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAuthApiError, useLogin } from '@/store/queries/auth';
 import { setAccessToken } from '@/utils/axios-instance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field } from '@/components/ui/field';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
+    const [showPassword, setShowPassword] = useState(false);
     const [loginError, setLoginError] = useState('');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
@@ -26,9 +27,7 @@ export default function LoginPage() {
             { username, password },
             {
                 onSuccess(data) {
-                    // access token → memory only (never localStorage)
                     setAccessToken(data.accessToken);
-                    // only non-sensitive user info persisted
                     localStorage.setItem('user', JSON.stringify({
                         username: data.username,
                         email: data.email,
@@ -50,72 +49,79 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="flex min-h-screen items-center justify-center bg-background">
-            <Card className="w-full max-w-sm">
-                <CardHeader>
-                    <CardTitle className="text-2xl">Login</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                        {registered && (
-                            <Alert>
-                                <AlertDescription>
-                                    Registration successful. Please verify your email before logging in.
-                                </AlertDescription>
-                            </Alert>
-                        )}
+        <div className="space-y-6 text-muted-foreground">
+            <div>
+                <h1 className="text-2xl font-bold text-foreground">Welcome back</h1>
+                <p className="mt-1 text-sm text-muted-foreground">Sign in to your IFoto account</p>
+            </div>
 
-                        {loginError && (
-                            <Alert variant="destructive">
-                                <AlertDescription>{loginError}</AlertDescription>
-                            </Alert>
-                        )}
-                        <div className="flex flex-col gap-1">
-                            <Label htmlFor="username">Username</Label>
-                            <Input
-                                id="username"
-                                type="text"
-                                value={username}
-                                onChange={e => setUsername(e.target.value)}
-                                placeholder="Enter your username"
-                                required
-                            />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                            <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
-                                <Link
-                                    to="/forgot-password"
-                                    className="text-xs font-medium text-foreground/80 underline underline-offset-4 hover:text-foreground"
-                                >
-                                    Forgot password?
-                                </Link>
-                            </div>
-                            <Input
-                                id="password"
-                                type="password"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder="Enter your password"
-                                required
-                            />
-                        </div>
-                        <Button
-                            type="submit"
-                            disabled={loginMutation.isPending}
-                            className="w-full"
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+                {registered && (
+                    <Alert>
+                        <AlertDescription>
+                            Registration successful. Please verify your email before logging in.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
+                {loginError && (
+                    <Alert variant="destructive">
+                        <AlertDescription>{loginError}</AlertDescription>
+                    </Alert>
+                )}
+
+                <Field>
+                    <Input
+                        id="username"
+                        type="text"
+                        value={username}
+                        onChange={e => setUsername(e.target.value)}
+                        placeholder="Username"
+                        required
+                    />
+                </Field>
+
+                <Field>
+                    <div className="relative">
+                        <Input
+                            id="password"
+                            type={showPassword ? 'text' : 'password'}
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                            placeholder="Password"
+                            className="pr-10"
+                            required
+                        />
+                        <button
+                            type="button"
+                            onClick={() => setShowPassword(v => !v)}
+                            className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                            tabIndex={-1}
                         >
-                            {loginMutation.isPending ? 'Logging in...' : 'Login'}
-                        </Button>
-                        <p className="text-center text-sm text-muted-foreground">
-                            Don&apos;t have an account?{' '}
-                            <Link to="/register" className="font-medium text-foreground underline underline-offset-4">
-                                Register
-                            </Link>
-                        </p>
-                    </form>
-                </CardContent>
-            </Card>
+                            {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                        </button>
+                    </div>
+                    <div className="flex justify-end">
+                        <Link
+                            to="/forgot-password"
+                            className="text-xs font-medium text-foreground/80 underline-offset-4 hover:text-foreground"
+                        >
+                            Forgot password?
+                        </Link>
+                    </div>
+                </Field>
+
+                <Button type="submit" disabled={loginMutation.isPending} className="w-full">
+                    {loginMutation.isPending ? 'Logging in...' : 'Login'}
+                </Button>
+
+                <p className="text-center text-sm text-muted-foreground">
+                    Don&apos;t have an account?{' '}
+                    <Link to="/register" className="font-medium text-foreground underline underline-offset-4">
+                        Register
+                    </Link>
+                </p>
+            </form>
         </div>
     );
 }

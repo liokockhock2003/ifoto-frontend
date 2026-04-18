@@ -1,5 +1,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
+import AuthLayout from '@/pages/Auth/layout'
 import ProtectedRoute from '@/protected-route'
 import LoginPage from '@/pages/Auth/login'
 import RegisterPage from '@/pages/Auth/register'
@@ -17,16 +18,12 @@ const ComingSoon = ({ title }: { title: string }) => (
 
 export const router = createBrowserRouter([
     {
-        path: '/login',
-        element: <LoginPage />,
-    },
-    {
-        path: '/register',
-        element: <RegisterPage />,
-    },
-    {
-        path: '/forgot-password',
-        element: <ForgotPasswordPage />,
+        element: <AuthLayout />,
+        children: [
+            { path: '/login', element: <LoginPage /> },
+            { path: '/register', element: <RegisterPage /> },
+            { path: '/forgot-password', element: <ForgotPasswordPage /> },
+        ],
     },
     {
         path: '/reset-password',
