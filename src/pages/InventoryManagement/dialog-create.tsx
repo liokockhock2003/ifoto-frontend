@@ -21,10 +21,12 @@ import {
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { useCreateMainEquipment, useCreateSubEquipment } from '@/store/queries/equipment';
+import { Switch } from '@/components/ui/switch';
 import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/equipment';
 
 import { useInventoryManagementContext } from './context';
 import { MAIN_EQUIPMENT_CONFIG, SUB_EQUIPMENT_CONFIG, SUB_EQUIPMENT_KEYS, SUB_KIND_CONFIG, type SubKindConfig } from './provider';
+import { QuantityFields } from './quantity-fields';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
@@ -51,6 +53,7 @@ const defaultMainForm = (kind: MainEquipmentKind): MainEquipmentPayload => ({
     condition: 'Good',
     status: 'Available',
     notes: '',
+    isForRent: false,
 });
 
 export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, onCreated }: MainEquipmentCreateDialogProps) {
@@ -158,6 +161,17 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                                 ))}
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    </Field>
+                    <Field className="sm:col-span-2">
+                        <div className="flex items-center justify-between rounded-lg border px-4 py-3">
+                            <div>
+                                <FieldLabel>Available for Rent</FieldLabel>
+                            </div>
+                            <Switch
+                                checked={form.isForRent}
+                                onCheckedChange={(checked) => setForm((prev) => ({ ...prev, isForRent: checked }))}
+                            />
+                        </div>
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
@@ -310,18 +324,11 @@ export function SubEquipmentCreateDialog({ open, onOpenChange, equipmentKind, on
                         </Field>
                     )}
 
-                    <Field>
-                        <FieldLabel>Total Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Used Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.usedQuantity} onChange={setNum('usedQuantity')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>Available Quantity</FieldLabel>
-                        <Input type="number" min={0} value={form.availableQuantity} onChange={setNum('availableQuantity')} />
-                    </Field>
+                    <QuantityFields
+                        className="sm:col-span-2"
+                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
+                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
+                    />
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
                         <Input placeholder="Optional notes" value={form.notes} onChange={setStr('notes')} />

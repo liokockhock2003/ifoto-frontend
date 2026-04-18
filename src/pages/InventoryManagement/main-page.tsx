@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Package, Plus } from 'lucide-react';
+import { BadgeDollarSign, Package, Plus } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 import { type ColumnDef } from '@tanstack/react-table';
 
@@ -54,6 +55,7 @@ const SUB_TAB_COLUMNS: Partial<Record<SubEquipmentTabValue, ColumnDef<SubEquipme
 
 function InventoryManagementContent() {
     const ctx = useInventoryManagementContext();
+    const navigate = useNavigate();
 
     const [openCreateMain, setOpenCreateMain] = useState(false);
     const [openCreateSub, setOpenCreateSub] = useState(false);
@@ -64,14 +66,20 @@ function InventoryManagementContent() {
 
     return (
         <div className="space-y-6 p-2 sm:p-6">
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <Package className="h-5 w-5 text-primary" />
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <Package className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl text-primary font-semibold tracking-tight">Inventory Management</h1>
+                        <p className="text-sm text-muted-foreground">Manage Kelab Fotokreatif's Photography Equipments</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-xl text-primary font-semibold tracking-tight">Inventory Management</h1>
-                    <p className="text-sm text-muted-foreground">Manage All Kelab Fotokreatif Equipment</p>
-                </div>
+                <Button variant="outline" size="sm" className="text-muted-foreground" onClick={() => navigate('/manage-inventory/rental-pricing')}>
+                    <BadgeDollarSign className="h-4 w-4" />
+                    <span className="hidden sm:inline">Rental Pricing</span>
+                </Button>
             </div>
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>

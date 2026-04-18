@@ -71,8 +71,8 @@ export default function RegisterPage() {
             },
             {
                 onSuccess() {
-                    toast.success('Registration successful. Please login.');
-                    navigate('/login', { replace: true });
+                    toast.success('Registration successful. Please check your email to verify your account.');
+                    navigate('/login?registered=true', { replace: true });
                 },
                 onError(err) {
                     const message = isAuthApiError(err) ? err.message : 'Registration failed';

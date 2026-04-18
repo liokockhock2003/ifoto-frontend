@@ -10,6 +10,9 @@ export const MainEquipmentSchema = z.object({
     condition: z.string(),
     status: z.string(),
     notes: z.string(),
+    pricingCategoryId: z.number().int().nonnegative().nullable(),
+    pricingCategory: z.string().nullable(),
+    isForRent: z.boolean(),
 });
 
 export const SubEquipmentSchema = z.object({
@@ -32,7 +35,7 @@ export const EquipmentListResponseSchema = z.object({
 
 // ── Payload schemas (no id — used for create & update request bodies) ─────────
 
-export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true });
+export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true, pricingCategoryId: true, pricingCategory: true });
 export const MainEquipmentUpdatePayloadSchema = MainEquipmentPayloadSchema.extend({
     mainEquipmentId: z.number().int().positive(),
 });

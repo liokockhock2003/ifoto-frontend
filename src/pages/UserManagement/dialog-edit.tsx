@@ -19,29 +19,29 @@ import type { User } from '@/store/schemas/user';
 import { getRoleLabel } from '@/constants/roles';
 
 /**
- * Roles that automatically imply ROLE_CLUB_MEMBER membership.
+ * Roles that automatically imply ROLE_STUDENT membership.
  */
-const IMPLIES_CLUB_MEMBER = ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_COMMITTEE'] as const;
+const IMPLIES_STUDENT = ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_COMMITTEE'] as const;
 
 /**
  * Event Committee requires at least one of these to also be selected.
  */
-const EVENT_COMMITTEE_REQUIRES_ONE_OF = ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'] as const;
+const EVENT_COMMITTEE_REQUIRES_ONE_OF = ['ROLE_STUDENT', 'ROLE_NON_STUDENT'] as const;
 
 const ROLE_GROUPS = [
     {
         label: 'Committee Roles',
-        description: 'Admin, High Committee and Equipment Committee automatically include Club Member.',
+        description: 'Admin, High Committee and Equipment Committee automatically include Student.',
         roles: ['ROLE_ADMIN', 'ROLE_HIGH_COMMITTEE', 'ROLE_EQUIPMENT_COMMITTEE'],
     },
     {
         label: 'Membership Type',
-        description: 'Club Member and Guest are mutually exclusive. Club Member is auto-included when a committee role that implies it is selected.',
-        roles: ['ROLE_CLUB_MEMBER', 'ROLE_GUEST'],
+        description: 'Student and Non-student are mutually exclusive. Student is auto-included when a committee role that implies it is selected.',
+        roles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
     },
     {
         label: 'Event Committee',
-        description: 'Event Committee is independent and must be paired with either Club Member or Guest.',
+        description: 'View-only. Assignment to events is managed by High Committee.',
         roles: ['ROLE_EVENT_COMMITTEE'],
     },
 ] as const;
@@ -70,7 +70,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
     const normalizedInitialRoles = useMemo(() => [...initialRoles].sort().join(','), [initialRoles]);
     const normalizedSelectedRoles = useMemo(() => [...selectedRoles].sort().join(','), [selectedRoles]);
 
-    const clubMemberImplied = IMPLIES_CLUB_MEMBER.some((r) => selectedRoles.includes(r));
+    const clubMemberImplied = IMPLIES_STUDENT.some((r) => selectedRoles.includes(r));
 
     const eventCommitteeSelected = selectedRoles.includes('ROLE_EVENT_COMMITTEE');
     const eventCommitteeValid =
@@ -96,11 +96,11 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                 next = [...prev, role];
             }
 
-            // Enforce: Club Member and Guest are mutually exclusive
-            if (role === 'ROLE_CLUB_MEMBER' && next.includes('ROLE_CLUB_MEMBER')) {
-                next = next.filter((r) => r !== 'ROLE_GUEST');
-            } else if (role === 'ROLE_GUEST' && next.includes('ROLE_GUEST')) {
-                next = next.filter((r) => r !== 'ROLE_CLUB_MEMBER');
+            // Enforce: Student and Guest are mutually exclusive
+            if (role === 'ROLE_STUDENT' && next.includes('ROLE_STUDENT')) {
+                next = next.filter((r) => r !== 'ROLE_NON_STUDENT');
+            } else if (role === 'ROLE_NON_STUDENT' && next.includes('ROLE_NON_STUDENT')) {
+                next = next.filter((r) => r !== 'ROLE_STUDENT');
             }
 
             // Enforce: High Committee and Equipment Committee are mutually exclusive
@@ -110,11 +110,11 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                 next = next.filter((r) => r !== 'ROLE_HIGH_COMMITTEE');
             }
 
-            // Enforce: selecting an implication role auto-adds Club Member and removes Guest
-            const needsClubMember = IMPLIES_CLUB_MEMBER.some((r) => next.includes(r));
+            // Enforce: selecting an implication role auto-adds Student and removes Guest
+            const needsClubMember = IMPLIES_STUDENT.some((r) => next.includes(r));
             if (needsClubMember) {
-                if (!next.includes('ROLE_CLUB_MEMBER')) next = [...next, 'ROLE_CLUB_MEMBER'];
-                next = next.filter((r) => r !== 'ROLE_GUEST');
+                if (!next.includes('ROLE_STUDENT')) next = [...next, 'ROLE_STUDENT'];
+                next = next.filter((r) => r !== 'ROLE_NON_STUDENT');
             }
 
             return next;
@@ -128,7 +128,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
             return;
         }
         if (!eventCommitteeValid) {
-            toast.error('Event Committee must be paired with Club Member or Guest.');
+            toast.error('Event Committee must be paired with Student or Non-student.');
             return;
         }
 
@@ -183,7 +183,8 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                     {group.roles.map((role) => {
                                         const isSelected = selectedRoles.includes(role);
                                         const isForced =
-                                            role === 'ROLE_CLUB_MEMBER' && clubMemberImplied;
+                                            role === 'ROLE_STUDENT' && clubMemberImplied;
+                                        const isReadOnly = role === 'ROLE_EVENT_COMMITTEE';
 
                                         return (
                                             <Tooltip key={role}>
@@ -192,13 +193,13 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                                         type="button"
                                                         variant={isSelected ? 'default' : 'outline'}
                                                         className="justify-between"
-                                                        disabled={isForced}
-                                                        onClick={() => !isForced && toggleRole(role)}
+                                                        disabled={isForced || isReadOnly}
+                                                        onClick={() => !isForced && !isReadOnly && toggleRole(role)}
                                                     >
                                                         <span className="truncate text-left">
                                                             {getRoleLabel(role)}
                                                         </span>
-                                                        {isForced ? (
+                                                        {isForced || isReadOnly ? (
                                                             <Lock className="ml-2 h-3.5 w-3.5 opacity-60" />
                                                         ) : isSelected ? (
                                                             <Check className="ml-2 h-4 w-4" />
@@ -207,7 +208,12 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                                 </TooltipTrigger>
                                                 {isForced && (
                                                     <TooltipContent side="top" className="text-xs">
-                                                        Auto-included by Admin, High Committee, or Equipment Committee
+                                                        Auto-included by Admin, High Committee, or Equipment Committee roles
+                                                    </TooltipContent>
+                                                )}
+                                                {isReadOnly && (
+                                                    <TooltipContent side="top" className="text-xs">
+                                                        Only High Committee can assign or remove this role
                                                     </TooltipContent>
                                                 )}
                                             </Tooltip>
@@ -220,7 +226,7 @@ export function UserEditDialog({ open, onOpenChange, user, onUpdated }: UserEdit
                                     eventCommitteeSelected &&
                                     !eventCommitteeValid && (
                                         <p className="text-xs text-destructive">
-                                            Event Committee must also have Club Member or Guest selected.
+                                            Event Committee must also have Student or Non-student selected.
                                         </p>
                                     )}
                             </div>

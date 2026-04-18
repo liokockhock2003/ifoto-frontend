@@ -62,6 +62,14 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
             );
         },
     }),
+    mainColumnHelper.accessor('isForRent', {
+        header: 'For Rent',
+        cell: (info) => (
+            <Badge variant="outline" className={info.getValue() ? 'badge-success' : ''}>
+                {info.getValue() ? 'Yes' : 'No'}
+            </Badge>
+        ),
+    }),
     mainColumnHelper.accessor('notes', {
         header: 'Notes',
         cell: (info) => (

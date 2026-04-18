@@ -33,20 +33,21 @@ const createEventMutation = eventQuery.customMutation<CreateEventPayload>({
 export const eventKeys = {
     all: eventQuery.qk(),
     list: () => eventQuery.lists(),
-    committeeList: (userId: number) => [...eventQuery.qk(), 'committee', userId],
+    userEvents: (userId: number) => [...eventQuery.qk(), 'users', userId],
 };
 
 export function useEvents() {
     return useQuery(eventQuery.list()());
 }
 
-export function useEventsByCommittee(userId: number) {
+export function useEventsByCommittee(userId: number, options?: { enabled?: boolean }) {
     return useQuery({
-        queryKey: eventKeys.committeeList(userId),
+        queryKey: eventKeys.userEvents(userId),
         queryFn: async () => {
-            const res = await axios.get(`/api/v1/events/committee/${userId}`);
+            const res = await axios.get(`/api/v1/events/users/${userId}`);
             return EventSchema.array().parse(res.data);
         },
+        enabled: options?.enabled ?? true,
     });
 }
 

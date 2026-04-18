@@ -1,9 +1,9 @@
 export const ROLE_LABELS: Record<string, string> = {
     ROLE_ADMIN: 'Admin',
-    ROLE_CLUB_MEMBER: 'Club Member',
+    ROLE_STUDENT: 'Student',
     ROLE_EQUIPMENT_COMMITTEE: 'Equipment Committee',
     ROLE_EVENT_COMMITTEE: 'Event Committee',
-    ROLE_GUEST: 'Guest',
+    ROLE_NON_STUDENT: 'Non-student',
     ROLE_HIGH_COMMITTEE: 'High Committee',
 };
 
