@@ -33,6 +33,23 @@ export const EquipmentListResponseSchema = z.object({
     subEquipment: z.array(SubEquipmentSchema),
 });
 
+export const BookedDateSchema = z.object({
+    equipmentId: z.number().int().nonnegative(),
+    startDate: z.string(),
+    endDate: z.string(),
+    pending: z.boolean(),
+});
+
+export const RentableEquipmentSchema = MainEquipmentSchema.extend({
+    isForRent: z.boolean().optional(),
+    memberType: z.string(),
+    rate1Day: z.number(),
+    rate3Days: z.number(),
+    ratePerDayExtra: z.number(),
+    latePenaltyPerDay: z.number(),
+    bookedDates: z.array(BookedDateSchema),
+});
+
 // ── Payload schemas (no id — used for create & update request bodies) ─────────
 
 export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true, pricingCategoryId: true, pricingCategory: true });
@@ -56,3 +73,6 @@ export type SubEquipmentPayload = z.infer<typeof SubEquipmentPayloadSchema>;
 export type SubEquipmentUpdatePayload = z.infer<typeof SubEquipmentUpdatePayloadSchema>;
 
 export type EquipmentListResponse = z.infer<typeof EquipmentListResponseSchema>;
+
+export type BookedDate = z.infer<typeof BookedDateSchema>;
+export type RentableEquipment = z.infer<typeof RentableEquipmentSchema>;

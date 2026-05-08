@@ -11,6 +11,8 @@ import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
 import EventManagementMainPage from '@/pages/EventManagement/main-page'
 import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
+import EquipmentRentalMainPage from '@/pages/MyRentalList/EquipmentRental/main-page'
+import RentalListPage from '@/pages/MyRentalList/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
@@ -80,11 +82,24 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'equipment-rent',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
-                        <ComingSoon title="Equipment Rent" />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
+                                <RentalListPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'new',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
+                                <EquipmentRentalMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                ],
             },
             {
                 path: 'event-management',

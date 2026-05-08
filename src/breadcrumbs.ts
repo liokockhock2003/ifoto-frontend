@@ -6,6 +6,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
     'user-management':                'User Management',
     'event-management':               'Event Management',
     'equipment-rent':                 'Equipment Rental',
+    'new':                            'New Rental',
     'equipment-returns':              'Return Rented Equipment',
     'equipment-requests':             'Equipment Request',
     'equipment-request-returns':      'Return Requested Equipment',

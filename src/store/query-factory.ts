@@ -26,8 +26,8 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
     // ── URL / key helpers (plain functions, no self-reference) ────────────────
     const qk = () => [model];
     const lists = (filters?: TFilters) => [...qk(), 'list', filters];
-    const details = (id: number) => [...qk(), 'detail', `${id}`];
-    const createUrl = (id?: number) => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
+    const details = (id: number | string) => [...qk(), 'detail', `${id}`];
+    const createUrl = (id?: number | string) => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
 
     // ── Axios method dispatcher (avoids indexing the full AxiosInstance) ───────
     const dispatch = (
@@ -125,7 +125,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
         },
 
         // ── Detail query ──────────────────────────────────────────────────────
-        detail(id: number, options?: QueryHandlerOptions<TModel>) {
+        detail(id: number | string, options?: QueryHandlerOptions<TModel>) {
             const action: Required<QueryHandlerOptions<TModel>> = {
                 onSuccess: (data) => data,
                 onError: (error) => console.error(error),
@@ -145,6 +145,40 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                     }
                 },
             });
+        },
+
+        // ── Custom parameterized query (dynamic path segment, any response shape) ──
+        customQuery<TResponse, TParam = number | string>(options: {
+            responseSchema: ZodType<TResponse>;
+            urlSuffix: (param: TParam) => string;
+            queryKeySuffix: (param: TParam) => unknown[];
+            requestConfig?: AxiosRequestConfig;
+            onSuccess?: (data: TResponse) => TResponse | Promise<TResponse>;
+            onError?: (error: unknown) => void;
+        }) {
+            const {
+                responseSchema,
+                urlSuffix,
+                queryKeySuffix,
+                requestConfig,
+                onSuccess = (data) => data,
+                onError = (error: unknown) => console.error(error),
+            } = options;
+
+            return (param: TParam, config?: { enabled?: boolean }) =>
+                queryOptions({
+                    queryKey: [...qk(), ...queryKeySuffix(param)],
+                    queryFn: async () => {
+                        try {
+                            const res = await axios.get(`${baseUrl}${urlSuffix(param)}`, requestConfig);
+                            return onSuccess(responseSchema.parse(res.data));
+                        } catch (error) {
+                            onError(error);
+                            throw error;
+                        }
+                    },
+                    enabled: config?.enabled ?? true,
+                });
         },
 
         // ── Custom mutation (arbitrary URL/method, still uses schema + toast) ──
