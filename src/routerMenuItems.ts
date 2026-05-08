@@ -42,6 +42,7 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Equipment Rental',
                 icon: ShoppingCart,
                 allowedRoles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
+                activePaths: ['/equipment-rent/new'],
             },
             {
                 to: '/equipment-returns',

@@ -1,12 +1,11 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { toast } from 'sonner';
 import { extractApiErrorMessage } from '@/utils/api-error';
 import { QueryFactory } from '@/store/query-factory';
-import { invalidateQuery } from '@/store/query-client';
-import { axios } from '@/utils/axios-instance';
 import {
     EventSchema,
     CreateEventPayloadSchema,
+    UpdateEventPayloadSchema,
+    DeleteEventPayloadSchema,
     type Event,
     type CreateEventPayload,
     type UpdateEventPayload,
@@ -22,6 +21,16 @@ const eventQuery = QueryFactory<Event>(
     '/api/v1/events',
 );
 
+// ── Query keys ────────────────────────────────────────────────────────────────
+
+export const eventKeys = {
+    all: eventQuery.qk(),
+    list: () => eventQuery.lists(),
+    userEvents: (userId: number) => [...eventQuery.qk(), 'users', userId],
+};
+
+// ── Mutation configs ──────────────────────────────────────────────────────────
+
 const createEventMutation = eventQuery.customMutation<CreateEventPayload>({
     method: 'post',
     urlSuffix: '',
@@ -30,26 +39,41 @@ const createEventMutation = eventQuery.customMutation<CreateEventPayload>({
     invalidateKeys: () => [eventKeys.all],
 });
 
-export const eventKeys = {
-    all: eventQuery.qk(),
-    list: () => eventQuery.lists(),
-    userEvents: (userId: number) => [...eventQuery.qk(), 'users', userId],
-};
+const updateEventMutation = eventQuery.customMutation<UpdateEventPayload>({
+    method: 'put',
+    urlSuffix: ({ id }) => `/${id}`,
+    inputSchema: UpdateEventPayloadSchema,
+    toastMsg: 'Event updated',
+    invalidateKeys: () => [eventKeys.all],
+});
+
+const deleteEventMutation = eventQuery.customMutation<DeleteEventPayload>({
+    method: 'delete',
+    urlSuffix: ({ id }) => `/${id}`,
+    inputSchema: DeleteEventPayloadSchema,
+    toastMsg: 'Event deleted',
+    invalidateKeys: () => [eventKeys.all],
+});
+
+// ── Query configs ─────────────────────────────────────────────────────────────
+
+const eventsByCommitteeQuery = eventQuery.customQuery<Event[], number>({
+    responseSchema: EventSchema.array(),
+    urlSuffix: (userId) => `/users/${userId}`,
+    queryKeySuffix: (userId) => ['users', userId],
+});
+
+// ── Query hooks ───────────────────────────────────────────────────────────────
 
 export function useEvents() {
     return useQuery(eventQuery.list()());
 }
 
 export function useEventsByCommittee(userId: number, options?: { enabled?: boolean }) {
-    return useQuery({
-        queryKey: eventKeys.userEvents(userId),
-        queryFn: async () => {
-            const res = await axios.get(`/api/v1/events/users/${userId}`);
-            return EventSchema.array().parse(res.data);
-        },
-        enabled: options?.enabled ?? true,
-    });
+    return useQuery(eventsByCommitteeQuery(userId, options));
 }
+
+// ── Mutation hooks ────────────────────────────────────────────────────────────
 
 export function useCreateEvent() {
     return useMutation<Event, Error, CreateEventPayload>({
@@ -66,34 +90,26 @@ export function useCreateEvent() {
 
 export function useUpdateEvent() {
     return useMutation<Event, Error, UpdateEventPayload>({
-        mutationFn: async ({ id, ...body }) => {
+        ...updateEventMutation,
+        mutationFn: async (input) => {
             try {
-                const res = await axios.put(`/api/v1/events/${id}`, body);
-                return EventSchema.parse(res.data);
+                return await updateEventMutation.mutationFn(input);
             } catch (err) {
                 throw new Error(extractApiErrorMessage(err));
             }
-        },
-        onSuccess: () => {
-            toast('Event updated');
-            invalidateQuery(eventKeys.all);
         },
     });
 }
 
 export function useDeleteEvent() {
     return useMutation<Event, Error, DeleteEventPayload>({
-        mutationFn: async ({ id }) => {
+        ...deleteEventMutation,
+        mutationFn: async (input) => {
             try {
-                const res = await axios.delete(`/api/v1/events/${id}`);
-                return EventSchema.parse(res.data);
+                return await deleteEventMutation.mutationFn(input);
             } catch (err) {
                 throw new Error(extractApiErrorMessage(err));
             }
-        },
-        onSuccess: () => {
-            toast('Event deleted');
-            invalidateQuery(eventKeys.all);
         },
     });
 }

@@ -10,6 +10,7 @@ import {
     SubEquipmentPayloadSchema,
     SubEquipmentUpdatePayloadSchema,
     EquipmentListResponseSchema,
+    RentableEquipmentSchema,
     type EquipmentListResponse,
     type MainEquipment,
     type MainEquipmentPayload,
@@ -17,6 +18,7 @@ import {
     type SubEquipment,
     type SubEquipmentPayload,
     type SubEquipmentUpdatePayload,
+    type RentableEquipment,
 } from '@/store/schemas/equipment';
 import { extractApiErrorMessage } from '@/utils/api-error';
 
@@ -66,10 +68,17 @@ type SubEquipmentDeletePayload = z.infer<typeof subEquipmentDeletePayloadSchema>
 // ── List query ────────────────────────────────────────────────────────────────
 
 const EQUIPMENT_LIST_QUERY_KEY_SUFFIX = 'list' as const;
+const RENTABLE_EQUIPMENT_QUERY_KEY_SUFFIX = 'rentable' as const;
 
 const equipmentListQuery = equipmentQuery.customList<EquipmentListResponse>({
     responseSchema: EquipmentListResponseSchema,
     queryKeySuffix: EQUIPMENT_LIST_QUERY_KEY_SUFFIX,
+});
+
+const rentableEquipmentListQuery = equipmentQuery.customList<RentableEquipment[]>({
+    responseSchema: RentableEquipmentSchema.array(),
+    urlSuffix: '/rentable',
+    queryKeySuffix: RENTABLE_EQUIPMENT_QUERY_KEY_SUFFIX,
 });
 
 // ── Mutation configs ──────────────────────────────────────────────────────────
@@ -127,12 +136,17 @@ const deleteSubEquipmentMutation = subEquipmentQuery.customMutation<SubEquipment
 export const equipmentKeys = {
     all: equipmentQuery.qk(),
     list: () => [...equipmentQuery.qk(), EQUIPMENT_LIST_QUERY_KEY_SUFFIX] as const,
+    rentable: () => [...equipmentQuery.qk(), RENTABLE_EQUIPMENT_QUERY_KEY_SUFFIX] as const,
 };
 
 // ── Query hooks ───────────────────────────────────────────────────────────────
 
 export function useEquipmentList() {
     return useQuery(equipmentListQuery());
+}
+
+export function useRentableEquipment() {
+    return useQuery(rentableEquipmentListQuery());
 }
 
 // ── Main equipment mutation hooks ─────────────────────────────────────────────
