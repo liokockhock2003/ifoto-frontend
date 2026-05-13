@@ -31,7 +31,7 @@ function fmtDate(iso: string) {
 
 export function ReceiptView({ rentalNumber, isGenerating }: { rentalNumber: string; isGenerating?: boolean }) {
     const { data: receiptList, isLoading: listLoading } = useMyReceipts(
-        { refetchInterval: isGenerating ? 3000 : false }
+        { refetchInterval: isGenerating ? 2000 : false }
     );
 
     const receiptSummary = receiptList?.find((r) => r.rentalNumber === rentalNumber);
