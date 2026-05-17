@@ -75,6 +75,7 @@ export function BookingReviewDialog({ open, onOpenChange, rental }: BookingRevie
     }
 
     const isPending = reviewMutation.isPending;
+    const dateRangeInvalid = !!approvedStartDate && !!approvedEndDate && approvedEndDate < approvedStartDate;
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -108,8 +109,11 @@ export function BookingReviewDialog({ open, onOpenChange, rental }: BookingRevie
                                 type="date"
                                 value={approvedEndDate}
                                 onChange={(e) => setApprovedEndDate(e.target.value)}
-                                className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
+                                className={`w-full h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring ${dateRangeInvalid ? 'border-destructive focus:ring-destructive' : 'border-input'}`}
                             />
+                            {dateRangeInvalid && (
+                                <p className="text-xs text-destructive">End date must be on or after the start date.</p>
+                            )}
                         </div>
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-foreground">Committee Notes</label>
@@ -126,7 +130,7 @@ export function BookingReviewDialog({ open, onOpenChange, rental }: BookingRevie
                                 Cancel
                             </Button>
                             <Button
-                                disabled={!approvedStartDate || !approvedEndDate || isPending}
+                                disabled={!approvedStartDate || !approvedEndDate || dateRangeInvalid || isPending}
                                 onClick={() => void handleApprove()}
                             >
                                 {isPending ? 'Approving...' : 'Approve Rental'}
