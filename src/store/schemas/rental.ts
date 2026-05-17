@@ -42,6 +42,25 @@ export const RentalSchema = z.object({
     createdAt: z.string(),
 });
 
+const ApproveRentalPayloadSchema = z.object({
+    action: z.literal('APPROVE'),
+    approvedStartDate: z.string(),
+    approvedEndDate: z.string(),
+    equipmentIds: z.array(z.number().int().positive()).optional(),
+    committeeNotes: z.string().optional(),
+});
+
+const RejectRentalPayloadSchema = z.object({
+    action: z.literal('REJECT'),
+    rejectionReason: z.string(),
+    committeeNotes: z.string().optional(),
+});
+
+export const ReviewRentalPayloadSchema = z.discriminatedUnion('action', [
+    ApproveRentalPayloadSchema,
+    RejectRentalPayloadSchema,
+]);
+
 export const PaymentPayloadSchema = z.object({
     paymentMethod: z.enum(['ONLINE', 'CASH']),
 });
@@ -56,10 +75,32 @@ export const PaymentResponseSchema = z.object({
     message: z.string(),
 });
 
+export const RentalFiltersSchema = z.object({
+    status: z.string().optional(),
+    search: z.string().optional(),
+    page: z.number().int().min(0).optional(),
+    size: z.number().int().positive().optional(),
+});
+
+export const PaginatedRentalSchema = z.object({
+    content: z.array(RentalSchema),
+    totalElements: z.number(),
+    totalPages: z.number(),
+    number: z.number(),
+    size: z.number(),
+    first: z.boolean(),
+    last: z.boolean(),
+    empty: z.boolean(),
+    numberOfElements: z.number(),
+});
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type CreateRentalPayload = z.infer<typeof CreateRentalPayloadSchema>;
 export type RentalItem = z.infer<typeof RentalItemSchema>;
 export type Rental = z.infer<typeof RentalSchema>;
+export type RentalFilters = z.infer<typeof RentalFiltersSchema>;
+export type PaginatedRental = z.infer<typeof PaginatedRentalSchema>;
+export type ReviewRentalPayload = z.infer<typeof ReviewRentalPayloadSchema>;
 export type PaymentPayload = z.infer<typeof PaymentPayloadSchema>;
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;

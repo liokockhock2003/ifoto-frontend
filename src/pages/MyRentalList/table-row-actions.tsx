@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Eye, CreditCard, FileText } from 'lucide-react';
+import { Eye, CreditCard, FileText, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Row } from '@tanstack/react-table';
 
@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import type { Rental } from '@/store/schemas/rental';
 
 import { RentalViewDialog } from './dialog-view';
+import { RentalDeleteDialog } from './dialog-delete';
 
 type RentalRowActionsProps = {
     row: Row<Rental>;
@@ -14,11 +15,13 @@ type RentalRowActionsProps = {
 
 export function RentalRowActions({ row }: RentalRowActionsProps) {
     const navigate = useNavigate();
-    const [open, setOpen] = useState(false);
+    const [viewOpen, setViewOpen] = useState(false);
+    const [deleteOpen, setDeleteOpen] = useState(false);
     const rental = row.original;
 
     const showPayNow = rental.status === 'APPROVED' || rental.status === 'PENDING_PAYMENT';
-    const showPayPenalty = rental.status === 'RETURNED' && rental.totalPenaltyAmount > 0;
+    const showPayPenalty = rental.status === 'RETURNED' && rental.totalPenaltyAmount > 0 && rental.paymentStatus !== 'PENALTY_PAID';
+    const showCancel = rental.status === 'PENDING_REVIEW';
 
     return (
         <>
@@ -27,7 +30,7 @@ export function RentalRowActions({ row }: RentalRowActionsProps) {
                     type="button"
                     size="icon"
                     variant="ghost"
-                    onClick={() => setOpen(true)}
+                    onClick={() => setViewOpen(true)}
                 >
                     <Eye className="h-4 w-4" />
                     <span className="sr-only">View rental details</span>
@@ -55,7 +58,7 @@ export function RentalRowActions({ row }: RentalRowActionsProps) {
                         onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
                     >
                         <CreditCard className="h-3.5 w-3.5" />
-                        Pay Now
+                        Pay Penalty
                     </Button>
                 )}
 
@@ -71,11 +74,30 @@ export function RentalRowActions({ row }: RentalRowActionsProps) {
                         <span className="sr-only">View receipt</span>
                     </Button>
                 )}
+
+                {showCancel && (
+                    <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => setDeleteOpen(true)}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Cancel rental</span>
+                    </Button>
+                )}
             </div>
 
             <RentalViewDialog
-                open={open}
-                onOpenChange={setOpen}
+                open={viewOpen}
+                onOpenChange={setViewOpen}
+                rental={rental}
+            />
+
+            <RentalDeleteDialog
+                open={deleteOpen}
+                onOpenChange={setDeleteOpen}
                 rental={rental}
             />
         </>
