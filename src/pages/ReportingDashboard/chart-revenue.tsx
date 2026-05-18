@@ -1,0 +1,90 @@
+import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+    ChartContainer,
+    ChartLegend,
+    ChartLegendContent,
+    ChartTooltip,
+    ChartTooltipContent,
+    type ChartConfig,
+} from '@/components/ui/chart';
+import { useRevenueOverTime } from '@/store/queries/report';
+import { useReportingDashboardContext } from './context';
+
+const chartConfig: ChartConfig = {
+    baseAmount: {
+        label: 'Base Revenue',
+        color: '#3b82f6',
+    },
+    penaltyAmount: {
+        label: 'Penalty Revenue',
+        color: '#ef4444',
+    },
+};
+
+function formatMonth(yyyyMm: string): string {
+    const [year, month] = yyyyMm.split('-');
+    const date = new Date(Number(year), Number(month) - 1);
+    return date.toLocaleString('default', { month: 'short', year: '2-digit' });
+}
+
+export function ChartRevenue() {
+    const { months } = useReportingDashboardContext();
+    const { data = [], isLoading } = useRevenueOverTime(months);
+
+    const chartData = data.map((item) => ({
+        ...item,
+        month: formatMonth(item.month),
+    }));
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Revenue Over Time</CardTitle>
+            </CardHeader>
+            <CardContent>
+                {isLoading ? (
+                    <div className="aspect-video w-full animate-pulse rounded bg-muted" />
+                ) : (
+                    <ChartContainer config={chartConfig}>
+                        <LineChart data={chartData} margin={{ left: -10, right: 4 }}>
+                            <CartesianGrid vertical={false} />
+                            <XAxis
+                                dataKey="month"
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                                tick={{ fontSize: 11 }}
+                            />
+                            <YAxis
+                                tickLine={false}
+                                axisLine={false}
+                                tickMargin={8}
+                                tick={{ fontSize: 11 }}
+                                tickFormatter={(v) => `RM${v}`}
+                            />
+                            <ChartTooltip content={<ChartTooltipContent />} />
+                            <ChartLegend content={<ChartLegendContent />} />
+                            <Line
+                                type="monotone"
+                                dataKey="baseAmount"
+                                stroke="var(--color-baseAmount)"
+                                strokeWidth={2}
+                                dot={false}
+                                activeDot={{ r: 4 }}
+                            />
+                            <Line
+                                type="monotone"
+                                dataKey="penaltyAmount"
+                                stroke="var(--color-penaltyAmount)"
+                                strokeWidth={2}
+                                dot={false}
+                                activeDot={{ r: 4 }}
+                            />
+                        </LineChart>
+                    </ChartContainer>
+                )}
+            </CardContent>
+        </Card>
+    );
+}

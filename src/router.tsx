@@ -14,6 +14,7 @@ import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
 import EquipmentRentalMainPage from '@/pages/MyRentalList/EquipmentRental/main-page'
 import RentalListPage from '@/pages/MyRentalList/main-page'
 import EquipmentBookingManagementMainPage from '@/pages/EquipmentBookingManagement/main-page'
+import ReportingDashboardMainPage from '@/pages/ReportingDashboard/main-page'
 
 const ComingSoon = ({ title }: { title: string }) => (
     <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
@@ -146,7 +147,7 @@ export const router = createBrowserRouter([
                 path: 'reporting-dashboard',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
-                        <ComingSoon title="Reporting Dashboard" />
+                        <ReportingDashboardMainPage />
                     </ProtectedRoute>
                 ),
             },
