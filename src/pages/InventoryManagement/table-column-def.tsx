@@ -1,7 +1,7 @@
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
-import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+import type { EquipmentStatusType, MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 
 import { MainEquipmentRowActions, SubEquipmentRowActions } from './table-row-actions';
 
@@ -14,12 +14,27 @@ const conditionBadgeClass: Record<string, string> = {
     Poor:      'badge-danger',
 };
 
-const statusBadgeClass: Record<string, string> = {
-    Available:   'badge-success',
-    'In Use':    'badge-info',
-    Maintenance: 'badge-warning',
-    Unavailable: 'badge-danger',
+const statusBadgeClass: Record<EquipmentStatusType, string> = {
+    AVAILABLE:   'badge-success',
+    MAINTENANCE: 'badge-warning',
+    UNAVAILABLE: 'badge-danger',
+    CONVOCATION: 'badge-info',
+    MRM:         'badge-info',
 };
+
+const statusLabel: Record<EquipmentStatusType, string> = {
+    AVAILABLE:   'Available',
+    MAINTENANCE: 'Maintenance',
+    UNAVAILABLE: 'Unavailable',
+    CONVOCATION: 'Convocation',
+    MRM:         'MRM Event',
+};
+
+function todayStatusType(dateStatuses: MainEquipment['dateStatuses']): EquipmentStatusType {
+    const today = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD in local time
+    const match = dateStatuses?.find((s) => s.startDate <= today && s.endDate >= today);
+    return match ? match.statusType : 'AVAILABLE';
+}
 
 // ── Main Equipment columns ────────────────────────────────────────────────────
 
@@ -51,13 +66,14 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
             );
         },
     }),
-    mainColumnHelper.accessor('status', {
+    mainColumnHelper.display({
+        id: 'todayStatus',
         header: 'Status',
-        cell: (info) => {
-            const value: string = info.getValue();
+        cell: ({ row }) => {
+            const s = todayStatusType(row.original.dateStatuses);
             return (
-                <Badge variant="outline" className={statusBadgeClass[value] ?? ''}>
-                    {value}
+                <Badge variant="outline" className={statusBadgeClass[s]}>
+                    {statusLabel[s]}
                 </Badge>
             );
         },
@@ -75,6 +91,19 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
         cell: (info) => (
             <span className="text-sm text-muted-foreground">{info.getValue() || '—'}</span>
         ),
+    }),
+    mainColumnHelper.display({
+        id: 'statusIndicator',
+        header: 'Schedules',
+        cell: ({ row }) => {
+            const count = row.original.dateStatuses?.length ?? 0;
+            if (count === 0) return <span className="text-muted-foreground text-xs">—</span>;
+            return (
+                <Badge variant="outline" className="badge-warning text-xs">
+                    {count} hold{count !== 1 ? 's' : ''}
+                </Badge>
+            );
+        },
     }),
     mainColumnHelper.display({
         id: 'actions',
@@ -102,9 +131,28 @@ const subEquipmentQuantityColumns: ColumnDef<SubEquipment, any>[] = [
         header: 'Total',
         cell: (info) => info.getValue(),
     }),
-    subColumnHelper.accessor('usedQuantity', {
-        header: 'In Use',
-        cell: (info) => info.getValue(),
+    subColumnHelper.accessor('committedQuantity', {
+        header: 'Committed',
+        cell: (info) => {
+            const value: number = info.getValue();
+            return (
+                <Badge variant="outline" className={value > 0 ? 'badge-warning' : ''}>
+                    {value}
+                </Badge>
+            );
+        },
+    }),
+    subColumnHelper.accessor('adminHeldQuantity', {
+        header: 'Admin Held',
+        cell: (info) => {
+            const value: number = info.getValue() ?? 0;
+            if (value === 0) return <span className="text-muted-foreground text-xs">—</span>;
+            return (
+                <Badge variant="outline" className="badge-warning">
+                    {value}
+                </Badge>
+            );
+        },
     }),
     subColumnHelper.accessor('availableQuantity', {
         header: 'Available',
@@ -113,6 +161,19 @@ const subEquipmentQuantityColumns: ColumnDef<SubEquipment, any>[] = [
             return (
                 <Badge variant="outline" className={value > 0 ? 'badge-success' : 'badge-danger'}>
                     {value}
+                </Badge>
+            );
+        },
+    }),
+    subColumnHelper.display({
+        id: 'holdsIndicator',
+        header: 'Holds',
+        cell: ({ row }) => {
+            const count = row.original.quantityHolds?.length ?? 0;
+            if (count === 0) return <span className="text-muted-foreground text-xs">—</span>;
+            return (
+                <Badge variant="outline" className="badge-warning text-xs">
+                    {count} hold{count !== 1 ? 's' : ''}
                 </Badge>
             );
         },

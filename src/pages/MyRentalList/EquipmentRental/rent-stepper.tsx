@@ -30,12 +30,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
-import { useRentableEquipment } from '@/store/queries/equipment';
+import { useAvailableEquipment } from '@/store/queries/equipment';
 import { useCreateRental, usePayRental } from '@/store/queries/rental';
 import type { Rental } from '@/store/schemas/rental';
 
 import { useEquipmentRentalContext } from './context';
-import { rentableEquipmentColumns } from './table-column-def';
+import { availableEquipmentColumns, availableSubEquipmentColumns } from './table-column-def';
 import { ReceiptView } from './Receipts/receipt-view';
 
 // ── Steps definition ──────────────────────────────────────────────────────────
@@ -50,23 +50,6 @@ const STEPS = [
 type StepId = (typeof STEPS)[number]['id'];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function rentalDays(startDate: string, endDate: string): number {
-    const diff = new Date(endDate).getTime() - new Date(startDate).getTime();
-    return Math.round(diff / (1000 * 60 * 60 * 24)) + 1;
-}
-
-function itemPrice(rate1Day: number, rate3Days: number, ratePerDayExtra: number, days: number): number {
-    // Tiered pricing: per-day up to 2 → 3-day flat → daily extra beyond 3
-    if (days < 3) return rate1Day * days;
-    if (days === 3) return rate3Days;
-    return rate3Days + (days - 3) * ratePerDayExtra;
-}
-
-// Rates from rentable equipment are in RM
-function fmtRM(amount: number) {
-    return `RM ${amount.toFixed(2)}`;
-}
 
 // Amounts from rental response are in cents
 function fmtCents(cents: number) {
@@ -152,25 +135,51 @@ function CartSummary({
     onBack: () => void;
     onRentalCreated: (rental: Rental) => void;
 }) {
-    const { cartIds, notes, setNotes, startDate, endDate } = useEquipmentRentalContext();
-    const { data: allEquipment } = useRentableEquipment();
+    const { cartIds, subQty, notes, setNotes, startDate, endDate } = useEquipmentRentalContext();
+    const { data: allEquipment } = useAvailableEquipment({
+        startDate: startDate ?? '',
+        endDate: endDate ?? '',
+        context: 'RENTAL',
+    });
     const { mutate, isPending, error } = useCreateRental();
 
-    const days = startDate && endDate ? rentalDays(startDate, endDate) : 0;
-
-    const cartItems = (allEquipment ?? []).filter((e) => cartIds.includes(e.mainEquipmentId));
-    const lineItems = cartItems.map((e) => ({
-        id: e.mainEquipmentId,
+    const cartItems = (allEquipment?.mainEquipment ?? []).filter((e) => cartIds.includes(e.mainEquipmentId));
+    const mainLineItems = cartItems.map((e) => ({
+        id: `main-${e.mainEquipmentId}`,
         label: `${e.brand} ${e.model}`,
         type: e.equipmentType,
-        amount: days > 0 ? itemPrice(e.rate1Day, e.rate3Days, e.ratePerDayExtra, days) : 0,
+        qty: 1,
     }));
-    const total = lineItems.reduce((sum, i) => sum + i.amount, 0);
+
+    const subLineItems = (allEquipment?.subEquipment ?? [])
+        .filter((e) => (subQty[e.subEquipmentId] ?? 0) > 0)
+        .map((e) => {
+            const qty = subQty[e.subEquipmentId]!;
+            return {
+                id: `sub-${e.subEquipmentId}`,
+                label: e.brand ? `${e.brand} ${e.equipmentType}` : e.equipmentType,
+                type: e.equipmentType,
+                qty,
+            };
+        });
+
+    const lineItems = [...mainLineItems, ...subLineItems];
+    const totalItemCount = cartIds.length + subLineItems.reduce((sum, i) => sum + i.qty, 0);
+
+    const subEquipmentEntries = Object.entries(subQty)
+        .filter(([, qty]) => qty > 0)
+        .map(([id, qty]) => ({ subEquipmentId: Number(id), quantity: qty }));
 
     const handleProceed = () => {
-        if (!startDate || !endDate || cartIds.length === 0) return;
+        if (!startDate || !endDate || totalItemCount === 0) return;
         mutate(
-            { equipmentIds: cartIds, startDate, endDate, notes },
+            {
+                equipmentIds: cartIds,
+                startDate,
+                endDate,
+                notes,
+                subEquipmentEntries: subEquipmentEntries.length > 0 ? subEquipmentEntries : undefined,
+            },
             { onSuccess: (data) => { onRentalCreated(data); onNext(); } },
         );
     };
@@ -180,30 +189,21 @@ function CartSummary({
             <div className="flex items-center gap-2">
                 <ShoppingCart className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium text-primary">
-                    {cartIds.length} item{cartIds.length !== 1 ? 's' : ''} in cart
+                    {totalItemCount} item{totalItemCount !== 1 ? 's' : ''} in cart
                 </span>
-                {days > 0 && (
-                    <span className="text-xs text-muted-foreground ml-auto">
-                        {days} day{days !== 1 ? 's' : ''}
-                    </span>
-                )}
             </div>
 
             {lineItems.length > 0 && (
                 <div className="rounded-md border bg-background text-sm divide-y">
                     {lineItems.map((item) => (
-                        <div key={item.id} className="flex items-center justify-between px-3 py-2 gap-2">
-                            <div>
-                                <span className="font-medium">{item.label}</span>
-                                <span className="text-muted-foreground text-xs ml-1.5">({item.type})</span>
-                            </div>
-                            <span className="font-mono text-xs shrink-0">{fmtRM(item.amount)}</span>
+                        <div key={item.id} className="flex items-center px-3 py-2 gap-2">
+                            <span className="font-medium">{item.label}</span>
+                            <span className="text-muted-foreground text-xs ml-1.5">({item.type})</span>
+                            {item.qty > 1 && (
+                                <span className="text-muted-foreground text-xs ml-1">× {item.qty}</span>
+                            )}
                         </div>
                     ))}
-                    <div className="flex items-center justify-between px-3 py-2 font-semibold">
-                        <span>Estimated Total</span>
-                        <span className="font-mono text-sm text-primary">{fmtRM(total)}</span>
-                    </div>
                 </div>
             )}
 
@@ -226,7 +226,7 @@ function CartSummary({
                 <Button variant="outline" size="sm" onClick={onBack} disabled={isPending}>
                     Cancel
                 </Button>
-                <Button size="sm" onClick={handleProceed} disabled={isPending || cartIds.length === 0}>
+                <Button size="sm" onClick={handleProceed} disabled={isPending || totalItemCount === 0}>
                     {isPending ? 'Submitting…' : 'Submit Rental Request'}
                 </Button>
             </div>
@@ -243,15 +243,21 @@ function Step2Content({
     onBack: () => void;
     onRentalCreated: (rental: Rental) => void;
 }) {
-    const { data, isLoading, isError, error, refetch } = useRentableEquipment();
-    const cameras = (data ?? []).filter((e) => e.equipmentType === 'Camera');
-    const lenses  = (data ?? []).filter((e) => e.equipmentType === 'Lens');
+    const { startDate, endDate } = useEquipmentRentalContext();
+    const { data, isLoading, isError, error, refetch } = useAvailableEquipment({
+        startDate: startDate ?? '',
+        endDate: endDate ?? '',
+        context: 'RENTAL',
+    });
+    const cameras = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Camera');
+    const lenses  = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Lens');
+    const subEquipment = data?.subEquipment ?? [];
 
     return (
         <div className="space-y-4">
             <CartSummary onNext={onNext} onBack={onBack} onRentalCreated={onRentalCreated} />
             <DataTable
-                columns={rentableEquipmentColumns}
+                columns={availableEquipmentColumns}
                 data={cameras}
                 isLoading={isLoading}
                 isError={isError}
@@ -262,7 +268,7 @@ function Step2Content({
                 emptyMessage="No cameras available."
             />
             <DataTable
-                columns={rentableEquipmentColumns}
+                columns={availableEquipmentColumns}
                 data={lenses}
                 isLoading={isLoading}
                 isError={isError}
@@ -272,6 +278,15 @@ function Step2Content({
                 totalElements={lenses.length}
                 emptyMessage="No lenses available."
             />
+            {subEquipment.length > 0 && (
+                <DataTable
+                    columns={availableSubEquipmentColumns}
+                    data={subEquipment}
+                    title="Accessories"
+                    totalElements={subEquipment.length}
+                    emptyMessage="No accessories available."
+                />
+            )}
         </div>
     );
 }
@@ -327,6 +342,22 @@ function Step3Content({
                                     <span className="text-xs text-muted-foreground ml-1.5">({item.equipmentType})</span>
                                 </div>
                                 <span className="font-mono text-xs shrink-0">{fmtCents(item.itemTotalAmount)}</span>
+                            </div>
+                        ))}
+                        {(rental.subItems ?? []).map((item) => (
+                            <div key={item.id} className="flex items-center justify-between px-3 py-2 gap-2">
+                                <div>
+                                    <span className="font-medium">
+                                        {item.brand ? `${item.brand} ` : ''}{item.equipmentType}
+                                    </span>
+                                    {item.quantity && item.quantity > 1 && (
+                                        <span className="text-muted-foreground text-xs ml-1">× {item.quantity}</span>
+                                    )}
+                                    <span className="text-xs text-muted-foreground ml-1.5">(Accessory)</span>
+                                </div>
+                                <span className="font-mono text-xs shrink-0">
+                                    {item.itemTotalAmount != null ? fmtCents(item.itemTotalAmount) : '—'}
+                                </span>
                             </div>
                         ))}
                         <div className="flex items-center justify-between px-3 py-2 font-semibold">

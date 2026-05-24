@@ -4,6 +4,7 @@ import type { Event } from '@/store/schemas/event';
 
 export type EventManagementContextValue = {
     events: Event[];
+    isEventCommittee: boolean;
 
     isLoading: boolean;
     isFetching: boolean;

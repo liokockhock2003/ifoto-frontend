@@ -60,6 +60,7 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Equipment Request',
                 icon: ClipboardList,
                 allowedRoles: ['ROLE_EVENT_COMMITTEE'],
+                activePaths: ['/equipment-requests/'],
             },
             {
                 to: '/equipment-request-returns',
@@ -101,6 +102,12 @@ export const menuGroups: MenuGroup[] = [
                 to: '/equipment-booking-management',
                 label: 'Equipment Booking Management',
                 icon: CalendarCheck,
+                allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
+            },
+            {
+                to: '/equipment-request-management',
+                label: 'Equipment Request Management',
+                icon: ClipboardList,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
             },
             {

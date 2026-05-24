@@ -2,6 +2,7 @@ import { createContext, useContext } from 'react';
 
 interface EquipmentRentalContextValue {
     cartIds: number[];
+    subQty: Record<number, number>;
     startDate: string;
     endDate: string;
     notes: string;
@@ -12,6 +13,7 @@ interface EquipmentRentalContextValue {
     setEndDate: (d: string) => void;
     setNotes: (n: string) => void;
     isInCart: (id: number) => boolean;
+    setSubQty: (subEquipmentId: number, qty: number) => void;
 }
 
 export const EquipmentRentalContext = createContext<EquipmentRentalContextValue | null>(null);
