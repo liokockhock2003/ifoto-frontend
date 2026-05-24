@@ -19,7 +19,6 @@ export const ReceiptRentalItemSchema = z.object({
     brand: z.string(),
     model: z.string(),
     serialNumber: z.string(),
-    pricingCategory: z.string(),
     rateApplied: z.number(),
     latePenalty: z.number(),
     itemTotal: z.number(),

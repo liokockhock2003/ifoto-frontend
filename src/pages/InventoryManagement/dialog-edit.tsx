@@ -31,12 +31,10 @@ import type {
 
 import { useInventoryManagementContext } from './context';
 import { SUB_KIND_CONFIG, subKindFromType } from './provider';
-import { QuantityFields } from './quantity-fields';
 
 // ── Shared ────────────────────────────────────────────────────────────────────
 
 const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
-const STATUSES = ['Available', 'In Use', 'Maintenance', 'Unavailable'] as const;
 
 // ── Main Equipment Edit Dialog ─────────────────────────────────────────────────
 
@@ -55,7 +53,6 @@ function toMainForm(equipment: MainEquipment | null): MainEquipmentUpdatePayload
         model: equipment?.model ?? '',
         serialNumber: equipment?.serialNumber ?? '',
         condition: equipment?.condition ?? 'Good',
-        status: equipment?.status ?? 'Available',
         notes: equipment?.notes ?? '',
         isForRent: equipment?.isForRent ?? false,
     };
@@ -144,28 +141,6 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                             </DropdownMenuContent>
                         </DropdownMenu>
                     </Field>
-                    <Field>
-                        <FieldLabel>Status</FieldLabel>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.status}
-                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
-                                {STATUSES.map((s) => (
-                                    <DropdownMenuItem
-                                        key={s}
-                                        className={s === form.status ? 'bg-accent' : ''}
-                                        onSelect={() => setVal('status')(s)}
-                                    >
-                                        {s}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </Field>
                     <Field className="sm:col-span-2">
                         <div className="flex items-center justify-between rounded-lg border px-4 py-3">
                             <div>
@@ -179,7 +154,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes} onChange={set('notes')} />
+                        <Input value={form.notes ?? ''} onChange={set('notes')} />
                     </Field>
                 </div>
 
@@ -213,8 +188,6 @@ function toSubForm(equipment: SubEquipment | null): SubEquipmentUpdatePayload {
         brand: equipment?.brand ?? null,
         capacity: equipment?.capacity ?? 1,
         totalQuantity: equipment?.totalQuantity ?? 1,
-        usedQuantity: equipment?.usedQuantity ?? 0,
-        availableQuantity: equipment?.availableQuantity ?? 1,
         notes: equipment?.notes ?? '',
     };
 }
@@ -329,14 +302,13 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
                         </Field>
                     )}
 
-                    <QuantityFields
-                        className="sm:col-span-2"
-                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
-                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
-                    />
+                    <Field>
+                        <FieldLabel>Total Quantity</FieldLabel>
+                        <Input type="number" min={1} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
+                    </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes} onChange={setStr('notes')} />
+                        <Input value={form.notes ?? ''} onChange={setStr('notes')} />
                     </Field>
                 </div>
 

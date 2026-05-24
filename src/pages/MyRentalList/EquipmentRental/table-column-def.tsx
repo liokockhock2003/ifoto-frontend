@@ -1,11 +1,9 @@
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
-import { MinusCircle, PlusCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import type { BookedDate, RentableEquipment } from '@/store/schemas/equipment';
+import type { EquipmentStatusType, MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 
-import { useEquipmentRentalContext } from './context';
+import { CartActionCell, SubEquipmentQuantityCell } from './table-row-actions';
 
 const conditionBadgeClass: Record<string, string> = {
     Excellent: 'badge-success',
@@ -14,62 +12,31 @@ const conditionBadgeClass: Record<string, string> = {
     Poor: 'badge-danger',
 };
 
-const statusBadgeClass: Record<string, string> = {
-    Available: 'badge-success',
-    'In Use': 'badge-info',
-    Maintenance: 'badge-warning',
-    Unavailable: 'badge-danger',
+const statusBadgeClass: Record<EquipmentStatusType, string> = {
+    AVAILABLE:   'badge-success',
+    MAINTENANCE: 'badge-warning',
+    UNAVAILABLE: 'badge-danger',
+    CONVOCATION: 'badge-info',
+    MRM:         'badge-info',
 };
 
-function CartActionCell({ equipmentId, bookedDates }: { equipmentId: number; bookedDates: BookedDate[] }) {
-    const { isInCart, addToCart, removeFromCart, startDate, endDate } = useEquipmentRentalContext();
+const statusLabel: Record<EquipmentStatusType, string> = {
+    AVAILABLE:   'Available',
+    MAINTENANCE: 'Maintenance',
+    UNAVAILABLE: 'Unavailable',
+    CONVOCATION: 'Convocation',
+    MRM:         'MRM Event',
+};
 
-    const datesSelected = !!startDate && !!endDate;
-
-    const isBooked =
-        datesSelected &&
-        bookedDates.some((b) => !b.pending && b.startDate <= endDate && b.endDate >= startDate);
-
-    const inCart = isInCart(equipmentId);
-
-    if (!datesSelected) {
-        return (
-            <Button variant="outline" size="sm" disabled className="text-muted-foreground">
-                Select dates
-            </Button>
-        );
-    }
-
-    if (isBooked) {
-        return <Badge variant="outline" className="badge-danger">Booked</Badge>;
-    }
-
-    return inCart ? (
-        <Button
-            variant="outline"
-            size="sm"
-            className="gap-1 text-destructive border-destructive hover:bg-destructive/10"
-            onClick={() => removeFromCart(equipmentId)}
-        >
-            <MinusCircle className="h-4 w-4" />
-            Remove
-        </Button>
-    ) : (
-        <Button
-            variant="outline"
-            size="sm"
-            className="gap-1 text-primary border-primary hover:bg-primary/10"
-            onClick={() => addToCart(equipmentId)}
-        >
-            <PlusCircle className="h-4 w-4" />
-            Add
-        </Button>
-    );
+function todayStatusType(dateStatuses: MainEquipment['dateStatuses']): EquipmentStatusType {
+    const today = new Date().toLocaleDateString('en-CA');
+    const match = dateStatuses?.find((s) => s.startDate <= today && s.endDate >= today);
+    return match ? match.statusType : 'AVAILABLE';
 }
 
-const columnHelper = createColumnHelper<RentableEquipment>();
+const columnHelper = createColumnHelper<MainEquipment>();
 
-export const rentableEquipmentColumns: ColumnDef<RentableEquipment, any>[] = [
+export const availableEquipmentColumns: ColumnDef<MainEquipment, any>[] = [
     columnHelper.accessor((row) => `${row.brand} ${row.model}`, {
         id: 'equipment',
         header: 'Equipment',
@@ -90,28 +57,54 @@ export const rentableEquipmentColumns: ColumnDef<RentableEquipment, any>[] = [
             return <Badge variant="outline" className={conditionBadgeClass[val] ?? ''}>{val}</Badge>;
         },
     }),
-    columnHelper.accessor('status', {
+    columnHelper.display({
+        id: 'todayStatus',
         header: 'Status',
-        cell: (info) => {
-            const val = info.getValue();
-            return <Badge variant="outline" className={statusBadgeClass[val] ?? ''}>{val}</Badge>;
+        cell: ({ row }) => {
+            const s = todayStatusType(row.original.dateStatuses);
+            return <Badge variant="outline" className={statusBadgeClass[s]}>{statusLabel[s]}</Badge>;
         },
-    }),
-    columnHelper.accessor('rate1Day', {
-        header: 'Rate / Day',
-        cell: (info) => `RM ${info.getValue().toFixed(2)}`,
-    }),
-    columnHelper.accessor('rate3Days', {
-        header: 'Rate / 3 Days',
-        cell: (info) => `RM ${info.getValue().toFixed(2)}`,
     }),
     columnHelper.display({
         id: 'cart',
         header: 'Cart',
         cell: ({ row }) => (
-            <CartActionCell
-                equipmentId={row.original.mainEquipmentId}
-                bookedDates={row.original.bookedDates}
+            <CartActionCell equipmentId={row.original.mainEquipmentId} />
+        ),
+    }),
+];
+
+// ── Sub equipment columns ─────────────────────────────────────────────────────
+
+const subColumnHelper = createColumnHelper<SubEquipment>();
+
+export const availableSubEquipmentColumns: ColumnDef<SubEquipment, any>[] = [
+    subColumnHelper.accessor('equipmentType', {
+        header: 'Type',
+        cell: (info) => <span className="font-medium">{info.getValue()}</span>,
+    }),
+    subColumnHelper.accessor('brand', {
+        header: 'Brand',
+        cell: (info) => info.getValue() ?? <span className="text-muted-foreground">—</span>,
+    }),
+    subColumnHelper.accessor('availableQuantity', {
+        header: 'Available',
+        cell: (info) => {
+            const val = info.getValue();
+            return (
+                <span className={`font-medium ${val === 0 ? 'text-destructive' : 'text-primary'}`}>
+                    {val} / {info.row.original.totalQuantity}
+                </span>
+            );
+        },
+    }),
+    subColumnHelper.display({
+        id: 'quantity',
+        header: 'Quantity',
+        cell: ({ row }) => (
+            <SubEquipmentQuantityCell
+                subEquipmentId={row.original.subEquipmentId}
+                availableQuantity={row.original.availableQuantity ?? 0}
             />
         ),
     }),

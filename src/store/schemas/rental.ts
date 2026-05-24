@@ -1,10 +1,27 @@
 import { z } from 'zod';
 
+export const SubEquipmentEntrySchema = z.object({
+    subEquipmentId: z.number().int().positive(),
+    quantity: z.number().int().positive(),
+});
+
 export const CreateRentalPayloadSchema = z.object({
     equipmentIds: z.array(z.number().int().positive()),
     startDate: z.string(),
     endDate: z.string(),
     notes: z.string(),
+    subEquipmentEntries: z.array(SubEquipmentEntrySchema).optional(),
+});
+
+export const RentalSubItemSchema = z.object({
+    id: z.number(),
+    subEquipmentId: z.number(),
+    equipmentType: z.string(),
+    brand: z.string().nullable(),
+    quantity: z.number().optional(),
+    baseAmount: z.number().optional(),
+    latePenaltyAmount: z.number().optional(),
+    itemTotalAmount: z.number().optional(),
 });
 
 export const RentalItemSchema = z.object({
@@ -14,7 +31,7 @@ export const RentalItemSchema = z.object({
     brand: z.string(),
     model: z.string(),
     serialNumber: z.string(),
-    pricingCategory: z.string(),
+    pricingCategory: z.string().nullable().optional(),
     baseAmount: z.number(),
     latePenaltyAmount: z.number(),
     itemTotalAmount: z.number(),
@@ -39,6 +56,7 @@ export const RentalSchema = z.object({
     committeeNotes: z.string().nullable(),
     renterNotes: z.string().nullable(),
     items: z.array(RentalItemSchema),
+    subItems: z.array(RentalSubItemSchema).optional(),
     createdAt: z.string(),
 });
 
@@ -96,8 +114,10 @@ export const PaginatedRentalSchema = z.object({
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
+export type SubEquipmentEntry = z.infer<typeof SubEquipmentEntrySchema>;
 export type CreateRentalPayload = z.infer<typeof CreateRentalPayloadSchema>;
 export type RentalItem = z.infer<typeof RentalItemSchema>;
+export type RentalSubItem = z.infer<typeof RentalSubItemSchema>;
 export type Rental = z.infer<typeof RentalSchema>;
 export type RentalFilters = z.infer<typeof RentalFiltersSchema>;
 export type PaginatedRental = z.infer<typeof PaginatedRentalSchema>;

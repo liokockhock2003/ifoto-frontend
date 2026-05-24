@@ -1,18 +1,21 @@
 import { useState } from 'react';
 import type { Row } from '@tanstack/react-table';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { CalendarDays, MoreHorizontal, PackageMinus, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 
 import { MainEquipmentDeleteDialog, SubEquipmentDeleteDialog } from './dialog-delete';
 import { MainEquipmentEditDialog, SubEquipmentEditDialog } from './dialog-edit';
+import { SubEquipmentQuantityHoldDialog } from './dialog-quantity-hold';
+import { EquipmentStatusDialog } from './dialog-status';
 
 // ── Main Equipment ────────────────────────────────────────────────────────────
 
@@ -23,6 +26,7 @@ type MainEquipmentRowActionsProps = {
 export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
+    const [openStatus, setOpenStatus] = useState(false);
 
     return (
         <>
@@ -38,6 +42,11 @@ export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setOpenStatus(true)}>
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Manage Status
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => setOpenDelete(true)}
                         className="text-destructive focus:text-destructive"
@@ -51,6 +60,11 @@ export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
             <MainEquipmentEditDialog
                 open={openEdit}
                 onOpenChange={setOpenEdit}
+                equipment={row.original}
+            />
+            <EquipmentStatusDialog
+                open={openStatus}
+                onOpenChange={setOpenStatus}
                 equipment={row.original}
             />
             <MainEquipmentDeleteDialog
@@ -71,6 +85,7 @@ type SubEquipmentRowActionsProps = {
 export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
+    const [openHolds, setOpenHolds] = useState(false);
 
     return (
         <>
@@ -86,6 +101,11 @@ export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setOpenHolds(true)}>
+                        <PackageMinus className="mr-2 h-4 w-4" />
+                        Manage Holds
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => setOpenDelete(true)}
                         className="text-destructive focus:text-destructive"
@@ -99,6 +119,11 @@ export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
             <SubEquipmentEditDialog
                 open={openEdit}
                 onOpenChange={setOpenEdit}
+                equipment={row.original}
+            />
+            <SubEquipmentQuantityHoldDialog
+                open={openHolds}
+                onOpenChange={setOpenHolds}
                 equipment={row.original}
             />
             <SubEquipmentDeleteDialog

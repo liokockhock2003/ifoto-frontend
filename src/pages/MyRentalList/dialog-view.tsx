@@ -6,7 +6,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Separator } from '@/components/ui/separator';
-import type { Rental, RentalItem } from '@/store/schemas/rental';
+import type { Rental, RentalItem, RentalSubItem } from '@/store/schemas/rental';
 import { statusVariant } from './table-column-def';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -67,6 +67,44 @@ function ItemsTable({ items }: { items: RentalItem[] }) {
                                 {item.latePenaltyAmount > 0 && (
                                     <p className="text-xs text-destructive">+{fmt(item.latePenaltyAmount)} penalty</p>
                                 )}
+                            </td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
+    );
+}
+
+function SubItemsTable({ items }: { items: RentalSubItem[] }) {
+    return (
+        <div className="rounded-md border overflow-hidden text-sm">
+            <table className="w-full">
+                <thead className="bg-muted/50">
+                    <tr>
+                        <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Accessory</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Qty</th>
+                        <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">Amount</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {items.map((item) => (
+                        <tr key={item.id} className="border-t">
+                            <td className="px-3 py-2">
+                                <p className="font-medium">{item.brand ? `${item.brand} ` : ''}{item.equipmentType}</p>
+                            </td>
+                            <td className="px-3 py-2 text-right text-muted-foreground hidden sm:table-cell">
+                                {item.quantity ?? '—'}
+                            </td>
+                            <td className="px-3 py-2 text-right">
+                                {item.itemTotalAmount != null ? (
+                                    <>
+                                        <p>{fmt(item.itemTotalAmount)}</p>
+                                        {(item.latePenaltyAmount ?? 0) > 0 && (
+                                            <p className="text-xs text-destructive">+{fmt(item.latePenaltyAmount!)} penalty</p>
+                                        )}
+                                    </>
+                                ) : '—'}
                             </td>
                         </tr>
                     ))}
@@ -165,6 +203,17 @@ export function RentalViewDialog({ open, onOpenChange, rental }: RentalViewDialo
                         <SectionHeading>Equipment ({rental.items.length})</SectionHeading>
                         <ItemsTable items={rental.items} />
                     </div>
+
+                    {/* Sub-items */}
+                    {(rental.subItems ?? []).length > 0 && (
+                        <>
+                            <Separator />
+                            <div className="space-y-2">
+                                <SectionHeading>Accessories ({(rental.subItems ?? []).length})</SectionHeading>
+                                <SubItemsTable items={rental.subItems!} />
+                            </div>
+                        </>
+                    )}
                 </div>
             </DialogContent>
         </Dialog>

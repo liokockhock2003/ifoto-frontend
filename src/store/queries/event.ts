@@ -57,6 +57,12 @@ const deleteEventMutation = eventQuery.customMutation<DeleteEventPayload>({
 
 // ── Query configs ─────────────────────────────────────────────────────────────
 
+const myEventsListQuery = eventQuery.customList<Event[]>({
+    responseSchema: EventSchema.array(),
+    urlSuffix: '/my',
+    queryKeySuffix: 'my',
+});
+
 const eventsByCommitteeQuery = eventQuery.customQuery<Event[], number>({
     responseSchema: EventSchema.array(),
     urlSuffix: (userId) => `/users/${userId}`,
@@ -64,6 +70,10 @@ const eventsByCommitteeQuery = eventQuery.customQuery<Event[], number>({
 });
 
 // ── Query hooks ───────────────────────────────────────────────────────────────
+
+export function useMyEvents() {
+    return useQuery(myEventsListQuery());
+}
 
 export function useEvents() {
     return useQuery(eventQuery.list()());
