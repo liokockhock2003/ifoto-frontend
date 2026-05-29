@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartTooltip,
@@ -11,7 +11,7 @@ import { useEquipmentUtilization } from '@/store/queries/report';
 const chartConfig: ChartConfig = {
     rentalCount: {
         label: 'Rentals',
-        color: '#3b82f6',
+        color: 'var(--color-primary)',
     },
 };
 
@@ -26,16 +26,17 @@ export function ChartEquipmentUtilization() {
         category: item.category,
     }));
 
-    const chartHeight = Math.max(240, chartData.length * 44);
+    const chartHeight = Math.max(160, chartData.length * 28);
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Equipment Utilization (Top {MAX_ITEMS})</CardTitle>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Equipment Utilization</CardTitle>
+                <CardDescription>Top {MAX_ITEMS} most rented items</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <div className="h-64 w-full animate-pulse rounded bg-muted" />
+                    <div className="h-56 w-full animate-pulse rounded bg-muted" />
                 ) : (
                     <div style={{ height: chartHeight }}>
                         <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">
@@ -59,14 +60,15 @@ export function ChartEquipmentUtilization() {
                                     tickLine={false}
                                     axisLine={false}
                                     tickMargin={8}
-                                    width={160}
-                                    tick={{ fontSize: 11 }}
+                                    width={155}
+                                    tick={{ fontSize: 10 }}
                                 />
                                 <ChartTooltip content={<ChartTooltipContent />} />
                                 <Bar
                                     dataKey="rentalCount"
                                     fill="var(--color-rentalCount)"
                                     radius={[0, 4, 4, 0]}
+                                    barSize={16}
                                 />
                             </BarChart>
                         </ChartContainer>

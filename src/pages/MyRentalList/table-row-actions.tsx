@@ -1,9 +1,16 @@
 import { useState } from 'react';
-import { Eye, CreditCard, FileText, X } from 'lucide-react';
+import { CreditCard, Eye, FileText, MoreHorizontal, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Row } from '@tanstack/react-table';
 
 import { Button } from '@/components/ui/button';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import type { Rental } from '@/store/schemas/rental';
 
 import { RentalViewDialog } from './dialog-view';
@@ -21,73 +28,79 @@ export function RentalRowActions({ row }: RentalRowActionsProps) {
 
     const showPayNow = rental.status === 'APPROVED' || rental.status === 'PENDING_PAYMENT';
     const showPayPenalty = rental.status === 'RETURNED' && rental.totalPenaltyAmount > 0 && rental.paymentStatus !== 'PENALTY_PAID';
+    const showInvoice = rental.status !== 'PENDING_REVIEW';
+    const showReceipt = (['PAID', 'ACTIVE', 'OVERDUE', 'RETURNED'] as const).includes(rental.status as 'PAID' | 'ACTIVE' | 'OVERDUE' | 'RETURNED');
     const showCancel = rental.status === 'PENDING_REVIEW';
 
     return (
         <>
-            <div className="flex items-center gap-1">
-                <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => setViewOpen(true)}
-                >
-                    <Eye className="h-4 w-4" />
-                    <span className="sr-only">View rental details</span>
-                </Button>
-
-                {showPayNow && (
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 text-primary border-primary hover:bg-primary/10"
-                        onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
-                    >
-                        <CreditCard className="h-3.5 w-3.5" />
-                        Pay Now
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-7 w-7">
+                        <MoreHorizontal className="h-4 w-4" />
+                        <span className="sr-only">Open actions</span>
                     </Button>
-                )}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => setViewOpen(true)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                    </DropdownMenuItem>
 
-                {showPayPenalty && (
-                    <Button
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="gap-1.5 text-destructive border-destructive hover:bg-destructive/10"
-                        onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
-                    >
-                        <CreditCard className="h-3.5 w-3.5" />
-                        Pay Penalty
-                    </Button>
-                )}
+                    {showInvoice && (
+                        <DropdownMenuItem
+                            onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Invoice
+                        </DropdownMenuItem>
+                    )}
 
-                {rental.status !== 'PENDING_PAYMENT' && (
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="text-muted-foreground"
-                        onClick={() => navigate('/equipment-rent/new', { state: { rental, goToReceipt: true } })}
-                    >
-                        <FileText className="h-4 w-4" />
-                        <span className="sr-only">View receipt</span>
-                    </Button>
-                )}
+                    {showReceipt && (
+                        <DropdownMenuItem
+                            onClick={() => navigate('/equipment-rent/new', { state: { rental, goToReceipt: true } })}
+                        >
+                            <FileText className="mr-2 h-4 w-4" />
+                            View Receipt
+                        </DropdownMenuItem>
+                    )}
 
-                {showCancel && (
-                    <Button
-                        type="button"
-                        size="icon"
-                        variant="ghost"
-                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                        onClick={() => setDeleteOpen(true)}
-                    >
-                        <X className="h-4 w-4" />
-                        <span className="sr-only">Cancel rental</span>
-                    </Button>
-                )}
-            </div>
+                    {(showPayNow || showPayPenalty) && <DropdownMenuSeparator />}
+
+                    {showPayNow && (
+                        <DropdownMenuItem
+                            className="text-primary focus:text-primary"
+                            onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
+                        >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Pay Now
+                        </DropdownMenuItem>
+                    )}
+
+                    {showPayPenalty && (
+                        <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => navigate('/equipment-rent/new', { state: { rental } })}
+                        >
+                            <CreditCard className="mr-2 h-4 w-4" />
+                            Pay Penalty
+                        </DropdownMenuItem>
+                    )}
+
+                    {showCancel && (
+                        <>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => setDeleteOpen(true)}
+                            >
+                                <X className="mr-2 h-4 w-4" />
+                                Cancel Rental
+                            </DropdownMenuItem>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
 
             <RentalViewDialog
                 open={viewOpen}

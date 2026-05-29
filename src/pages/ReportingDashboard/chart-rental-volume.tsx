@@ -1,5 +1,5 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartTooltip,
@@ -8,15 +8,14 @@ import {
 } from '@/components/ui/chart';
 import { useRentalVolume } from '@/store/queries/report';
 import { useReportingDashboardContext } from './context';
+import { formatMonth } from './utils';
 
 const chartConfig: ChartConfig = {
     count: {
         label: 'Rentals',
-        color: '#3b82f6',
+        color: 'var(--color-primary)',
     },
 };
-
-import { formatMonth } from './utils';
 
 export function ChartRentalVolume() {
     const { months } = useReportingDashboardContext();
@@ -29,14 +28,15 @@ export function ChartRentalVolume() {
 
     return (
         <Card className="h-full">
-            <CardHeader>
-                <CardTitle>Rental Volume Over Time</CardTitle>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Rental Volume Over Time</CardTitle>
+                <CardDescription>Number of rentals per month</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="aspect-video w-full animate-pulse rounded bg-muted" />
                 ) : (
-                    <ChartContainer config={chartConfig}>
+                    <ChartContainer config={chartConfig} className="max-h-[280px] w-full">
                         <BarChart data={chartData} margin={{ left: -10, right: 4 }}>
                             <CartesianGrid vertical={false} />
                             <XAxis

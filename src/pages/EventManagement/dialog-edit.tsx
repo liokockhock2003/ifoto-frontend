@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { DatePicker } from '@/components/date-picker';
+import { RangeDatePicker } from '@/components/range-date-picker';
 import {
     Dialog,
     DialogContent,
@@ -86,13 +86,14 @@ export function EventEditDialog({ open, onOpenChange, event }: EventEditDialogPr
                         <FieldLabel>Event Name</FieldLabel>
                         <Input value={form.eventName ?? ''} onChange={set('eventName')} />
                     </Field>
-                    <Field>
-                        <FieldLabel>Start Date</FieldLabel>
-                        <DatePicker value={form.startDate ?? ''} onChange={setVal('startDate')} />
-                    </Field>
-                    <Field>
-                        <FieldLabel>End Date</FieldLabel>
-                        <DatePicker value={form.endDate ?? ''} onChange={setVal('endDate')} />
+                    <Field className="sm:col-span-2">
+                        <FieldLabel>Date Range</FieldLabel>
+                        <RangeDatePicker
+                            startDate={form.startDate ?? ''}
+                            endDate={form.endDate ?? ''}
+                            onStartChange={setVal('startDate')}
+                            onEndChange={setVal('endDate')}
+                        />
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Location</FieldLabel>

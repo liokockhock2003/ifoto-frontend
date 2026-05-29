@@ -3,8 +3,9 @@ import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import type { EquipmentRequest, RequestStatus } from '@/store/schemas/request';
 
+import { REQUEST_STATUS_BADGE, REQUEST_STATUS_LABEL } from '@/constants/requestStatus';
 import { EquipmentRequestRowActions } from './table-row-actions';
-import { formatDateRange, STATUS_LABEL, STATUS_VARIANT } from './utils';
+import { formatDateRange } from './utils';
 
 const col = createColumnHelper<EquipmentRequest>();
 
@@ -17,10 +18,9 @@ export const requestColumns: ColumnDef<EquipmentRequest, any>[] = [
         header: 'Status',
         cell: (info) => {
             const status = info.getValue() as RequestStatus;
-            const { variant, className } = STATUS_VARIANT[status] ?? { variant: 'outline', className: '' };
             return (
-                <Badge variant={variant} className={className}>
-                    {STATUS_LABEL[status] ?? status}
+                <Badge variant="outline" className={REQUEST_STATUS_BADGE[status] ?? ''}>
+                    {REQUEST_STATUS_LABEL[status] ?? status}
                 </Badge>
             );
         },
@@ -41,13 +41,6 @@ export const requestColumns: ColumnDef<EquipmentRequest, any>[] = [
         cell: ({ row }) =>
             formatDateRange(row.original.approvedStartDate, row.original.approvedEndDate),
     }),
-    col.accessor('items', {
-        header: 'Items',
-        cell: (info) => {
-            const count = info.getValue().length;
-            return <span className="text-sm text-muted-foreground">{count} {count === 1 ? 'item' : 'items'}</span>;
-        },
-    }),
     col.display({
         id: 'actions',
         header: 'Actions',
@@ -55,4 +48,5 @@ export const requestColumns: ColumnDef<EquipmentRequest, any>[] = [
     }),
 ];
 
-export { formatDateRange, STATUS_LABEL, STATUS_VARIANT } from './utils';
+export { formatDateRange } from './utils';
+export { REQUEST_STATUS_LABEL as STATUS_LABEL, REQUEST_STATUS_BADGE as STATUS_VARIANT } from '@/constants/requestStatus';

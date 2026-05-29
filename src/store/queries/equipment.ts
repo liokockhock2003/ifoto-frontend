@@ -13,7 +13,6 @@ import {
     EquipmentDateStatusSchema,
     SubEquipmentQuantityHoldSchema,
     type EquipmentListResponse,
-    type EquipmentListFilters,
     type AvailableEquipmentFilters,
     type MainEquipment,
     type MainEquipmentPayload,
@@ -157,7 +156,7 @@ const createStatusMutation = mainEquipmentQuery.customMutation<CreateStatusPaylo
     responseSchema: z.any(),
     toastMsg: 'Status created',
     invalidateKeys: (_, i) => [
-        [...mainEquipmentQuery.qk(), i.mainEquipmentId, 'statuses'],
+        [...mainEquipmentQuery.qk(), 'statuses', i.mainEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -168,7 +167,7 @@ const updateStatusMutation = mainEquipmentQuery.customMutation<UpdateStatusPaylo
     responseSchema: z.any(),
     toastMsg: 'Status updated',
     invalidateKeys: (_, i) => [
-        [...mainEquipmentQuery.qk(), i.mainEquipmentId, 'statuses'],
+        [...mainEquipmentQuery.qk(), 'statuses', i.mainEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -179,7 +178,7 @@ const deleteStatusMutation = mainEquipmentQuery.customMutation<DeleteStatusPaylo
     responseSchema: z.any(),
     toastMsg: 'Status deleted',
     invalidateKeys: (_, i) => [
-        [...mainEquipmentQuery.qk(), i.mainEquipmentId, 'statuses'],
+        [...mainEquipmentQuery.qk(), 'statuses', i.mainEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -202,9 +201,9 @@ const createHoldMutation = subEquipmentQuery.customMutation<CreateHoldPayload>({
     method: 'post',
     urlSuffix: (i) => `/${i.subEquipmentId}/quantity-holds`,
     responseSchema: z.any(),
-    toastMsg: 'Hold created',
+    toastMsg: 'Schedule created',
     invalidateKeys: (_, i) => [
-        [...subEquipmentQuery.qk(), i.subEquipmentId, 'quantity-holds'],
+        [...subEquipmentQuery.qk(), 'quantity-holds', i.subEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -213,9 +212,9 @@ const updateHoldMutation = subEquipmentQuery.customMutation<UpdateHoldPayload>({
     method: 'put',
     urlSuffix: (i) => `/${i.subEquipmentId}/quantity-holds/${i.holdId}`,
     responseSchema: z.any(),
-    toastMsg: 'Hold updated',
+    toastMsg: 'Schedule updated',
     invalidateKeys: (_, i) => [
-        [...subEquipmentQuery.qk(), i.subEquipmentId, 'quantity-holds'],
+        [...subEquipmentQuery.qk(), 'quantity-holds', i.subEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -224,9 +223,9 @@ const deleteHoldMutation = subEquipmentQuery.customMutation<DeleteHoldPayload>({
     method: 'delete',
     urlSuffix: (i) => `/${i.subEquipmentId}/quantity-holds/${i.holdId}`,
     responseSchema: z.any(),
-    toastMsg: 'Hold deleted',
+    toastMsg: 'Schedule deleted',
     invalidateKeys: (_, i) => [
-        [...subEquipmentQuery.qk(), i.subEquipmentId, 'quantity-holds'],
+        [...subEquipmentQuery.qk(), 'quantity-holds', i.subEquipmentId],
         [...equipmentKeys.list()],
     ],
 });
@@ -251,8 +250,8 @@ export const subEquipmentHoldKeys = {
 
 // ── Query hooks ───────────────────────────────────────────────────────────────
 
-export function useEquipmentList(filters?: EquipmentListFilters) {
-    return useQuery(equipmentListQuery(filters));
+export function useEquipmentList() {
+    return useQuery(equipmentListQuery({}));
 }
 
 export function useAvailableEquipment(filters: AvailableEquipmentFilters) {

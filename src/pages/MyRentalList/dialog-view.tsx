@@ -5,8 +5,11 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Rental, RentalItem, RentalSubItem } from '@/store/schemas/rental';
+import { RENTAL_STATUS_LABEL, type RentalStatus } from '@/constants/rentalStatus';
 import { statusVariant } from './table-column-def';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -45,58 +48,58 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function ItemsTable({ items }: { items: RentalItem[] }) {
     return (
-        <div className="rounded-md border overflow-hidden text-sm">
-            <table className="w-full">
-                <thead className="bg-muted/50">
-                    <tr>
-                        <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Equipment</th>
-                        <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Type</th>
-                        <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div className="rounded-md border overflow-hidden">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Equipment</TableHead>
+                        <TableHead className="hidden sm:table-cell">Type</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     {items.map((item) => (
-                        <tr key={item.id} className="border-t">
-                            <td className="px-3 py-2">
+                        <TableRow key={item.id}>
+                            <TableCell>
                                 <p className="font-medium">{item.brand} {item.model}</p>
                                 <p className="text-xs text-muted-foreground font-mono">{item.serialNumber}</p>
-                            </td>
-                            <td className="px-3 py-2 text-muted-foreground hidden sm:table-cell">{item.equipmentType}</td>
-                            <td className="px-3 py-2 text-right">
+                            </TableCell>
+                            <TableCell className="text-muted-foreground hidden sm:table-cell">{item.equipmentType}</TableCell>
+                            <TableCell className="text-right">
                                 <p>{fmt(item.baseAmount)}</p>
                                 {item.latePenaltyAmount > 0 && (
                                     <p className="text-xs text-destructive">+{fmt(item.latePenaltyAmount)} penalty</p>
                                 )}
-                            </td>
-                        </tr>
+                            </TableCell>
+                        </TableRow>
                     ))}
-                </tbody>
-            </table>
+                </TableBody>
+            </Table>
         </div>
     );
 }
 
 function SubItemsTable({ items }: { items: RentalSubItem[] }) {
     return (
-        <div className="rounded-md border overflow-hidden text-sm">
-            <table className="w-full">
-                <thead className="bg-muted/50">
-                    <tr>
-                        <th className="text-left px-3 py-2 text-xs font-semibold text-muted-foreground">Accessory</th>
-                        <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground hidden sm:table-cell">Qty</th>
-                        <th className="text-right px-3 py-2 text-xs font-semibold text-muted-foreground">Amount</th>
-                    </tr>
-                </thead>
-                <tbody>
+        <div className="rounded-md border overflow-hidden">
+            <Table>
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>Accessory</TableHead>
+                        <TableHead className="text-right hidden sm:table-cell">Qty</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
                     {items.map((item) => (
-                        <tr key={item.id} className="border-t">
-                            <td className="px-3 py-2">
+                        <TableRow key={item.id}>
+                            <TableCell>
                                 <p className="font-medium">{item.brand ? `${item.brand} ` : ''}{item.equipmentType}</p>
-                            </td>
-                            <td className="px-3 py-2 text-right text-muted-foreground hidden sm:table-cell">
-                                {item.quantity ?? '—'}
-                            </td>
-                            <td className="px-3 py-2 text-right">
+                            </TableCell>
+                            <TableCell className="text-right text-muted-foreground hidden sm:table-cell">
+                                {item.borrowedQuantity}
+                            </TableCell>
+                            <TableCell className="text-right">
                                 {item.itemTotalAmount != null ? (
                                     <>
                                         <p>{fmt(item.itemTotalAmount)}</p>
@@ -105,11 +108,11 @@ function SubItemsTable({ items }: { items: RentalSubItem[] }) {
                                         )}
                                     </>
                                 ) : '—'}
-                            </td>
-                        </tr>
+                            </TableCell>
+                        </TableRow>
                     ))}
-                </tbody>
-            </table>
+                </TableBody>
+            </Table>
         </div>
     );
 }
@@ -127,94 +130,96 @@ export function RentalViewDialog({ open, onOpenChange, rental }: RentalViewDialo
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto text-foreground">
+            <DialogContent className="sm:max-w-lg text-foreground">
                 <DialogHeader>
                     <div className="flex items-center gap-3 flex-wrap">
                         <DialogTitle className="text-primary font-mono text-base">{rental.rentalNumber}</DialogTitle>
                         <Badge variant="outline" className={statusVariant(rental.status)}>
-                            {rental.status.replace(/_/g, ' ')}
+                            {RENTAL_STATUS_LABEL[rental.status as RentalStatus] ?? rental.status.replace(/_/g, ' ')}
                         </Badge>
                     </div>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                    {/* Overview */}
-                    <div className="space-y-2">
-                        <SectionHeading>Overview</SectionHeading>
-                        <InfoRow label="Submitted" value={new Date(rental.createdAt).toLocaleString('en-MY')} />
-                        <InfoRow label="Renter" value={rental.renterUsername} />
-                        <InfoRow label="Payment Method" value={rental.paymentMethod} />
-                        <InfoRow label="Payment Status" value={rental.paymentStatus} />
-                    </div>
+                <ScrollArea className="max-h-[70vh] pr-4">
+                    <div className="space-y-4">
+                        {/* Overview */}
+                        <div className="space-y-2">
+                            <SectionHeading>Overview</SectionHeading>
+                            <InfoRow label="Submitted" value={new Date(rental.createdAt).toLocaleString('en-MY')} />
+                            <InfoRow label="Renter" value={rental.renterUsername} />
+                            <InfoRow label="Payment Method" value={rental.paymentMethod} />
+                            <InfoRow label="Payment Status" value={rental.paymentStatus} />
+                        </div>
 
-                    <Separator />
+                        <Separator />
 
-                    {/* Dates */}
-                    <div className="space-y-2">
-                        <SectionHeading>Dates</SectionHeading>
-                        <InfoRow label="Requested Start" value={fmtDate(rental.requestedStartDate)} />
-                        <InfoRow label="Requested End" value={fmtDate(rental.requestedEndDate)} />
-                        <InfoRow label="Approved Start" value={fmtDate(rental.approvedStartDate)} />
-                        <InfoRow label="Approved End" value={fmtDate(rental.approvedEndDate)} />
-                        {rental.durationDays !== null && (
-                            <InfoRow label="Duration" value={`${rental.durationDays} day${rental.durationDays !== 1 ? 's' : ''}`} />
+                        {/* Dates */}
+                        <div className="space-y-2">
+                            <SectionHeading>Dates</SectionHeading>
+                            <InfoRow label="Requested Start" value={fmtDate(rental.requestedStartDate)} />
+                            <InfoRow label="Requested End" value={fmtDate(rental.requestedEndDate)} />
+                            <InfoRow label="Approved Start" value={fmtDate(rental.approvedStartDate)} />
+                            <InfoRow label="Approved End" value={fmtDate(rental.approvedEndDate)} />
+                            {rental.durationDays !== null && (
+                                <InfoRow label="Duration" value={`${rental.durationDays} day${rental.durationDays !== 1 ? 's' : ''}`} />
+                            )}
+                        </div>
+
+                        <Separator />
+
+                        {/* Financials */}
+                        <div className="space-y-2">
+                            <SectionHeading>Financials</SectionHeading>
+                            <InfoRow label="Base Amount" value={fmt(rental.totalBaseAmount)} />
+                            <InfoRow label="Penalty" value={fmt(rental.totalPenaltyAmount)} />
+                            <InfoRow
+                                label="Total"
+                                value={<span className="text-primary font-semibold">{fmt(rental.totalAmount)}</span>}
+                            />
+                        </div>
+
+                        <Separator />
+
+                        {/* Notes */}
+                        {(rental.renterNotes || rental.committeeNotes || rental.rejectionReason) && (
+                            <>
+                                <div className="space-y-2">
+                                    <SectionHeading>Notes</SectionHeading>
+                                    {rental.renterNotes && (
+                                        <InfoRow label="Your Notes" value={rental.renterNotes} />
+                                    )}
+                                    {rental.committeeNotes && (
+                                        <InfoRow label="Committee Notes" value={rental.committeeNotes} />
+                                    )}
+                                    {rental.rejectionReason && (
+                                        <InfoRow
+                                            label="Rejection Reason"
+                                            value={<span className="text-destructive">{rental.rejectionReason}</span>}
+                                        />
+                                    )}
+                                </div>
+                                <Separator />
+                            </>
+                        )}
+
+                        {/* Items */}
+                        <div className="space-y-2">
+                            <SectionHeading>Equipment ({rental.items.length})</SectionHeading>
+                            <ItemsTable items={rental.items} />
+                        </div>
+
+                        {/* Sub-items */}
+                        {(rental.subItems ?? []).length > 0 && (
+                            <>
+                                <Separator />
+                                <div className="space-y-2">
+                                    <SectionHeading>Accessories ({(rental.subItems ?? []).length})</SectionHeading>
+                                    <SubItemsTable items={rental.subItems!} />
+                                </div>
+                            </>
                         )}
                     </div>
-
-                    <Separator />
-
-                    {/* Financials */}
-                    <div className="space-y-2">
-                        <SectionHeading>Financials</SectionHeading>
-                        <InfoRow label="Base Amount" value={fmt(rental.totalBaseAmount)} />
-                        <InfoRow label="Penalty" value={fmt(rental.totalPenaltyAmount)} />
-                        <InfoRow
-                            label="Total"
-                            value={<span className="text-primary font-semibold">{fmt(rental.totalAmount)}</span>}
-                        />
-                    </div>
-
-                    <Separator />
-
-                    {/* Notes */}
-                    {(rental.renterNotes || rental.committeeNotes || rental.rejectionReason) && (
-                        <>
-                            <div className="space-y-2">
-                                <SectionHeading>Notes</SectionHeading>
-                                {rental.renterNotes && (
-                                    <InfoRow label="Your Notes" value={rental.renterNotes} />
-                                )}
-                                {rental.committeeNotes && (
-                                    <InfoRow label="Committee Notes" value={rental.committeeNotes} />
-                                )}
-                                {rental.rejectionReason && (
-                                    <InfoRow
-                                        label="Rejection Reason"
-                                        value={<span className="text-destructive">{rental.rejectionReason}</span>}
-                                    />
-                                )}
-                            </div>
-                            <Separator />
-                        </>
-                    )}
-
-                    {/* Items */}
-                    <div className="space-y-2">
-                        <SectionHeading>Equipment ({rental.items.length})</SectionHeading>
-                        <ItemsTable items={rental.items} />
-                    </div>
-
-                    {/* Sub-items */}
-                    {(rental.subItems ?? []).length > 0 && (
-                        <>
-                            <Separator />
-                            <div className="space-y-2">
-                                <SectionHeading>Accessories ({(rental.subItems ?? []).length})</SectionHeading>
-                                <SubItemsTable items={rental.subItems!} />
-                            </div>
-                        </>
-                    )}
-                </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );

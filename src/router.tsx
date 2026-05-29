@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
 import AuthLayout from '@/pages/Auth/layout'
 import ProtectedRoute from '@/protected-route'
+import { useAuth } from '@/store/auth-context'
 import LoginPage from '@/pages/Auth/login'
 import RegisterPage from '@/pages/Auth/register'
 import ForgotPasswordPage from '@/pages/Auth/forgot-password'
@@ -13,15 +14,26 @@ import EventManagementMainPage from '@/pages/EventManagement/main-page'
 import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
 import EquipmentRentalMainPage from '@/pages/MyRentalList/EquipmentRental/main-page'
 import RentalListPage from '@/pages/MyRentalList/main-page'
-import EquipmentBookingManagementMainPage from '@/pages/EquipmentBookingManagement/main-page'
-import EquipmentRequestManagementMainPage from '@/pages/EquipmentRequestManagement/main-page'
+import RentalManagementMainPage from '@/pages/RentalManagement/main-page'
+import EventEquipmentMainPage from '@/pages/EventEquipment/main-page'
 import ReportingDashboardMainPage from '@/pages/ReportingDashboard/main-page'
 import EquipmentRequestListMainPage from '@/pages/EventManagement/EquipmentRequestList/main-page'
 import EquipmentRequestMainPage from '@/pages/EventManagement/EquipmentRequestList/EquipmentRequest/main-page'
 
-const ComingSoon = ({ title }: { title: string }) => (
-    <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
-)
+function RoleRedirect() {
+    const { isAuthenticated, isLoading, hasRole } = useAuth();
+    if (isLoading) return (
+        <div className="flex h-full items-center justify-center p-8">
+            <span className="text-muted-foreground text-sm">Loading...</span>
+        </div>
+    );
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (hasRole('ROLE_ADMIN')) return <Navigate to="/user-management" replace />;
+    if (hasRole('ROLE_EQUIPMENT_COMMITTEE')) return <Navigate to="/manage-inventory" replace />;
+    if (hasRole('ROLE_HIGH_COMMITTEE')) return <Navigate to="/event-management" replace />;
+    if (hasRole('ROLE_EVENT_COMMITTEE')) return <Navigate to="/equipment-requests" replace />;
+    return <Navigate to="/equipment-rent" replace />;
+}
 
 export const router = createBrowserRouter([
     {
@@ -46,7 +58,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <ProtectedRoute><ComingSoon title="Home" /></ProtectedRoute>,
+                element: <RoleRedirect />,
             },
             {
                 path: 'manage-inventory',
@@ -141,42 +153,18 @@ export const router = createBrowserRouter([
                 ),
             },
             {
-                path: 'equipment-returns',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
-                        <ComingSoon title="Return Rented Equipment" />
-                    </ProtectedRoute>
-                ),
-            },
-            {
-                path: 'equipment-request-returns',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
-                        <ComingSoon title="Return Requested Equipment" />
-                    </ProtectedRoute>
-                ),
-            },
-            {
-                path: 'equipment-booking-management',
+                path: 'rental-management',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <EquipmentBookingManagementMainPage />
+                        <RentalManagementMainPage />
                     </ProtectedRoute>
                 ),
             },
             {
-                path: 'equipment-request-management',
+                path: 'event-equipment',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <EquipmentRequestManagementMainPage />
-                    </ProtectedRoute>
-                ),
-            },
-            {
-                path: 'equipment-return-management',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <ComingSoon title="Equipment Return Management" />
+                        <EventEquipmentMainPage />
                     </ProtectedRoute>
                 ),
             },

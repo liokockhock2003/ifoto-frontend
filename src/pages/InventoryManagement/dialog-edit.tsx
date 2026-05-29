@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useUpdateMainEquipment, useUpdateSubEquipment } from '@/store/queries/equipment';
 import { Switch } from '@/components/ui/switch';
 import type {
@@ -29,12 +30,9 @@ import type {
     SubEquipmentUpdatePayload,
 } from '@/store/schemas/equipment';
 
+import { EQUIPMENT_CONDITIONS as CONDITIONS } from '@/constants/equipmentCondition';
 import { useInventoryManagementContext } from './context';
 import { SUB_KIND_CONFIG, subKindFromType } from './provider';
-
-// ── Shared ────────────────────────────────────────────────────────────────────
-
-const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
 
 // ── Main Equipment Edit Dialog ─────────────────────────────────────────────────
 
@@ -154,7 +152,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes ?? ''} onChange={set('notes')} />
+                        <Textarea value={form.notes ?? ''} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 
@@ -308,7 +306,7 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes ?? ''} onChange={setStr('notes')} />
+                        <Textarea value={form.notes ?? ''} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 

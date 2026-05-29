@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ClipboardList, Search } from 'lucide-react';
+import { CalendarCheck, ChevronDown, Search } from 'lucide-react';
 
 import { DataTable } from '@/components/data-table';
 import {
@@ -14,25 +14,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-import { useRequestManagementContext } from './context';
-import { RequestManagementProvider } from './provider';
-import { requestManagementColumns } from './table-column-def';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const REQUEST_STATUSES = [
-    'PENDING_REVIEW',
-    'APPROVED',
-    'REJECTED',
-    'CANCELLED',
-    'ACTIVE',
-    'RETURNED',
-] as const;
+import { RENTAL_STATUS_LABEL, RENTAL_STATUS_VALUES, type RentalStatus } from '@/constants/rentalStatus';
+import { useBookingManagementContext } from './context';
+import { BookingManagementProvider } from './provider';
+import { bookingManagementColumns } from './table-column-def';
 
 // ── Header controls ───────────────────────────────────────────────────────────
 
 function SearchInput() {
-    const { filters, setSearch } = useRequestManagementContext();
+    const { filters, setSearch } = useBookingManagementContext();
     const [value, setValue] = useState(filters.search ?? '');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -59,7 +49,7 @@ function SearchInput() {
         <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-                placeholder="Search requests..."
+                placeholder="Search rentals..."
                 value={value}
                 onChange={handleChange}
                 className="w-full pl-9 sm:w-52 rounded-4xl"
@@ -69,13 +59,13 @@ function SearchInput() {
 }
 
 function StatusFilter() {
-    const { filters, setStatus } = useRequestManagementContext();
+    const { filters, setStatus } = useBookingManagementContext();
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 rounded-4xl gap-1.5 text-muted-foreground">
-                    {filters.status ? filters.status.replace(/_/g, ' ') : 'All statuses'}
+                    {filters.status ? (RENTAL_STATUS_LABEL[filters.status as RentalStatus] ?? filters.status.replace(/_/g, ' ')) : 'All statuses'}
                     <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
             </DropdownMenuTrigger>
@@ -86,9 +76,9 @@ function StatusFilter() {
                 >
                     <DropdownMenuRadioItem value="">All statuses</DropdownMenuRadioItem>
                     <DropdownMenuSeparator />
-                    {REQUEST_STATUSES.map((s) => (
+                    {RENTAL_STATUS_VALUES.map((s) => (
                         <DropdownMenuRadioItem key={s} value={s}>
-                            {s.replace(/_/g, ' ')}
+                            {RENTAL_STATUS_LABEL[s]}
                         </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>
@@ -110,9 +100,9 @@ function StatusFilter() {
 
 // ── Page content ──────────────────────────────────────────────────────────────
 
-function RequestManagementContent() {
+function BookingManagementContent() {
     const {
-        requests,
+        rentals,
         filters,
         totalElements,
         totalPages,
@@ -121,28 +111,28 @@ function RequestManagementContent() {
         error,
         setPage,
         refetch,
-    } = useRequestManagementContext();
+    } = useBookingManagementContext();
 
     return (
         <div className="space-y-4 p-2 sm:p-6">
             <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <ClipboardList className="h-5 w-5 text-primary" />
+                    <CalendarCheck className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                    <h1 className="text-xl text-primary font-semibold tracking-tight">Equipment Request Management</h1>
-                    <p className="text-sm text-muted-foreground">Review and action equipment requests from event committees.</p>
+                    <h1 className="text-xl text-primary font-semibold tracking-tight">Rental Management</h1>
+                    <p className="text-sm text-muted-foreground">Review and manage all rental requests.</p>
                 </div>
             </div>
 
             <DataTable
-                columns={requestManagementColumns}
-                data={requests}
+                columns={bookingManagementColumns}
+                data={rentals}
                 isLoading={isLoading}
                 isError={isError}
                 error={error ?? undefined}
                 onRetry={() => void refetch()}
-                title="All Equipment Requests"
+                title="All Rental Requests"
                 totalElements={totalElements}
                 headerActions={
                     <div className="flex items-center gap-2">
@@ -153,7 +143,7 @@ function RequestManagementContent() {
                 page={filters.page}
                 totalPages={totalPages}
                 onPageChange={setPage}
-                emptyMessage="No requests found."
+                emptyMessage="No rentals found."
             />
         </div>
     );
@@ -161,10 +151,10 @@ function RequestManagementContent() {
 
 // ── Default export ────────────────────────────────────────────────────────────
 
-export default function RequestManagementMainPage() {
+export default function BookingManagementMainPage() {
     return (
-        <RequestManagementProvider>
-            <RequestManagementContent />
-        </RequestManagementProvider>
+        <BookingManagementProvider>
+            <BookingManagementContent />
+        </BookingManagementProvider>
     );
 }

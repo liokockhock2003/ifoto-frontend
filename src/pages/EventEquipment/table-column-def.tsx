@@ -2,7 +2,7 @@ import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
 import type { EquipmentRequest, RequestStatus } from '@/store/schemas/request';
-import { STATUS_LABEL, STATUS_VARIANT } from '@/pages/EventManagement/EquipmentRequestList/utils';
+import { REQUEST_STATUS_BADGE, REQUEST_STATUS_LABEL } from '@/constants/requestStatus';
 
 import { RequestRowActions } from './table-row-actions';
 
@@ -25,10 +25,9 @@ export const requestManagementColumns: ColumnDef<EquipmentRequest, any>[] = [
         header: 'Status',
         cell: (info) => {
             const s = info.getValue() as RequestStatus;
-            const { variant, className } = STATUS_VARIANT[s] ?? { variant: 'outline' as const, className: '' };
             return (
-                <Badge variant={variant} className={className}>
-                    {STATUS_LABEL[s] ?? s.replace(/_/g, ' ')}
+                <Badge variant="outline" className={REQUEST_STATUS_BADGE[s] ?? ''}>
+                    {REQUEST_STATUS_LABEL[s] ?? s.replace(/_/g, ' ')}
                 </Badge>
             );
         },
@@ -47,7 +46,7 @@ export const requestManagementColumns: ColumnDef<EquipmentRequest, any>[] = [
     }),
     columnHelper.display({
         id: 'actions',
-        header: '',
+        header: 'Actions',
         cell: ({ row }) => <RequestRowActions row={row} />,
     }),
 ];

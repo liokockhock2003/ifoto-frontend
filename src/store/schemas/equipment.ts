@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const EquipmentStatusTypeSchema = z.enum([
-    'UNAVAILABLE', 'MAINTENANCE', 'CONVOCATION', 'MRM', 'AVAILABLE',
+    'UNAVAILABLE', 'MAINTENANCE', 'CONVOCATION', 'MRM', 'AVAILABLE', 'BOOKED',
 ]);
 
 export const EquipmentDateStatusSchema = z.object({
@@ -13,7 +13,7 @@ export const EquipmentDateStatusSchema = z.object({
 });
 
 export const EquipmentStatusPayloadSchema = z.object({
-    statusType: EquipmentStatusTypeSchema.exclude(['AVAILABLE']),
+    statusType: EquipmentStatusTypeSchema.exclude(['AVAILABLE', 'BOOKED']),
     startDate: z.string(),
     endDate: z.string(),
     notes: z.string().optional(),
@@ -27,9 +27,10 @@ export const MainEquipmentSchema = z.object({
     model: z.string(),
     serialNumber: z.string(),
     condition: z.string(),
+    status: EquipmentStatusTypeSchema,
     notes: z.string().nullable(),
     pricingCategoryId: z.number().int().nonnegative().nullish(),
-    pricingCategoryName: z.string().nullish(),
+    pricingCategory: z.string().nullish(),
     isForRent: z.boolean(),
     dateStatuses: z.array(EquipmentDateStatusSchema).optional(),
 });
@@ -73,10 +74,7 @@ export const EquipmentListResponseSchema = z.object({
     subEquipment: z.array(SubEquipmentSchema),
 });
 
-export const EquipmentListFiltersSchema = z.object({
-    startDate: z.string().optional(),
-    endDate: z.string().optional(),
-});
+export const EquipmentListFiltersSchema = z.object({});
 
 export const AvailableEquipmentContextSchema = z.enum(['RENTAL', 'EVENT_REQUEST']);
 
@@ -88,7 +86,7 @@ export const AvailableEquipmentFiltersSchema = z.object({
 
 // ── Payload schemas (no id — used for create & update request bodies) ─────────
 
-export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true, pricingCategoryId: true, pricingCategoryName: true, dateStatuses: true });
+export const MainEquipmentPayloadSchema = MainEquipmentSchema.omit({ mainEquipmentId: true, status: true, pricingCategoryId: true, pricingCategory: true, dateStatuses: true });
 export const MainEquipmentUpdatePayloadSchema = MainEquipmentPayloadSchema.extend({
     mainEquipmentId: z.number().int().positive(),
 });

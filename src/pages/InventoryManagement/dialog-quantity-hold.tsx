@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import { PackageMinus, Pencil, X } from 'lucide-react';
+import { Minus, PackageMinus, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { DatePicker } from '@/components/date-picker';
+import { DeleteConfirm, ScheduleEntryForm } from '@/components/schedule-entry-form';
+import { ManagementTable } from '@/components/management-table';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group';
 import {
     Dialog,
     DialogContent,
@@ -12,7 +14,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
     useCreateQuantityHold,
@@ -87,55 +89,48 @@ function HoldForm({
     }
 
     return (
-        <div className="rounded-md border bg-muted/30 p-4 space-y-4">
-            <p className="text-sm font-medium">{editing ? 'Edit Hold' : 'Add Hold'}</p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ScheduleEntryForm
+            title={editing ? 'Edit Schedule' : 'Add Schedule'}
+            startDate={form.startDate}
+            endDate={form.endDate}
+            notes={form.notes}
+            onStartChange={(d) => setForm((p) => ({ ...p, startDate: d }))}
+            onEndChange={(d) => setForm((p) => ({ ...p, endDate: d }))}
+            onNotesChange={(n) => setForm((p) => ({ ...p, notes: n }))}
+            onSubmit={() => void handleSubmit()}
+            onCancel={onCancel}
+            isPending={isPending}
+            canSubmit={canSubmit}
+            submitLabel={editing ? 'Save Changes' : 'Add Schedule'}
+            notesPlaeholder="e.g. Sent for repair"
+            extraFields={
                 <Field>
                     <FieldLabel>Quantity</FieldLabel>
-                    <Input
-                        type="number"
-                        min={1}
-                        value={form.quantity}
-                        onChange={(e) => setForm((p) => ({ ...p, quantity: Math.max(1, Number(e.target.value)) }))}
-                    />
+                    <ButtonGroup>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            disabled={form.quantity <= 1}
+                            onClick={() => setForm((p) => ({ ...p, quantity: Math.max(1, p.quantity - 1) }))}
+                        >
+                            <Minus className="h-4 w-4" />
+                        </Button>
+                        <ButtonGroupText className="px-4 text-sm border-0 justify-center min-w-[2.5rem]">
+                            {form.quantity}
+                        </ButtonGroupText>
+                        <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            onClick={() => setForm((p) => ({ ...p, quantity: p.quantity + 1 }))}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
+                    </ButtonGroup>
                 </Field>
-
-                <Field>
-                    <FieldLabel>Notes (optional)</FieldLabel>
-                    <Input
-                        placeholder="e.g. Sent for repair"
-                        value={form.notes}
-                        onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                    />
-                </Field>
-
-                <Field>
-                    <FieldLabel>Start Date</FieldLabel>
-                    <DatePicker
-                        value={form.startDate}
-                        onChange={(d) => setForm((p) => ({ ...p, startDate: d, endDate: p.endDate && p.endDate < d ? '' : p.endDate }))}
-                    />
-                </Field>
-
-                <Field>
-                    <FieldLabel>End Date</FieldLabel>
-                    <DatePicker
-                        value={form.endDate}
-                        onChange={(d) => setForm((p) => ({ ...p, endDate: d }))}
-                        disabled={!form.startDate}
-                    />
-                </Field>
-            </div>
-
-            <div className="flex gap-2">
-                <Button type="button" size="sm" disabled={!canSubmit || isPending} onClick={() => void handleSubmit()}>
-                    {isPending ? 'Saving…' : editing ? 'Save Changes' : 'Add Hold'}
-                </Button>
-                <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={onCancel}>
-                    Cancel
-                </Button>
-            </div>
-        </div>
+            }
+        />
     );
 }
 
@@ -159,33 +154,20 @@ function DeleteHoldConfirm({
             await mutation.mutateAsync({ subEquipmentId, holdId: entry.id });
             onDone();
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to delete hold');
+            toast.error(err instanceof Error ? err.message : 'Failed to delete schedule');
         }
     }
 
     return (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 space-y-3">
-            <p className="text-sm font-medium text-destructive">Remove this quantity hold?</p>
-            <p className="text-xs text-muted-foreground">
-                <span className="font-medium">{entry.quantity} unit{entry.quantity !== 1 ? 's' : ''}</span>
-                {' · '}
-                {fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}
-            </p>
-            <div className="flex gap-2">
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    disabled={mutation.isPending}
-                    onClick={() => void handleDelete()}
-                >
-                    {mutation.isPending ? 'Deleting…' : 'Delete'}
-                </Button>
-                <Button type="button" size="sm" variant="outline" disabled={mutation.isPending} onClick={onCancel}>
-                    Cancel
-                </Button>
-            </div>
-        </div>
+        <DeleteConfirm
+            title="Remove this quantity schedule?"
+            description={
+                <><span className="font-medium text-foreground">{entry.quantity} unit{entry.quantity !== 1 ? 's' : ''}</span>{' · '}{fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}</>
+            }
+            onDelete={() => void handleDelete()}
+            onCancel={onCancel}
+            isPending={mutation.isPending}
+        />
     );
 }
 
@@ -214,121 +196,94 @@ export function SubEquipmentQuantityHoldDialog({ open, onOpenChange, equipment }
 
     return (
         <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setMode({ type: 'idle' }); }}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl text-foreground">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
                         <PackageMinus className="h-4 w-4 text-primary" />
-                        {displayName} — Quantity Holds
+                        {displayName}
                     </DialogTitle>
                     <DialogDescription>
                         {holdCount > 0
-                            ? `${holdCount} active hold${holdCount !== 1 ? 's' : ''}`
-                            : 'No holds — full quantity available'}
+                            ? `${holdCount} active schedule${holdCount !== 1 ? 's' : ''}`
+                            : 'No schedule — full quantity available'}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                    {mode.type === 'add' && (
-                        <HoldForm
-                            subEquipmentId={equipment.subEquipmentId}
-                            editing={null}
-                            onDone={() => setMode({ type: 'idle' })}
-                            onCancel={() => setMode({ type: 'idle' })}
-                        />
-                    )}
-                    {mode.type === 'edit' && (
-                        <HoldForm
-                            subEquipmentId={equipment.subEquipmentId}
-                            editing={mode.entry}
-                            onDone={() => setMode({ type: 'idle' })}
-                            onCancel={() => setMode({ type: 'idle' })}
-                        />
-                    )}
-                    {mode.type === 'delete' && (
-                        <DeleteHoldConfirm
-                            subEquipmentId={equipment.subEquipmentId}
-                            entry={mode.entry}
-                            onDone={() => setMode({ type: 'idle' })}
-                            onCancel={() => setMode({ type: 'idle' })}
-                        />
-                    )}
-
-                    <Separator />
-
-                    <div className="flex items-center justify-between">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                            All Holds
-                        </p>
-                        {mode.type === 'idle' && (
-                            <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setMode({ type: 'add' })}
-                            >
-                                + Add Hold
-                            </Button>
+                <ScrollArea className="max-h-[70vh]">
+                    <div className="space-y-4 pr-4">
+                        {mode.type === 'add' && (
+                            <HoldForm
+                                subEquipmentId={equipment.subEquipmentId}
+                                editing={null}
+                                onDone={() => setMode({ type: 'idle' })}
+                                onCancel={() => setMode({ type: 'idle' })}
+                            />
                         )}
-                    </div>
+                        {mode.type === 'edit' && (
+                            <HoldForm
+                                subEquipmentId={equipment.subEquipmentId}
+                                editing={mode.entry}
+                                onDone={() => setMode({ type: 'idle' })}
+                                onCancel={() => setMode({ type: 'idle' })}
+                            />
+                        )}
+                        {mode.type === 'delete' && (
+                            <DeleteHoldConfirm
+                                subEquipmentId={equipment.subEquipmentId}
+                                entry={mode.entry}
+                                onDone={() => setMode({ type: 'idle' })}
+                                onCancel={() => setMode({ type: 'idle' })}
+                            />
+                        )}
 
-                    {isLoading ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">Loading…</p>
-                    ) : !holds?.length ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                            No quantity holds — full quantity is available for all dates.
-                        </p>
-                    ) : (
-                        <div className="rounded-md border overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/50">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Quantity</th>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date Range</th>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Notes</th>
-                                        <th className="px-3 py-2" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {holds.map((entry) => (
-                                        <tr key={entry.id} className="border-t">
-                                            <td className="px-3 py-2 font-medium">
-                                                {entry.quantity} unit{entry.quantity !== 1 ? 's' : ''}
-                                            </td>
-                                            <td className="px-3 py-2 text-xs">
-                                                {fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}
-                                            </td>
-                                            <td className="px-3 py-2 text-xs text-muted-foreground">
-                                                {entry.notes ?? '—'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-1 justify-end">
-                                                    <Button
-                                                        type="button"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-7 w-7"
-                                                        onClick={() => setMode({ type: 'edit', entry })}
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-7 w-7 text-destructive hover:text-destructive"
-                                                        onClick={() => setMode({ type: 'delete', entry })}
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                        <Separator />
+
+                        <div className="flex items-center justify-between">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                                All Schedules
+                            </p>
+                            {mode.type === 'idle' && (
+                                <Button
+                                    type="button"
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() => setMode({ type: 'add' })}
+                                >
+                                    + Add Schedule
+                                </Button>
+                            )}
                         </div>
-                    )}
-                </div>
+
+                        <ManagementTable
+                            data={holds}
+                            isLoading={isLoading}
+                            emptyMessage="No quantity schedules — full quantity is available for all dates."
+                            getKey={(entry) => entry.id}
+                            columns={[
+                                {
+                                    key: 'quantity',
+                                    header: 'Quantity',
+                                    className: 'font-medium',
+                                    render: (entry) => `${entry.quantity} unit${entry.quantity !== 1 ? 's' : ''}`,
+                                },
+                                {
+                                    key: 'dateRange',
+                                    header: 'Date Range',
+                                    className: 'text-xs',
+                                    render: (entry) => `${fmtDate(entry.startDate)} – ${fmtDate(entry.endDate)}`,
+                                },
+                                {
+                                    key: 'notes',
+                                    header: 'Notes',
+                                    className: 'text-xs text-muted-foreground',
+                                    render: (entry) => entry.notes ?? '—',
+                                },
+                            ]}
+                            onEdit={(entry) => setMode({ type: 'edit', entry })}
+                            onDelete={(entry) => setMode({ type: 'delete', entry })}
+                        />
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );

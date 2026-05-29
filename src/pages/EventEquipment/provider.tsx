@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useAvailableEquipment } from '@/store/queries/equipment';
 import { useAllRequests } from '@/store/queries/request';
+import type { EquipmentRequest } from '@/store/schemas/request';
 import {
     RequestManagementContext,
     DEFAULT_REQUEST_FILTERS,
@@ -8,8 +10,14 @@ import {
 
 export function RequestManagementProvider({ children }: { children: ReactNode }) {
     const [filters, setLocalFilters] = useState<RequestManagementFilters>(DEFAULT_REQUEST_FILTERS);
+    const [reviewRequest, setReviewRequest] = useState<EquipmentRequest | null>(null);
 
     const query = useAllRequests(filters);
+    const availableEquipmentQuery = useAvailableEquipment({
+        startDate: reviewRequest?.requestedStartDate ?? '',
+        endDate: reviewRequest?.requestedEndDate ?? '',
+        context: 'EVENT_REQUEST',
+    });
 
     const setStatus = useCallback((status?: string) => {
         setLocalFilters((prev) => ({ ...prev, status: status || undefined, page: 0 }));
@@ -47,8 +55,13 @@ export function RequestManagementProvider({ children }: { children: ReactNode })
             isError: query.isError,
             error: query.error ?? null,
             refetch: query.refetch,
+            reviewRequest,
+            setReviewRequest,
+            availableEquipment: availableEquipmentQuery.data?.mainEquipment ?? [],
+            availableSubEquipment: availableEquipmentQuery.data?.subEquipment ?? [],
+            isAvailableEquipmentLoading: availableEquipmentQuery.isLoading,
         }),
-        [filters, setStatus, setSearch, setPage, setFilters, resetFilters, query],
+        [filters, setStatus, setSearch, setPage, setFilters, resetFilters, query, reviewRequest, availableEquipmentQuery],
     );
 
     return (

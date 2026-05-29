@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { CalendarCheck, ChevronDown, Search } from 'lucide-react';
+import { ChevronDown, ClipboardList, Search } from 'lucide-react';
 
 import { DataTable } from '@/components/data-table';
 import {
@@ -14,29 +14,15 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
-import { useBookingManagementContext } from './context';
-import { BookingManagementProvider } from './provider';
-import { bookingManagementColumns } from './table-column-def';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const RENTAL_STATUSES = [
-    'PENDING_REVIEW',
-    'APPROVED',
-    'REJECTED',
-    'CANCELLED',
-    'PENDING_PAYMENT',
-    // 'PENDING_CASH',
-    'PAID',
-    'ACTIVE',
-    'OVERDUE',
-    'RETURNED',
-] as const;
+import { REQUEST_STATUS_LABEL, REQUEST_STATUS_VALUES, type RequestStatus } from '@/constants/requestStatus';
+import { useRequestManagementContext } from './context';
+import { RequestManagementProvider } from './provider';
+import { requestManagementColumns } from './table-column-def';
 
 // ── Header controls ───────────────────────────────────────────────────────────
 
 function SearchInput() {
-    const { filters, setSearch } = useBookingManagementContext();
+    const { filters, setSearch } = useRequestManagementContext();
     const [value, setValue] = useState(filters.search ?? '');
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -63,7 +49,7 @@ function SearchInput() {
         <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-                placeholder="Search rentals..."
+                placeholder="Search requests..."
                 value={value}
                 onChange={handleChange}
                 className="w-full pl-9 sm:w-52 rounded-4xl"
@@ -73,13 +59,13 @@ function SearchInput() {
 }
 
 function StatusFilter() {
-    const { filters, setStatus } = useBookingManagementContext();
+    const { filters, setStatus } = useRequestManagementContext();
 
     return (
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm" className="h-9 rounded-4xl gap-1.5 text-muted-foreground">
-                    {filters.status ? filters.status.replace(/_/g, ' ') : 'All statuses'}
+                    {filters.status ? (REQUEST_STATUS_LABEL[filters.status as RequestStatus] ?? filters.status.replace(/_/g, ' ')) : 'All statuses'}
                     <ChevronDown className="h-3.5 w-3.5" />
                 </Button>
             </DropdownMenuTrigger>
@@ -90,9 +76,9 @@ function StatusFilter() {
                 >
                     <DropdownMenuRadioItem value="">All statuses</DropdownMenuRadioItem>
                     <DropdownMenuSeparator />
-                    {RENTAL_STATUSES.map((s) => (
+                    {REQUEST_STATUS_VALUES.map((s) => (
                         <DropdownMenuRadioItem key={s} value={s}>
-                            {s.replace(/_/g, ' ')}
+                            {REQUEST_STATUS_LABEL[s]}
                         </DropdownMenuRadioItem>
                     ))}
                 </DropdownMenuRadioGroup>
@@ -114,9 +100,9 @@ function StatusFilter() {
 
 // ── Page content ──────────────────────────────────────────────────────────────
 
-function BookingManagementContent() {
+function RequestManagementContent() {
     const {
-        rentals,
+        requests,
         filters,
         totalElements,
         totalPages,
@@ -125,28 +111,28 @@ function BookingManagementContent() {
         error,
         setPage,
         refetch,
-    } = useBookingManagementContext();
+    } = useRequestManagementContext();
 
     return (
         <div className="space-y-4 p-2 sm:p-6">
             <div className="flex items-center gap-3">
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <CalendarCheck className="h-5 w-5 text-primary" />
+                    <ClipboardList className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                    <h1 className="text-xl text-primary font-semibold tracking-tight">Equipment Booking Management</h1>
-                    <p className="text-sm text-muted-foreground">Review and manage all rental requests.</p>
+                    <h1 className="text-xl text-primary font-semibold tracking-tight">Event's Equipment</h1>
+                    <p className="text-sm text-muted-foreground">Review and action equipment requests from event committees.</p>
                 </div>
             </div>
 
             <DataTable
-                columns={bookingManagementColumns}
-                data={rentals}
+                columns={requestManagementColumns}
+                data={requests}
                 isLoading={isLoading}
                 isError={isError}
                 error={error ?? undefined}
                 onRetry={() => void refetch()}
-                title="All Rental Requests"
+                title="All Equipment Requests"
                 totalElements={totalElements}
                 headerActions={
                     <div className="flex items-center gap-2">
@@ -157,7 +143,7 @@ function BookingManagementContent() {
                 page={filters.page}
                 totalPages={totalPages}
                 onPageChange={setPage}
-                emptyMessage="No rentals found."
+                emptyMessage="No requests found."
             />
         </div>
     );
@@ -165,10 +151,10 @@ function BookingManagementContent() {
 
 // ── Default export ────────────────────────────────────────────────────────────
 
-export default function BookingManagementMainPage() {
+export default function RequestManagementMainPage() {
     return (
-        <BookingManagementProvider>
-            <BookingManagementContent />
-        </BookingManagementProvider>
+        <RequestManagementProvider>
+            <RequestManagementContent />
+        </RequestManagementProvider>
     );
 }

@@ -32,10 +32,10 @@ export function EventRowActions({ row }: EventRowActionsProps) {
                 type="button"
                 size="sm"
                 variant="outline"
-                onClick={() => void navigate(`/equipment-requests/${row.original.eventId}`)}
+                onClick={() => void navigate(`/equipment-requests/${row.original.eventId}`, { state: { breadcrumbLabel: row.original.eventName } })}
             >
                 <ClipboardList className="mr-2 h-4 w-4" />
-                Request Equipment
+                View Requests
             </Button>
         );
     }
