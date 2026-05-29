@@ -1,5 +1,5 @@
 import { AlertTriangle, DollarSign, Package, TrendingUp } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { useKpiStats } from '@/store/queries/report';
 
 export function KpiCards() {
@@ -39,25 +39,27 @@ export function KpiCards() {
     ];
 
     return (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             {cards.map((card) => (
-                <Card key={card.title}>
-                    <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">
-                            {card.title}
-                        </CardTitle>
-                        <card.icon
-                            className={`h-4 w-4 ${card.danger ? 'text-destructive' : 'text-muted-foreground'}`}
-                        />
-                    </CardHeader>
-                    <CardContent>
-                        {isLoading ? (
-                            <div className="h-8 w-24 animate-pulse rounded bg-muted" />
-                        ) : (
-                            <div className={`text-2xl font-bold ${card.danger ? 'text-destructive' : ''}`}>
-                                {card.display(card.value)}
+                <Card key={card.title} className="p-4">
+                    <CardContent className="p-0">
+                        <div className="flex items-start gap-3">
+                            <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ${
+                                card.danger ? 'bg-destructive/10' : 'bg-primary/10'
+                            }`}>
+                                <card.icon className={`h-4 w-4 ${card.danger ? 'text-destructive' : 'text-primary'}`} />
                             </div>
-                        )}
+                            <div className="min-w-0 flex-1">
+                                <p className="text-xs font-medium text-muted-foreground leading-tight">{card.title}</p>
+                                {isLoading ? (
+                                    <div className="mt-1 h-6 w-20 animate-pulse rounded bg-muted" />
+                                ) : (
+                                    <p className={`mt-0.5 text-xl font-bold tabular-nums ${card.danger ? 'text-destructive' : ''}`}>
+                                        {card.display(card.value)}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             ))}

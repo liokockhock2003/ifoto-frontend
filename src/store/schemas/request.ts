@@ -14,7 +14,7 @@ export const EquipmentRequestSubItemSchema = z.object({
     subEquipmentId: z.number().int(),
     equipmentType: z.string(),
     brand: z.string().nullable(),
-    quantity: z.number().int().positive(),
+    borrowedQuantity: z.number().int().positive().optional(),
 });
 
 export const RequestStatusSchema = z.enum([
@@ -66,27 +66,36 @@ export const RequestFiltersSchema = z.object({
     size: z.number().int().positive().optional(),
 });
 
-export const SubmitRequestPayloadSchema = z.object({
-    eventId: z.number().int(),
-    equipmentIds: z.array(z.number().int()).min(1),
-    startDate: z.string(),
-    endDate: z.string(),
-    notes: z.string().optional(),
-});
-
 export const SubEquipmentEntrySchema = z.object({
     subEquipmentId: z.number().int(),
     quantity: z.number().int().positive(),
 });
 
-export const ReviewRequestPayloadSchema = z.object({
-    action: z.enum(['APPROVE', 'REJECT']),
-    approvedStartDate: z.string().optional(),
-    approvedEndDate: z.string().optional(),
-    equipmentIds: z.array(z.number().int()).optional(),
+export const SubmitRequestPayloadSchema = z.object({
+    eventId: z.number().int(),
+    equipmentIds: z.array(z.number().int()).min(1),
     subEquipmentEntries: z.array(SubEquipmentEntrySchema).optional(),
+    startDate: z.string(),
+    endDate: z.string(),
+    notes: z.string().optional(),
+});
+
+const ApproveRequestPayloadSchema = z.object({
+    action: z.literal('APPROVE'),
+    equipmentIds: z.array(z.number().int()).optional(),
     committeeNotes: z.string().optional(),
 });
+
+const RejectRequestPayloadSchema = z.object({
+    action: z.literal('REJECT'),
+    rejectionReason: z.string().optional(),
+    committeeNotes: z.string().optional(),
+});
+
+export const ReviewRequestPayloadSchema = z.discriminatedUnion('action', [
+    ApproveRequestPayloadSchema,
+    RejectRequestPayloadSchema,
+]);
 
 export type EquipmentRequestItem = z.infer<typeof EquipmentRequestItemSchema>;
 export type EquipmentRequestSubItem = z.infer<typeof EquipmentRequestSubItemSchema>;

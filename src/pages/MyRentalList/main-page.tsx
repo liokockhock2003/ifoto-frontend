@@ -1,15 +1,28 @@
 import { PlusCircle, Receipt } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
 
+import { RentalSuccessDialog } from './EquipmentRental/dialog-success-rent';
 import { useRentalListContext } from './context';
 import { RentalListProvider } from './provider';
 import { rentalListColumns } from './table-column-def';
 
 function RentalListContent() {
     const navigate = useNavigate();
+    const location = useLocation();
+    const state = location.state as { rentalSubmitted?: boolean; rentalNumber?: string } | null;
+
+    const [successOpen, setSuccessOpen] = useState(state?.rentalSubmitted === true);
+    const rentalNumber = state?.rentalNumber;
+
+    const handleSuccessClose = () => {
+        setSuccessOpen(false);
+        navigate('/equipment-rent', { replace: true, state: null });
+    };
+
     const { data, isLoading, isError, error, refetch } = useRentalListContext();
 
     return (
@@ -40,6 +53,12 @@ function RentalListContent() {
                 title="Rental History"
                 totalElements={data?.length}
                 emptyMessage="No rentals found."
+            />
+
+            <RentalSuccessDialog
+                open={successOpen}
+                onOpenChange={(open) => { if (!open) handleSuccessClose(); }}
+                rentalNumber={rentalNumber}
             />
         </div>
     );

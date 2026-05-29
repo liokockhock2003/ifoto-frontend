@@ -9,13 +9,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 
 type EquipmentRequestConfirmationDialogProps = {
     open: boolean;
     onOpenChange: (open: boolean) => void;
     onConfirm: () => void;
     isPending: boolean;
-    cartCount: number;
+    cartIds: number[];
+    subQty: Record<number, number>;
+    mainEquipment: MainEquipment[];
+    subEquipment: SubEquipment[];
     startDate: string;
     endDate: string;
     notes: string;
@@ -35,11 +39,21 @@ export function EquipmentRequestConfirmationDialog({
     onOpenChange,
     onConfirm,
     isPending,
-    cartCount,
+    cartIds,
+    subQty,
+    mainEquipment,
+    subEquipment,
     startDate,
     endDate,
     notes,
 }: EquipmentRequestConfirmationDialogProps) {
+    const mainEquipmentMap = new Map(mainEquipment.map((e) => [e.mainEquipmentId, e]));
+    const subEquipmentMap = new Map(subEquipment.map((e) => [e.subEquipmentId, e]));
+
+    const subEntries = Object.entries(subQty)
+        .filter(([, qty]) => qty > 0)
+        .map(([idStr, qty]) => ({ id: Number(idStr), qty }));
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-md text-muted-foreground">
@@ -54,10 +68,39 @@ export function EquipmentRequestConfirmationDialog({
                 </DialogHeader>
 
                 <div className="space-y-3 rounded-md border bg-muted/30 p-4 text-sm">
-                    <div className="flex justify-between">
-                        <span className="text-muted-foreground">Equipment selected</span>
-                        <span className="font-medium">{cartCount} {cartCount === 1 ? 'item' : 'items'}</span>
-                    </div>
+                    {/* Main equipment */}
+                    {cartIds.length > 0 && (
+                        <div className="space-y-1">
+                            <p className="text-muted-foreground">Equipment ({cartIds.length})</p>
+                            {cartIds.map((id) => {
+                                const eq = mainEquipmentMap.get(id);
+                                return (
+                                    <p key={id} className="font-medium pl-2">
+                                        {eq ? `${eq.brand} ${eq.model}` : `Equipment #${id}`}
+                                    </p>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {/* Sub-equipment */}
+                    {subEntries.length > 0 && (
+                        <div className="space-y-1">
+                            <p className="text-muted-foreground">Accessories ({subEntries.length} type{subEntries.length !== 1 ? 's' : ''})</p>
+                            {subEntries.map(({ id, qty }) => {
+                                const eq = subEquipmentMap.get(id);
+                                const label = eq
+                                    ? eq.brand ? `${eq.brand} ${eq.equipmentType}` : eq.equipmentType
+                                    : `Accessory #${id}`;
+                                return (
+                                    <p key={id} className="font-medium pl-2">
+                                        {label} <span className="text-muted-foreground tabular-nums">× {qty}</span>
+                                    </p>
+                                );
+                            })}
+                        </div>
+                    )}
+
                     <div className="flex justify-between">
                         <span className="text-muted-foreground">Start date</span>
                         <span className="font-medium">{formatDisplayDate(startDate)}</span>

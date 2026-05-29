@@ -2,12 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { QueryFactory } from '@/store/query-factory';
 import {
     KpiStatsSchema,
-    RentalStatusBreakdownItemSchema,
+    RentalStatusBreakdownSchema,
     RentalVolumeItemSchema,
     RevenueItemSchema,
     EquipmentUtilizationItemSchema,
     type KpiStats,
-    type RentalStatusBreakdownItem,
+    type RentalStatusBreakdown,
     type RentalVolumeItem,
     type RevenueItem,
     type EquipmentUtilizationItem,
@@ -32,8 +32,8 @@ const kpiListQuery = reportQuery.customList<KpiStats>({
     queryKeySuffix: 'kpi',
 });
 
-const rentalStatusListQuery = reportQuery.customList<RentalStatusBreakdownItem[]>({
-    responseSchema: RentalStatusBreakdownItemSchema.array(),
+const rentalStatusListQuery = reportQuery.customList<RentalStatusBreakdown>({
+    responseSchema: RentalStatusBreakdownSchema,
     urlSuffix: '/rental-status',
     queryKeySuffix: 'rental-status',
 });

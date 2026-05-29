@@ -1,26 +1,15 @@
+import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Rental } from '@/store/schemas/rental';
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
+import { RENTAL_STATUS_BADGE, RENTAL_STATUS_LABEL, type RentalStatus } from '@/constants/rentalStatus';
 import { RentalRowActions } from './table-row-actions';
 
 const columnHelper = createColumnHelper<Rental>();
 
-const statusBadgeClass: Record<string, string> = {
-    PENDING_REVIEW:   'badge-warning',
-    APPROVED:         'badge-success',
-    REJECTED:         'badge-danger',
-    CANCELLED:        'badge-danger',
-    PENDING_PAYMENT:  'badge-warning',
-    // PENDING_CASH:     'badge-warning',
-    PAID:             'badge-info',
-    ACTIVE:           'badge-success',
-    OVERDUE:          'badge-danger',
-    RETURNED:         'badge-info',
-};
-
 export function statusVariant(status: string): string {
-    return statusBadgeClass[status] ?? '';
+    return RENTAL_STATUS_BADGE[status as RentalStatus] ?? '';
 }
 
 export const rentalListColumns: ColumnDef<Rental, any>[] = [
@@ -30,11 +19,18 @@ export const rentalListColumns: ColumnDef<Rental, any>[] = [
     }),
     columnHelper.accessor('status', {
         header: 'Status',
-        cell: (info) => (
-            <Badge variant="outline" className={statusVariant(info.getValue())}>
-                {info.getValue().replace(/_/g, ' ')}
-            </Badge>
-        ),
+        cell: (info) => {
+            const { status, totalPenaltyAmount, paymentStatus } = info.row.original;
+            const unpaidPenalty = status === 'RETURNED' && totalPenaltyAmount > 0 && paymentStatus !== 'PENALTY_PAID';
+            return (
+                <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className={statusVariant(info.getValue())}>
+                        {RENTAL_STATUS_LABEL[info.getValue() as RentalStatus] ?? info.getValue().replace(/_/g, ' ')}
+                    </Badge>
+                    {unpaidPenalty && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
+                </div>
+            );
+        },
     }),
     columnHelper.accessor('requestedStartDate', {
         header: 'Start Date',

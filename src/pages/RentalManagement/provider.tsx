@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useState, type ReactNode } from 'react';
+import { useAvailableEquipment } from '@/store/queries/equipment';
 import { useAllRentals } from '@/store/queries/rental';
+import type { Rental } from '@/store/schemas/rental';
 import {
     BookingManagementContext,
     DEFAULT_BOOKING_FILTERS,
@@ -8,8 +10,14 @@ import {
 
 export function BookingManagementProvider({ children }: { children: ReactNode }) {
     const [filters, setLocalFilters] = useState<BookingManagementFilters>(DEFAULT_BOOKING_FILTERS);
+    const [reviewRental, setReviewRental] = useState<Rental | null>(null);
 
     const query = useAllRentals(filters);
+    const availableEquipmentQuery = useAvailableEquipment({
+        startDate: reviewRental?.requestedStartDate ?? '',
+        endDate: reviewRental?.requestedEndDate ?? '',
+        context: 'RENTAL',
+    });
 
     const setStatus = useCallback((status?: string) => {
         setLocalFilters((prev) => ({ ...prev, status: status || undefined, page: 0 }));
@@ -47,8 +55,13 @@ export function BookingManagementProvider({ children }: { children: ReactNode })
             isError: query.isError,
             error: query.error ?? null,
             refetch: query.refetch,
+            reviewRental,
+            setReviewRental,
+            availableEquipment: availableEquipmentQuery.data?.mainEquipment ?? [],
+            availableSubEquipment: availableEquipmentQuery.data?.subEquipment ?? [],
+            isAvailableEquipmentLoading: availableEquipmentQuery.isLoading,
         }),
-        [filters, setStatus, setSearch, setPage, setFilters, resetFilters, query],
+        [filters, setStatus, setSearch, setPage, setFilters, resetFilters, query, reviewRental, availableEquipmentQuery],
     );
 
     return (

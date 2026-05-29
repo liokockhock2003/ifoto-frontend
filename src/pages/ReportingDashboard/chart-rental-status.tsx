@@ -1,5 +1,5 @@
 import { Cell, Pie, PieChart } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartTooltip,
@@ -7,84 +7,70 @@ import {
     type ChartConfig,
 } from '@/components/ui/chart';
 import { useRentalStatusBreakdown } from '@/store/queries/report';
+import type { RentalStatusBreakdown } from '@/store/schemas/report';
 
-const STATUS_COLORS: Record<string, string> = {
-    PENDING_REVIEW: '#f59e0b',
-    APPROVED: '#3b82f6',
-    ACTIVE: '#22c55e',
-    OVERDUE: '#ef4444',
-    RETURNED: '#8b5cf6',
-    REJECTED: '#6b7280',
-    CANCELLED: '#94a3b8',
-};
+const BREAKDOWN_CONFIG = [
+    { key: 'approved', label: 'Approved', color: 'var(--color-primary)' },
+    { key: 'paid', label: 'Paid', color: 'var(--color-chart-4)' },
+    { key: 'active', label: 'Active', color: '#22c55e' },
+    { key: 'overdue', label: 'Overdue', color: 'var(--color-destructive)' },
+    { key: 'paidOverdue', label: 'Paid (Overdue)', color: '#f97316' },
+    { key: 'returned', label: 'Returned', color: '#8b5cf6' },
+] as const satisfies { key: keyof RentalStatusBreakdown; label: string; color: string }[];
 
-const STATUS_LABELS: Record<string, string> = {
-    PENDING_REVIEW: 'Pending Review',
-    APPROVED: 'Approved',
-    ACTIVE: 'Active',
-    OVERDUE: 'Overdue',
-    RETURNED: 'Returned',
-    REJECTED: 'Rejected',
-    CANCELLED: 'Cancelled',
-};
+const chartConfig: ChartConfig = Object.fromEntries(
+    BREAKDOWN_CONFIG.map(({ key, label, color }) => [key, { label, color }]),
+);
 
 export function ChartRentalStatus() {
-    const { data = [], isLoading } = useRentalStatusBreakdown();
+    const { data, isLoading } = useRentalStatusBreakdown();
 
-    const chartConfig: ChartConfig = Object.fromEntries(
-        data.map((item) => [
-            item.status,
-            {
-                label: STATUS_LABELS[item.status] ?? item.status,
-                color: STATUS_COLORS[item.status] ?? '#94a3b8',
-            },
-        ]),
-    );
+    const chartData = data
+        ? BREAKDOWN_CONFIG.map(({ key, label, color }) => ({
+            name: key, label, count: data[key], color,
+        }))
+        : [];
 
-    const total = data.reduce((sum, item) => sum + item.count, 0);
+    const total = chartData.reduce((sum, item) => sum + item.count, 0);
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Rental Status Breakdown</CardTitle>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Rental Status Breakdown</CardTitle>
+                <CardDescription>Distribution across all rental states</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
-                    <div className="flex aspect-square max-h-[280px] items-center justify-center mx-auto">
-                        <div className="h-32 w-32 animate-pulse rounded-full bg-muted" />
+                    <div className="flex aspect-square max-h-[240px] items-center justify-center mx-auto">
+                        <div className="h-28 w-28 animate-pulse rounded-full bg-muted" />
                     </div>
                 ) : (
-                    <ChartContainer config={chartConfig} className="mx-auto aspect-square max-h-[280px]">
+                    <ChartContainer config={chartConfig} className="max-h-[200px] mx-auto aspect-square">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent hideLabel />} />
                             <Pie
-                                data={data}
+                                data={chartData}
                                 dataKey="count"
-                                nameKey="status"
-                                innerRadius={65}
-                                outerRadius={100}
+                                nameKey="name"
+                                innerRadius={35}
+                                outerRadius={90}
                             >
-                                {data.map((entry) => (
-                                    <Cell
-                                        key={entry.status}
-                                        fill={STATUS_COLORS[entry.status] ?? '#94a3b8'}
-                                    />
+                                {chartData.map((entry) => (
+                                    <Cell key={entry.name} fill={entry.color} />
                                 ))}
                             </Pie>
                         </PieChart>
                     </ChartContainer>
                 )}
-                <div className="mt-4 flex flex-wrap justify-center gap-x-4 gap-y-2">
-                    {data.map((item) => (
-                        <div key={item.status} className="flex items-center gap-1.5 text-xs">
+                <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5">
+                    {chartData.map((item) => (
+                        <div key={item.name} className="flex items-center gap-1.5 text-xs">
                             <div
                                 className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ backgroundColor: STATUS_COLORS[item.status] ?? '#94a3b8' }}
+                                style={{ backgroundColor: item.color }}
                             />
-                            <span className="text-muted-foreground">
-                                {STATUS_LABELS[item.status] ?? item.status}
-                            </span>
-                            <span className="font-medium tabular-nums">{item.count}</span>
+                            <span className="text-muted-foreground">{item.label}</span>
+                            <span className="font-semibold tabular-nums">{item.count}</span>
                         </div>
                     ))}
                 </div>

@@ -1,5 +1,4 @@
 import { useMemo, type ReactNode } from 'react';
-import { format } from 'date-fns';
 
 import { useEquipmentList } from '@/store/queries/equipment';
 
@@ -58,8 +57,7 @@ type InventoryManagementProviderProps = {
 export function InventoryManagementProvider({
     children,
 }: InventoryManagementProviderProps) {
-    const today = format(new Date(), 'yyyy-MM-dd');
-    const equipmentQuery = useEquipmentList({ startDate: today, endDate: today });
+    const equipmentQuery = useEquipmentList();
 
     const value = useMemo(
         () => {

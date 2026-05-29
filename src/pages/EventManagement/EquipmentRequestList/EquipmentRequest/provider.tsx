@@ -27,6 +27,7 @@ export function EquipmentRequestProvider({ children }: EquipmentRequestProviderP
 
     const [cartIds, setCartIds] = useState<number[]>([]);
     const [notes, setNotes] = useState('');
+    const [subQty, setSubQtyState] = useState<Record<number, number>>({});
 
     const addToCart = useCallback((id: number) => {
         setCartIds((prev) => (prev.includes(id) ? prev : [...prev, id]));
@@ -38,9 +39,14 @@ export function EquipmentRequestProvider({ children }: EquipmentRequestProviderP
 
     const isInCart = useCallback((id: number) => cartIds.includes(id), [cartIds]);
 
+    const setSubQty = useCallback((id: number, qty: number) => {
+        setSubQtyState((prev) => ({ ...prev, [id]: qty }));
+    }, []);
+
     const clearCart = useCallback(() => {
         setCartIds([]);
         setNotes('');
+        setSubQtyState({});
     }, []);
 
     const value = useMemo(
@@ -53,6 +59,8 @@ export function EquipmentRequestProvider({ children }: EquipmentRequestProviderP
             endDate,
             notes,
             eventId,
+            subQty,
+            setSubQty,
             addToCart,
             removeFromCart,
             isInCart,
@@ -67,6 +75,8 @@ export function EquipmentRequestProvider({ children }: EquipmentRequestProviderP
             endDate,
             notes,
             eventId,
+            subQty,
+            setSubQty,
             addToCart,
             removeFromCart,
             isInCart,

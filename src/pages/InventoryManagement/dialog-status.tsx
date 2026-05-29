@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { CalendarDays, ChevronDown, Pencil, X } from 'lucide-react';
+import { CalendarDays, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
-import { DatePicker } from '@/components/date-picker';
+import { DeleteConfirm, ScheduleEntryForm } from '@/components/schedule-entry-form';
+import { ManagementTable } from '@/components/management-table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,7 +20,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
     useCreateEquipmentStatus,
@@ -33,28 +34,11 @@ import type {
     EquipmentStatusType,
     MainEquipment,
 } from '@/store/schemas/equipment';
-
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const STATUS_OPTIONS: Exclude<EquipmentStatusType, 'AVAILABLE'>[] = [
-    'MAINTENANCE', 'UNAVAILABLE', 'CONVOCATION', 'MRM',
-];
-
-const STATUS_LABEL: Record<EquipmentStatusType, string> = {
-    MAINTENANCE:  'Maintenance',
-    UNAVAILABLE:  'Unavailable',
-    CONVOCATION:  'Convocation',
-    MRM:          'MRM Event',
-    AVAILABLE:    'Available',
-};
-
-const STATUS_BADGE: Record<EquipmentStatusType, string> = {
-    MAINTENANCE:  'badge-warning',
-    UNAVAILABLE:  'badge-danger',
-    CONVOCATION:  'badge-info',
-    MRM:          'badge-info',
-    AVAILABLE:    'badge-success',
-};
+import {
+    EQUIPMENT_STATUS_OPTIONS as STATUS_OPTIONS,
+    EQUIPMENT_STATUS_LABEL as STATUS_LABEL,
+    EQUIPMENT_STATUS_BADGE as STATUS_BADGE,
+} from '@/constants/equipmentStatus';
 
 function fmtDate(d: string) {
     return new Date(d).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
@@ -119,9 +103,21 @@ function StatusForm({
     }
 
     return (
-        <div className="rounded-md border bg-muted/30 p-4 space-y-4">
-            <p className="text-sm font-medium">{editing ? 'Edit Status Entry' : 'Add Status Entry'}</p>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <ScheduleEntryForm
+            title={editing ? 'Edit Status Entry' : 'Add Status Entry'}
+            startDate={form.startDate}
+            endDate={form.endDate}
+            notes={form.notes}
+            onStartChange={(d) => setForm((p) => ({ ...p, startDate: d, endDate: p.endDate && p.endDate < d ? '' : p.endDate }))}
+            onEndChange={(d) => setForm((p) => ({ ...p, endDate: d }))}
+            onNotesChange={(n) => setForm((p) => ({ ...p, notes: n }))}
+            onSubmit={() => void handleSubmit()}
+            onCancel={onCancel}
+            isPending={isPending}
+            canSubmit={canSubmit}
+            submitLabel={editing ? 'Save Changes' : 'Add Entry'}
+            notesPlaeholder="e.g. Annual servicing"
+            extraFields={
                 <Field>
                     <FieldLabel>Status Type</FieldLabel>
                     <DropdownMenu>
@@ -144,49 +140,14 @@ function StatusForm({
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </Field>
-
-                <Field>
-                    <FieldLabel>Notes (optional)</FieldLabel>
-                    <Input
-                        placeholder="e.g. Annual servicing"
-                        value={form.notes}
-                        onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                    />
-                </Field>
-
-                <Field>
-                    <FieldLabel>Start Date</FieldLabel>
-                    <DatePicker
-                        value={form.startDate}
-                        onChange={(d) => setForm((p) => ({ ...p, startDate: d, endDate: p.endDate && p.endDate < d ? '' : p.endDate }))}
-                    />
-                </Field>
-
-                <Field>
-                    <FieldLabel>End Date</FieldLabel>
-                    <DatePicker
-                        value={form.endDate}
-                        onChange={(d) => setForm((p) => ({ ...p, endDate: d }))}
-                        disabled={!form.startDate}
-                    />
-                </Field>
-            </div>
-
-            <div className="flex gap-2">
-                <Button type="button" size="sm" disabled={!canSubmit || isPending} onClick={() => void handleSubmit()}>
-                    {isPending ? 'Saving…' : editing ? 'Save Changes' : 'Add Entry'}
-                </Button>
-                <Button type="button" size="sm" variant="outline" disabled={isPending} onClick={onCancel}>
-                    Cancel
-                </Button>
-            </div>
-        </div>
+            }
+        />
     );
 }
 
 // ── Delete confirmation ───────────────────────────────────────────────────────
 
-function DeleteConfirm({
+function StatusDeleteConfirm({
     mainEquipmentId,
     entry,
     onDone,
@@ -209,28 +170,15 @@ function DeleteConfirm({
     }
 
     return (
-        <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 space-y-3">
-            <p className="text-sm font-medium text-destructive">Remove this status entry?</p>
-            <p className="text-xs text-muted-foreground">
-                <span className="font-medium">{STATUS_LABEL[entry.statusType]}</span>
-                {' · '}
-                {fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}
-            </p>
-            <div className="flex gap-2">
-                <Button
-                    type="button"
-                    size="sm"
-                    variant="destructive"
-                    disabled={mutation.isPending}
-                    onClick={() => void handleDelete()}
-                >
-                    {mutation.isPending ? 'Deleting…' : 'Delete'}
-                </Button>
-                <Button type="button" size="sm" variant="outline" disabled={mutation.isPending} onClick={onCancel}>
-                    Cancel
-                </Button>
-            </div>
-        </div>
+        <DeleteConfirm
+            title="Remove this status entry?"
+            description={
+                <><span className="font-medium text-foreground">{STATUS_LABEL[entry.statusType]}</span>{' · '}{fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}</>
+            }
+            onDelete={() => void handleDelete()}
+            onCancel={onCancel}
+            isPending={mutation.isPending}
+        />
     );
 }
 
@@ -258,20 +206,21 @@ export function EquipmentStatusDialog({ open, onOpenChange, equipment }: Equipme
 
     return (
         <Dialog open={open} onOpenChange={(v) => { onOpenChange(v); if (!v) setMode({ type: 'idle' }); }}>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="sm:max-w-2xl text-foreground">
                 <DialogHeader>
-                    <DialogTitle className="flex items-center gap-2">
-                        <CalendarDays className="h-4 w-4 text-primary" />
-                        {equipment.brand} {equipment.model} — Status Entries
+                    <DialogTitle className="flex items-center gap-2 text-primary">
+                        <CalendarDays className="h-4 w-4" />
+                        {equipment.brand} {equipment.model}
                     </DialogTitle>
                     <DialogDescription>
                         {upcomingCount > 0
-                            ? `${upcomingCount} upcoming hold${upcomingCount !== 1 ? 's' : ''}`
-                            : 'No holds — equipment is available for all dates'}
+                            ? `${upcomingCount} upcoming schedules${upcomingCount !== 1 ? 's' : ''}`
+                            : 'No schedules — equipment is available for all dates'}
                     </DialogDescription>
                 </DialogHeader>
 
-                <div className="space-y-4">
+                <ScrollArea className="max-h-[70vh]">
+                <div className="space-y-4 pr-4">
                     {/* Inline form / delete confirm */}
                     {mode.type === 'add' && (
                         <StatusForm
@@ -290,7 +239,7 @@ export function EquipmentStatusDialog({ open, onOpenChange, equipment }: Equipme
                         />
                     )}
                     {mode.type === 'delete' && (
-                        <DeleteConfirm
+                        <StatusDeleteConfirm
                             mainEquipmentId={equipment.mainEquipmentId}
                             entry={mode.entry}
                             onDone={() => setMode({ type: 'idle' })}
@@ -309,7 +258,7 @@ export function EquipmentStatusDialog({ open, onOpenChange, equipment }: Equipme
                             <Button
                                 type="button"
                                 size="sm"
-                                variant="outline"
+                                // variant="outline"
                                 onClick={() => setMode({ type: 'add' })}
                             >
                                 + Add Status
@@ -318,66 +267,39 @@ export function EquipmentStatusDialog({ open, onOpenChange, equipment }: Equipme
                     </div>
 
                     {/* Status list */}
-                    {isLoading ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">Loading…</p>
-                    ) : !statuses?.length ? (
-                        <p className="text-sm text-muted-foreground py-4 text-center">
-                            No status entries — equipment is available for all dates.
-                        </p>
-                    ) : (
-                        <div className="rounded-md border overflow-hidden">
-                            <table className="w-full text-sm">
-                                <thead className="bg-muted/50">
-                                    <tr>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Status</th>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Date Range</th>
-                                        <th className="px-3 py-2 text-left font-medium text-muted-foreground">Notes</th>
-                                        <th className="px-3 py-2" />
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {statuses.map((entry) => (
-                                        <tr key={entry.id} className="border-t">
-                                            <td className="px-3 py-2">
-                                                <Badge variant="outline" className={STATUS_BADGE[entry.statusType]}>
-                                                    {STATUS_LABEL[entry.statusType]}
-                                                </Badge>
-                                            </td>
-                                            <td className="px-3 py-2 text-xs">
-                                                {fmtDate(entry.startDate)} – {fmtDate(entry.endDate)}
-                                            </td>
-                                            <td className="px-3 py-2 text-xs text-muted-foreground">
-                                                {entry.notes ?? '—'}
-                                            </td>
-                                            <td className="px-3 py-2">
-                                                <div className="flex items-center gap-1 justify-end">
-                                                    <Button
-                                                        type="button"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-7 w-7"
-                                                        onClick={() => setMode({ type: 'edit', entry })}
-                                                    >
-                                                        <Pencil className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                    <Button
-                                                        type="button"
-                                                        size="icon"
-                                                        variant="ghost"
-                                                        className="h-7 w-7 text-destructive hover:text-destructive"
-                                                        onClick={() => setMode({ type: 'delete', entry })}
-                                                    >
-                                                        <X className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    <ManagementTable
+                        data={statuses}
+                        isLoading={isLoading}
+                        emptyMessage="No status entries — equipment is available for all dates."
+                        getKey={(entry) => entry.id}
+                        columns={[
+                            {
+                                key: 'status',
+                                header: 'Status',
+                                render: (entry) => (
+                                    <Badge variant="outline" className={STATUS_BADGE[entry.statusType]}>
+                                        {STATUS_LABEL[entry.statusType]}
+                                    </Badge>
+                                ),
+                            },
+                            {
+                                key: 'dateRange',
+                                header: 'Date Range',
+                                className: 'text-xs text-foreground',
+                                render: (entry) => `${fmtDate(entry.startDate)} – ${fmtDate(entry.endDate)}`,
+                            },
+                            {
+                                key: 'notes',
+                                header: 'Notes',
+                                className: 'text-xs text-muted-foreground',
+                                render: (entry) => entry.notes ?? '—',
+                            },
+                        ]}
+                        onEdit={(entry) => setMode({ type: 'edit', entry })}
+                        onDelete={(entry) => setMode({ type: 'delete', entry })}
+                    />
                 </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );

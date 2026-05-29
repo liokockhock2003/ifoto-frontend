@@ -16,12 +16,14 @@ export const CreateRentalPayloadSchema = z.object({
 export const RentalSubItemSchema = z.object({
     id: z.number(),
     subEquipmentId: z.number(),
+    type: z.string(),
     equipmentType: z.string(),
+    cameraModel: z.array(z.string()),
     brand: z.string().nullable(),
-    quantity: z.number().optional(),
-    baseAmount: z.number().optional(),
-    latePenaltyAmount: z.number().optional(),
-    itemTotalAmount: z.number().optional(),
+    borrowedQuantity: z.number(),
+    baseAmount: z.number(),
+    latePenaltyAmount: z.number(),
+    itemTotalAmount: z.number(),
 });
 
 export const RentalItemSchema = z.object({
@@ -37,11 +39,23 @@ export const RentalItemSchema = z.object({
     itemTotalAmount: z.number(),
 });
 
+export const RentalStatusSchema = z.enum([
+    'PENDING_REVIEW',
+    'APPROVED',
+    'REJECTED',
+    'CANCELLED',
+    'PENDING_PAYMENT',
+    'PAID',
+    'ACTIVE',
+    'OVERDUE',
+    'RETURNED',
+]);
+
 export const RentalSchema = z.object({
     id: z.number(),
     rentalNumber: z.string(),
     renterUsername: z.string(),
-    status: z.string(),
+    status: RentalStatusSchema,
     paymentMethod: z.string(),
     paymentStatus: z.string(),
     requestedStartDate: z.string(),
@@ -62,8 +76,6 @@ export const RentalSchema = z.object({
 
 const ApproveRentalPayloadSchema = z.object({
     action: z.literal('APPROVE'),
-    approvedStartDate: z.string(),
-    approvedEndDate: z.string(),
     equipmentIds: z.array(z.number().int().positive()).optional(),
     committeeNotes: z.string().optional(),
 });
@@ -119,6 +131,7 @@ export type CreateRentalPayload = z.infer<typeof CreateRentalPayloadSchema>;
 export type RentalItem = z.infer<typeof RentalItemSchema>;
 export type RentalSubItem = z.infer<typeof RentalSubItemSchema>;
 export type Rental = z.infer<typeof RentalSchema>;
+export type RentalStatus = z.infer<typeof RentalStatusSchema>;
 export type RentalFilters = z.infer<typeof RentalFiltersSchema>;
 export type PaginatedRental = z.infer<typeof PaginatedRentalSchema>;
 export type ReviewRentalPayload = z.infer<typeof ReviewRentalPayloadSchema>;

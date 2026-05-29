@@ -1,7 +1,8 @@
-import { MinusCircle, PlusCircle } from 'lucide-react';
+import { Minus, MinusCircle, Plus, PlusCircle } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ButtonGroup, ButtonGroupText } from '@/components/ui/button-group';
 
 import { useEquipmentRentalContext } from './context';
 
@@ -28,7 +29,7 @@ export function SubEquipmentQuantityCell({
     }
 
     return (
-        <div className="flex items-center gap-1">
+        <ButtonGroup>
             <Button
                 type="button"
                 variant="outline"
@@ -37,9 +38,11 @@ export function SubEquipmentQuantityCell({
                 disabled={qty === 0}
                 onClick={() => setSubQty(subEquipmentId, qty - 1)}
             >
-                <MinusCircle className="h-3.5 w-3.5" />
+                <Minus className="h-3 w-3" />
             </Button>
-            <span className="w-6 text-center text-sm font-medium tabular-nums">{qty}</span>
+            <ButtonGroupText className="h-7 px-3 text-sm border-0 min-w-[2rem] justify-center">
+                {qty}
+            </ButtonGroupText>
             <Button
                 type="button"
                 variant="outline"
@@ -48,9 +51,9 @@ export function SubEquipmentQuantityCell({
                 disabled={qty >= availableQuantity}
                 onClick={() => setSubQty(subEquipmentId, qty + 1)}
             >
-                <PlusCircle className="h-3.5 w-3.5" />
+                <Plus className="h-3 w-3" />
             </Button>
-        </div>
+        </ButtonGroup>
     );
 }
 

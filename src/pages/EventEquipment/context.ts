@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 import type { EquipmentRequest } from '@/store/schemas/request';
 
 export type RequestManagementFilters = {
@@ -28,6 +29,11 @@ export type RequestManagementContextValue = {
     isError: boolean;
     error: Error | null;
     refetch: () => Promise<unknown>;
+    reviewRequest: EquipmentRequest | null;
+    setReviewRequest: (request: EquipmentRequest | null) => void;
+    availableEquipment: MainEquipment[];
+    availableSubEquipment: SubEquipment[];
+    isAvailableEquipmentLoading: boolean;
 };
 
 export const RequestManagementContext = createContext<RequestManagementContextValue | undefined>(undefined);

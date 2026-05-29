@@ -213,7 +213,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                     return responseSchema.parse(res.data);
                 },
                 onSuccess: (data: TModel, variables: TInput) => {
-                    if (toastMsg) toast(toastMsg);
+                    if (toastMsg) toast.success(toastMsg);
 
                     const keysToInvalidate = invalidateKeys?.(data, variables);
                     if (keysToInvalidate && keysToInvalidate.length > 0) {
@@ -267,7 +267,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                                 ? description(variables)
                                 : ({ create: 'Created', edit: 'Updated', delete: 'Deleted', 'soft-delete': 'Archived' })[type];
 
-                    toast(toastDescription);
+                    toast.success(toastDescription);
                     onSuccess(data);
                     invalidateQuery(lists(), details((data as { id?: number }).id ?? 0));
                 },

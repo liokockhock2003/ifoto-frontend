@@ -10,7 +10,8 @@ export const SEGMENT_LABELS: Record<string, string> = {
     'equipment-returns':              'Return Rented Equipment',
     'equipment-requests':             'Equipment Request',
     'equipment-request-returns':      'Return Requested Equipment',
-    'equipment-booking-management':   'Equipment Booking Management',
+    'equipment-booking-management':   'Rental Management',
+    'equipment-request-management':   "Event's Equipment",
     'equipment-return-management':    'Equipment Return Management',
     'reporting-dashboard':            'Reporting Dashboard',
 };

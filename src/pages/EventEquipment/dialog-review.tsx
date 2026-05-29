@@ -1,7 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
+import { EquipmentSelect } from '@/components/equipment-select';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
 import {
     Dialog,
     DialogContent,
@@ -9,9 +11,12 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { PrimaryTabsList, PrimaryTabsTrigger } from '@/components/primary-tabs';
 import { useReviewRequest } from '@/store/queries/request';
 import type { EquipmentRequest } from '@/store/schemas/request';
+
+import { useRequestManagementContext } from './context';
 
 type RequestReviewDialogProps = {
     open: boolean;
@@ -21,21 +26,26 @@ type RequestReviewDialogProps = {
 
 export function RequestReviewDialog({ open, onOpenChange, request }: RequestReviewDialogProps) {
     const reviewMutation = useReviewRequest();
+    const { setReviewRequest, availableEquipment, availableSubEquipment, isAvailableEquipmentLoading } = useRequestManagementContext();
 
-    const [approvedStartDate, setApprovedStartDate] = useState('');
-    const [approvedEndDate, setApprovedEndDate] = useState('');
+    const [equipmentIds, setEquipmentIds] = useState<number[]>([]);
     const [approveNotes, setApproveNotes] = useState('');
     const [rejectNotes, setRejectNotes] = useState('');
 
-    function resetForm() {
-        setApprovedStartDate('');
-        setApprovedEndDate('');
-        setApproveNotes('');
-        setRejectNotes('');
-    }
+    useEffect(() => {
+        if (open) {
+            setEquipmentIds(request?.items.map((i) => i.mainEquipmentId) ?? []);
+            setReviewRequest(request ?? null);
+        } else {
+            setEquipmentIds([]);
+            setApproveNotes('');
+            setRejectNotes('');
+            setReviewRequest(null);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open]);
 
     function handleOpenChange(next: boolean) {
-        if (!next) resetForm();
         onOpenChange(next);
     }
 
@@ -45,12 +55,7 @@ export function RequestReviewDialog({ open, onOpenChange, request }: RequestRevi
             await reviewMutation.mutateAsync({
                 id: request.id,
                 action: 'APPROVE',
-                approvedStartDate,
-                approvedEndDate,
-                equipmentIds: request.items.map((i) => i.mainEquipmentId),
-                subEquipmentEntries: request.subItems.length > 0
-                    ? request.subItems.map((i) => ({ subEquipmentId: i.subEquipmentId, quantity: i.quantity }))
-                    : undefined,
+                equipmentIds,
                 ...(approveNotes ? { committeeNotes: approveNotes } : {}),
             });
             toast.success(`Request ${request.requestNumber} approved`);
@@ -76,54 +81,41 @@ export function RequestReviewDialog({ open, onOpenChange, request }: RequestRevi
     }
 
     const isPending = reviewMutation.isPending;
-    const dateRangeInvalid = !!approvedStartDate && !!approvedEndDate && approvedEndDate < approvedStartDate;
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
-            <DialogContent className="sm:max-w-md text-muted-foreground">
+            <DialogContent className="sm:max-w-lg text-muted-foreground">
                 <DialogHeader>
-                    <DialogTitle className="text-foreground">
+                    <DialogTitle className="text-primary">
                         Review Request{request ? ` — ${request.requestNumber}` : ''}
                     </DialogTitle>
                 </DialogHeader>
 
                 <Tabs defaultValue="approve">
-                    <TabsList className="w-full">
-                        <TabsTrigger value="approve" className="flex-1">Approve</TabsTrigger>
-                        <TabsTrigger value="reject" className="flex-1">Reject</TabsTrigger>
-                    </TabsList>
+                    <PrimaryTabsList className="w-full">
+                        <PrimaryTabsTrigger value="approve" className="flex-1">Approve</PrimaryTabsTrigger>
+                        <PrimaryTabsTrigger value="reject" className="flex-1">Reject</PrimaryTabsTrigger>
+                    </PrimaryTabsList>
 
                     {/* ── Approve tab ── */}
                     <TabsContent value="approve" className="space-y-3 pt-2">
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium text-foreground">Approved Start Date *</label>
-                            <input
-                                type="date"
-                                value={approvedStartDate}
-                                onChange={(e) => setApprovedStartDate(e.target.value)}
-                                className="w-full h-9 rounded-md border border-input bg-transparent px-3 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring"
-                            />
-                        </div>
-                        <div className="space-y-1">
-                            <label className="text-xs font-medium text-foreground">Approved End Date *</label>
-                            <input
-                                type="date"
-                                value={approvedEndDate}
-                                onChange={(e) => setApprovedEndDate(e.target.value)}
-                                className={`w-full h-9 rounded-md border bg-transparent px-3 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring ${dateRangeInvalid ? 'border-destructive focus:ring-destructive' : 'border-input'}`}
-                            />
-                            {dateRangeInvalid && (
-                                <p className="text-xs text-destructive">End date must be on or after the start date.</p>
-                            )}
-                        </div>
+                        <EquipmentSelect
+                            value={equipmentIds}
+                            onChange={setEquipmentIds}
+                            requestedItems={request?.items ?? []}
+                            requestedSubItems={request?.subItems ?? []}
+                            availableEquipment={availableEquipment}
+                            availableSubEquipment={availableSubEquipment}
+                            isLoading={isAvailableEquipmentLoading}
+                        />
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-foreground">Committee Notes</label>
-                            <textarea
+                            <Textarea
                                 value={approveNotes}
                                 onChange={(e) => setApproveNotes(e.target.value)}
                                 placeholder="Optional notes for the requester"
                                 rows={3}
-                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                                className="resize-none"
                             />
                         </div>
                         <DialogFooter>
@@ -131,7 +123,7 @@ export function RequestReviewDialog({ open, onOpenChange, request }: RequestRevi
                                 Cancel
                             </Button>
                             <Button
-                                disabled={!approvedStartDate || !approvedEndDate || dateRangeInvalid || isPending}
+                                disabled={equipmentIds.length === 0 || isPending}
                                 onClick={() => void handleApprove()}
                             >
                                 {isPending ? 'Approving...' : 'Approve Request'}
@@ -143,12 +135,12 @@ export function RequestReviewDialog({ open, onOpenChange, request }: RequestRevi
                     <TabsContent value="reject" className="space-y-3 pt-2">
                         <div className="space-y-1">
                             <label className="text-xs font-medium text-foreground">Committee Notes</label>
-                            <textarea
+                            <Textarea
                                 value={rejectNotes}
                                 onChange={(e) => setRejectNotes(e.target.value)}
                                 placeholder="Reason for rejection (optional)"
                                 rows={4}
-                                className="w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                                className="resize-none"
                             />
                         </div>
                         <DialogFooter>

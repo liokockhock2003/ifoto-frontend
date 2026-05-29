@@ -1,5 +1,4 @@
 import {
-    Banknote,
     CalendarDays,
     Check,
     CreditCard,
@@ -10,7 +9,6 @@ import {
 import { useEffect, useState } from 'react';
 import { useLocation, useSearchParams } from 'react-router-dom';
 
-import { DataTable } from '@/components/data-table';
 import { Badge } from '@/components/reui/badge';
 import {
     Stepper,
@@ -23,20 +21,14 @@ import {
     StepperTitle,
     StepperTrigger,
 } from '@/components/reui/stepper';
-import { DatePicker } from '@/components/date-picker';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { cn } from '@/lib/utils';
-import { useAvailableEquipment } from '@/store/queries/equipment';
-import { useCreateRental, usePayRental } from '@/store/queries/rental';
 import type { Rental } from '@/store/schemas/rental';
 
 import { useEquipmentRentalContext } from './context';
-import { availableEquipmentColumns, availableSubEquipmentColumns } from './table-column-def';
-import { ReceiptView } from './Receipts/receipt-view';
+import { GeneratedReceipt } from './rent-stepper/generated-receipt';
+import { MakePayment } from './rent-stepper/make-payment';
+import { PickDateRange } from './rent-stepper/pick-date-range';
+import { PickEquipments } from './rent-stepper/pick-equipments';
 
 // ── Steps definition ──────────────────────────────────────────────────────────
 
@@ -49,18 +41,7 @@ const STEPS = [
 
 type StepId = (typeof STEPS)[number]['id'];
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-// Amounts from rental response are in cents
-function fmtCents(cents: number) {
-    return `RM ${(cents / 100).toFixed(2)}`;
-}
-
-function fmtDate(date: string) {
-    return new Date(date).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
-}
-
-// ── Pre-fill context from rental (renders nothing) ────────────────────────────
+// ── Pre-fill context dates when navigating from Pay Now ───────────────────────
 
 function PreFillFromRental({ rental }: { rental: Rental }) {
     const { setStartDate, setEndDate } = useEquipmentRentalContext();
@@ -72,380 +53,6 @@ function PreFillFromRental({ rental }: { rental: Rental }) {
     return null;
 }
 
-// ── Step 1: Pick Dates ────────────────────────────────────────────────────────
-
-function Step1Content({ onNext }: { onNext: () => void }) {
-    const { startDate, endDate, setStartDate, setEndDate } = useEquipmentRentalContext();
-    const canAdvance = !!startDate && !!endDate;
-
-    return (
-        <div className="space-y-4">
-            <div className="flex items-center gap-2 text-primary">
-                <CalendarDays className="h-5 w-5" />
-                <h2 className="font-semibold">Select your rental period</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 max-w-md">
-                <div className="space-y-1">
-                    <Label className="text-xs">Start Date</Label>
-                    <DatePicker
-                        value={startDate}
-                        onChange={setStartDate}
-                        placeholder="Pick start date"
-                    />
-                </div>
-                <div className="space-y-1">
-                    <Label className="text-xs">End Date</Label>
-                    <DatePicker
-                        value={endDate}
-                        onChange={setEndDate}
-                        placeholder="Pick end date"
-                        disabled={!startDate}
-                    />
-                </div>
-            </div>
-            {canAdvance ? (
-                <p className="text-xs text-muted-foreground">
-                    Rental period:{' '}
-                    <span className="font-medium text-foreground">
-                        {new Date(startDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                    {' '}–{' '}
-                    <span className="font-medium text-foreground">
-                        {new Date(endDate).toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' })}
-                    </span>
-                </p>
-            ) : (
-                <p className="text-xs text-muted-foreground">Pick both dates to continue.</p>
-            )}
-            <Button onClick={onNext} disabled={!canAdvance} size="sm">
-                Next
-            </Button>
-        </div>
-    );
-}
-
-// ── Step 2: Add Equipment ─────────────────────────────────────────────────────
-
-function CartSummary({
-    onNext,
-    onBack,
-    onRentalCreated,
-}: {
-    onNext: () => void;
-    onBack: () => void;
-    onRentalCreated: (rental: Rental) => void;
-}) {
-    const { cartIds, subQty, notes, setNotes, startDate, endDate } = useEquipmentRentalContext();
-    const { data: allEquipment } = useAvailableEquipment({
-        startDate: startDate ?? '',
-        endDate: endDate ?? '',
-        context: 'RENTAL',
-    });
-    const { mutate, isPending, error } = useCreateRental();
-
-    const cartItems = (allEquipment?.mainEquipment ?? []).filter((e) => cartIds.includes(e.mainEquipmentId));
-    const mainLineItems = cartItems.map((e) => ({
-        id: `main-${e.mainEquipmentId}`,
-        label: `${e.brand} ${e.model}`,
-        type: e.equipmentType,
-        qty: 1,
-    }));
-
-    const subLineItems = (allEquipment?.subEquipment ?? [])
-        .filter((e) => (subQty[e.subEquipmentId] ?? 0) > 0)
-        .map((e) => {
-            const qty = subQty[e.subEquipmentId]!;
-            return {
-                id: `sub-${e.subEquipmentId}`,
-                label: e.brand ? `${e.brand} ${e.equipmentType}` : e.equipmentType,
-                type: e.equipmentType,
-                qty,
-            };
-        });
-
-    const lineItems = [...mainLineItems, ...subLineItems];
-    const totalItemCount = cartIds.length + subLineItems.reduce((sum, i) => sum + i.qty, 0);
-
-    const subEquipmentEntries = Object.entries(subQty)
-        .filter(([, qty]) => qty > 0)
-        .map(([id, qty]) => ({ subEquipmentId: Number(id), quantity: qty }));
-
-    const handleProceed = () => {
-        if (!startDate || !endDate || totalItemCount === 0) return;
-        mutate(
-            {
-                equipmentIds: cartIds,
-                startDate,
-                endDate,
-                notes,
-                subEquipmentEntries: subEquipmentEntries.length > 0 ? subEquipmentEntries : undefined,
-            },
-            { onSuccess: (data) => { onRentalCreated(data); onNext(); } },
-        );
-    };
-
-    return (
-        <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
-            <div className="flex items-center gap-2">
-                <ShoppingCart className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium text-primary">
-                    {totalItemCount} item{totalItemCount !== 1 ? 's' : ''} in cart
-                </span>
-            </div>
-
-            {lineItems.length > 0 && (
-                <div className="rounded-md border bg-background text-sm divide-y">
-                    {lineItems.map((item) => (
-                        <div key={item.id} className="flex items-center px-3 py-2 gap-2">
-                            <span className="font-medium">{item.label}</span>
-                            <span className="text-muted-foreground text-xs ml-1.5">({item.type})</span>
-                            {item.qty > 1 && (
-                                <span className="text-muted-foreground text-xs ml-1">× {item.qty}</span>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            <div className="max-w-sm space-y-1">
-                <Label htmlFor="notes" className="text-xs">Notes</Label>
-                <Input
-                    id="notes"
-                    placeholder="Purpose / remarks..."
-                    value={notes}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNotes(e.target.value)}
-                />
-            </div>
-
-            {error && (
-                <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-xs">{error.message}</AlertDescription>
-                </Alert>
-            )}
-            <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={onBack} disabled={isPending}>
-                    Cancel
-                </Button>
-                <Button size="sm" onClick={handleProceed} disabled={isPending || totalItemCount === 0}>
-                    {isPending ? 'Submitting…' : 'Submit Rental Request'}
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-function Step2Content({
-    onNext,
-    onBack,
-    onRentalCreated,
-}: {
-    onNext: () => void;
-    onBack: () => void;
-    onRentalCreated: (rental: Rental) => void;
-}) {
-    const { startDate, endDate } = useEquipmentRentalContext();
-    const { data, isLoading, isError, error, refetch } = useAvailableEquipment({
-        startDate: startDate ?? '',
-        endDate: endDate ?? '',
-        context: 'RENTAL',
-    });
-    const cameras = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Camera');
-    const lenses  = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Lens');
-    const subEquipment = data?.subEquipment ?? [];
-
-    return (
-        <div className="space-y-4">
-            <CartSummary onNext={onNext} onBack={onBack} onRentalCreated={onRentalCreated} />
-            <DataTable
-                columns={availableEquipmentColumns}
-                data={cameras}
-                isLoading={isLoading}
-                isError={isError}
-                error={error ?? undefined}
-                onRetry={() => void refetch()}
-                title="Cameras"
-                totalElements={cameras.length}
-                emptyMessage="No cameras available."
-            />
-            <DataTable
-                columns={availableEquipmentColumns}
-                data={lenses}
-                isLoading={isLoading}
-                isError={isError}
-                error={error ?? undefined}
-                onRetry={() => void refetch()}
-                title="Lenses"
-                totalElements={lenses.length}
-                emptyMessage="No lenses available."
-            />
-            {subEquipment.length > 0 && (
-                <DataTable
-                    columns={availableSubEquipmentColumns}
-                    data={subEquipment}
-                    title="Accessories"
-                    totalElements={subEquipment.length}
-                    emptyMessage="No accessories available."
-                />
-            )}
-        </div>
-    );
-}
-
-// ── Step 3: Payment ───────────────────────────────────────────────────────────
-
-function Step3Content({
-    rental,
-    onNext,
-    onBack,
-}: {
-    rental: Rental | null;
-    onNext: () => void;
-    onBack: () => void;
-}) {
-    const [paymentMethod, setPaymentMethod] = useState<'ONLINE' | 'CASH'>('ONLINE');
-    const { mutate, isPending, error } = usePayRental();
-
-    const handlePay = () => {
-        if (!rental) return;
-        mutate(
-            { id: rental.id, paymentMethod },
-            {
-                onSuccess: (data) => {
-                    if (data.billUrl) {
-                        window.open(data.billUrl, '_blank');
-                    }
-                    onNext();
-                },
-            },
-        );
-    };
-
-    return (
-        <div className="space-y-5">
-            {/* Rental summary */}
-            {rental && (
-                <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
-                    <div className="flex items-center gap-2 text-sm font-medium text-primary">
-                        <Receipt className="h-4 w-4" />
-                        <span>Rental Summary</span>
-                        <span className="ml-auto font-mono text-xs text-muted-foreground">{rental.rentalNumber}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                        <CalendarDays className="h-3.5 w-3.5 shrink-0" />
-                        <span>{fmtDate(rental.requestedStartDate)} – {fmtDate(rental.requestedEndDate)}</span>
-                    </div>
-                    <div className="rounded-md border bg-background text-sm divide-y">
-                        {rental.items.map((item) => (
-                            <div key={item.id} className="flex items-center justify-between px-3 py-2 gap-2">
-                                <div>
-                                    <span className="font-medium">{item.brand} {item.model}</span>
-                                    <span className="text-xs text-muted-foreground ml-1.5">({item.equipmentType})</span>
-                                </div>
-                                <span className="font-mono text-xs shrink-0">{fmtCents(item.itemTotalAmount)}</span>
-                            </div>
-                        ))}
-                        {(rental.subItems ?? []).map((item) => (
-                            <div key={item.id} className="flex items-center justify-between px-3 py-2 gap-2">
-                                <div>
-                                    <span className="font-medium">
-                                        {item.brand ? `${item.brand} ` : ''}{item.equipmentType}
-                                    </span>
-                                    {item.quantity && item.quantity > 1 && (
-                                        <span className="text-muted-foreground text-xs ml-1">× {item.quantity}</span>
-                                    )}
-                                    <span className="text-xs text-muted-foreground ml-1.5">(Accessory)</span>
-                                </div>
-                                <span className="font-mono text-xs shrink-0">
-                                    {item.itemTotalAmount != null ? fmtCents(item.itemTotalAmount) : '—'}
-                                </span>
-                            </div>
-                        ))}
-                        <div className="flex items-center justify-between px-3 py-2 font-semibold">
-                            <span>Total</span>
-                            <span className="font-mono text-sm text-primary">{fmtCents(rental.totalAmount)}</span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Payment method selector */}
-            <div className="space-y-2">
-                <Label className="text-xs">Payment Method</Label>
-                <div className="grid grid-cols-2 gap-3 max-w-sm">
-                    <button
-                        type="button"
-                        onClick={() => setPaymentMethod('ONLINE')}
-                        className={cn(
-                            'rounded-lg border-2 p-4 text-left space-y-1 transition-colors',
-                            paymentMethod === 'ONLINE'
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/40',
-                        )}
-                    >
-                        <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            <span className="font-semibold text-sm">Online</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Pay via Billplz</p>
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setPaymentMethod('CASH')}
-                        className={cn(
-                            'rounded-lg border-2 p-4 text-left space-y-1 transition-colors',
-                            paymentMethod === 'CASH'
-                                ? 'border-primary bg-primary/5'
-                                : 'border-border hover:border-primary/40',
-                        )}
-                    >
-                        <div className="flex items-center gap-2">
-                            <Banknote className="h-4 w-4" />
-                            <span className="font-semibold text-sm">Cash</span>
-                        </div>
-                        <p className="text-xs text-muted-foreground">Pay in person</p>
-                    </button>
-                </div>
-            </div>
-
-            {error && (
-                <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-xs">{error.message}</AlertDescription>
-                </Alert>
-            )}
-
-            <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={onBack} disabled={isPending}>
-                    Cancel
-                </Button>
-                <Button size="sm" onClick={handlePay} disabled={isPending || !rental}>
-                    {isPending
-                        ? 'Processing…'
-                        : 'Pay Now'}
-                </Button>
-            </div>
-        </div>
-    );
-}
-
-// ── Step 4: Receipt ───────────────────────────────────────────────────────────
-
-function Step4Content({ rentalNumber, isGenerating, onBack }: { rentalNumber: string | null; isGenerating?: boolean; onBack: () => void }) {
-    return (
-        <div className="space-y-4">
-            {rentalNumber
-                ? <ReceiptView rentalNumber={rentalNumber} isGenerating={isGenerating} />
-                : (
-                    <div className="flex flex-col items-center justify-center py-16 gap-3 text-muted-foreground">
-                        <Receipt className="h-10 w-10 opacity-40" />
-                        <p className="text-sm">No rental linked to this receipt.</p>
-                    </div>
-                )
-            }
-            <Button variant="outline" size="sm" onClick={onBack}>← Back</Button>
-        </div>
-    );
-}
-
 // ── RentStepper ───────────────────────────────────────────────────────────────
 
 export function RentStepper() {
@@ -455,16 +62,20 @@ export function RentStepper() {
     const goToReceipt = state?.goToReceipt ?? false;
 
     const [searchParams] = useSearchParams();
-    // Captured once on mount so they survive the URL cleanup in handleDialogClose
-    const [rentalNumberFromUrl] = useState(() => searchParams.get('rentalNumber'));
     const [fromBillplzRedirect] = useState(
         () => searchParams.get('billplz[paid]') === 'true' && !!searchParams.get('rentalNumber')
     );
+    const [rentalIdFromSession] = useState<number | null>(() => {
+        if (searchParams.get('billplz[paid]') !== 'true') return null;
+        const stored = sessionStorage.getItem('billplz_rentalId');
+        if (stored) sessionStorage.removeItem('billplz_rentalId');
+        return stored ? Number(stored) : null;
+    });
 
     const [currentStep, setCurrentStep] = useState<StepId>(
         fromBillplzRedirect || goToReceipt ? 4 : prefilledRental ? 3 : 1
     );
-    const [rental, setRental] = useState<Rental | null>(prefilledRental);
+    const [rental] = useState<Rental | null>(prefilledRental);
 
     const goTo = (step: StepId) => setCurrentStep(step);
 
@@ -478,7 +89,6 @@ export function RentStepper() {
             }}
             className="w-full space-y-6"
         >
-            {/* Pre-fill context dates when coming from Pay Now */}
             {prefilledRental && <PreFillFromRental rental={prefilledRental} />}
 
             {/* Step navigation */}
@@ -551,24 +161,25 @@ export function RentStepper() {
                     </CardHeader>
                     <CardContent className="pt-5">
                         <StepperContent value={1}>
-                            <Step1Content onNext={() => goTo(2)} />
+                            <PickDateRange onNext={() => goTo(2)} />
                         </StepperContent>
                         <StepperContent value={2}>
-                            <Step2Content
-                                onNext={() => goTo(3)}
+                            <PickEquipments
                                 onBack={() => goTo(1)}
-                                onRentalCreated={setRental}
                             />
                         </StepperContent>
                         <StepperContent value={3}>
-                            <Step3Content
+                            <MakePayment
                                 rental={rental}
                                 onNext={() => goTo(4)}
-                                onBack={() => goTo(2)}
                             />
                         </StepperContent>
                         <StepperContent value={4}>
-                            <Step4Content rentalNumber={rental?.rentalNumber ?? rentalNumberFromUrl} isGenerating={fromBillplzRedirect} onBack={() => goTo(3)} />
+                            <GeneratedReceipt
+                                rentalId={rental?.id ?? rentalIdFromSession}
+                                isGenerating={fromBillplzRedirect}
+                                onBack={() => goTo(3)}
+                            />
                         </StepperContent>
                     </CardContent>
                 </Card>

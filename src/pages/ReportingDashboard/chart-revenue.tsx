@@ -1,5 +1,5 @@
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
     ChartLegend,
@@ -10,19 +10,12 @@ import {
 } from '@/components/ui/chart';
 import { useRevenueOverTime } from '@/store/queries/report';
 import { useReportingDashboardContext } from './context';
+import { formatMonth } from './utils';
 
 const chartConfig: ChartConfig = {
-    baseAmount: {
-        label: 'Base Revenue',
-        color: '#3b82f6',
-    },
-    penaltyAmount: {
-        label: 'Penalty Revenue',
-        color: '#ef4444',
-    },
+    baseAmount: { label: 'Base Revenue', color: 'var(--color-primary)' },
+    penaltyAmount: { label: 'Penalty Revenue', color: 'var(--color-destructive)' },
 };
-
-import { formatMonth } from './utils';
 
 export function ChartRevenue() {
     const { months } = useReportingDashboardContext();
@@ -35,14 +28,15 @@ export function ChartRevenue() {
 
     return (
         <Card>
-            <CardHeader>
-                <CardTitle>Revenue Over Time</CardTitle>
+            <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold">Revenue Over Time (RM)</CardTitle>
+                <CardDescription>Base vs penalty revenue collected per month</CardDescription>
             </CardHeader>
             <CardContent>
                 {isLoading ? (
                     <div className="aspect-video w-full animate-pulse rounded bg-muted" />
                 ) : (
-                    <ChartContainer config={chartConfig}>
+                    <ChartContainer config={chartConfig} className="max-h-[270px] w-full">
                         <LineChart data={chartData} margin={{ left: -10, right: 4 }}>
                             <CartesianGrid vertical={false} />
                             <XAxis
@@ -57,7 +51,7 @@ export function ChartRevenue() {
                                 axisLine={false}
                                 tickMargin={8}
                                 tick={{ fontSize: 11 }}
-                                tickFormatter={(v) => `RM${v}`}
+                                tickFormatter={(v) => `${v}`}
                             />
                             <ChartTooltip content={<ChartTooltipContent />} />
                             <ChartLegend content={<ChartLegendContent />} />

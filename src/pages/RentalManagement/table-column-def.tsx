@@ -1,6 +1,8 @@
+import { AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import type { Rental } from '@/store/schemas/rental';
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
+import { RENTAL_STATUS_LABEL, type RentalStatus } from '@/constants/rentalStatus';
 import { statusVariant } from '@/pages/MyRentalList/table-column-def';
 
 import { BookingRowActions } from './table-row-actions';
@@ -18,11 +20,18 @@ export const bookingManagementColumns: ColumnDef<Rental, any>[] = [
     }),
     columnHelper.accessor('status', {
         header: 'Status',
-        cell: (info) => (
-            <Badge variant="outline" className={statusVariant(info.getValue())}>
-                {info.getValue().replace(/_/g, ' ')}
-            </Badge>
-        ),
+        cell: (info) => {
+            const { status, totalPenaltyAmount, paymentStatus } = info.row.original;
+            const unpaidPenalty = status === 'RETURNED' && totalPenaltyAmount > 0 && paymentStatus !== 'PENALTY_PAID';
+            return (
+                <div className="flex items-center gap-1.5">
+                    <Badge variant="outline" className={statusVariant(info.getValue())}>
+                        {RENTAL_STATUS_LABEL[info.getValue() as RentalStatus] ?? info.getValue().replace(/_/g, ' ')}
+                    </Badge>
+                    {unpaidPenalty && <AlertTriangle className="h-3.5 w-3.5 text-destructive" />}
+                </div>
+            );
+        },
     }),
     columnHelper.accessor('requestedStartDate', {
         header: 'Start Date',
@@ -48,7 +57,7 @@ export const bookingManagementColumns: ColumnDef<Rental, any>[] = [
     }),
     columnHelper.display({
         id: 'actions',
-        header: '',
+        header: 'actions',
         cell: ({ row }) => <BookingRowActions row={row} />,
     }),
 ];

@@ -1,4 +1,5 @@
 import { createContext, useContext } from 'react';
+import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 import type { Rental } from '@/store/schemas/rental';
 
 export type BookingManagementFilters = {
@@ -28,6 +29,11 @@ export type BookingManagementContextValue = {
     isError: boolean;
     error: Error | null;
     refetch: () => Promise<unknown>;
+    reviewRental: Rental | null;
+    setReviewRental: (rental: Rental | null) => void;
+    availableEquipment: MainEquipment[];
+    availableSubEquipment: SubEquipment[];
+    isAvailableEquipmentLoading: boolean;
 };
 
 export const BookingManagementContext = createContext<BookingManagementContextValue | undefined>(undefined);

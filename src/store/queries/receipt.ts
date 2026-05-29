@@ -1,10 +1,13 @@
 import { useQuery } from '@tanstack/react-query';
+import { isAxiosError } from 'axios';
+
 import { QueryFactory } from '@/store/query-factory';
+import { axios } from '@/utils/axios-instance';
 import {
+    InvoiceDetailSchema,
     ReceiptDetailSchema,
-    ReceiptListItemSchema,
+    type InvoiceDetail,
     type ReceiptDetail,
-    type ReceiptListItem,
 } from '@/store/schemas/receipt';
 
 // ── Query factory instance ────────────────────────────────────────────────────
@@ -13,42 +16,106 @@ const receiptQuery = QueryFactory<ReceiptDetail, unknown, never>(
     'receipt',
     {
         single: ReceiptDetailSchema,
-        list: ReceiptListItemSchema.array() as never,
+        list: ReceiptDetailSchema.array() as never,
     },
     '/api/v1/receipts',
 );
 
 // ── Query configs ─────────────────────────────────────────────────────────────
 
-const MY_RECEIPT_LIST_SUFFIX = 'my' as const;
+const invoiceByRentalQuery = receiptQuery.customQuery<InvoiceDetail, number>({
+    responseSchema: InvoiceDetailSchema,
+    urlSuffix: (id) => `/invoice/rental/${id}`,
+    queryKeySuffix: (id) => ['invoice', id],
+});
 
-// Current user's receipt list — GET /api/v1/receipts/my
-const myReceiptsListQuery = receiptQuery.customList<ReceiptListItem[]>({
-    responseSchema: ReceiptListItemSchema.array(),
-    urlSuffix: '/my',
-    queryKeySuffix: MY_RECEIPT_LIST_SUFFIX,
+const penaltyInvoiceByRentalQuery = receiptQuery.customQuery<InvoiceDetail, number>({
+    responseSchema: InvoiceDetailSchema,
+    urlSuffix: (id) => `/overdue-invoice/rental/${id}`,
+    queryKeySuffix: (id) => ['penalty-invoice', id],
+});
+
+const receiptByRentalQuery = receiptQuery.customQuery<ReceiptDetail, number>({
+    responseSchema: ReceiptDetailSchema,
+    urlSuffix: (id) => `/receipt/rental/${id}`,
+    queryKeySuffix: (id) => ['receipt', id],
+});
+
+const penaltyReceiptByRentalQuery = receiptQuery.customQuery<ReceiptDetail, number>({
+    responseSchema: ReceiptDetailSchema,
+    urlSuffix: (id) => `/overdue-receipt/rental/${id}`,
+    queryKeySuffix: (id) => ['penalty-receipt', id],
 });
 
 // ── Query keys ────────────────────────────────────────────────────────────────
 
 export const receiptKeys = {
     all: receiptQuery.qk(),
-    my: () => [...receiptQuery.qk(), MY_RECEIPT_LIST_SUFFIX] as const,
-    detail: (receiptNumber: string) => [...receiptQuery.qk(), 'detail', receiptNumber] as const,
 };
 
 // ── Query hooks ───────────────────────────────────────────────────────────────
 
-export function useMyReceipts(options?: { refetchInterval?: number | false }) {
-    return useQuery({
-        ...myReceiptsListQuery(),
+export function useInvoice(rentalId: number | null) {
+    return useQuery<InvoiceDetail | null>({
+        queryKey: invoiceByRentalQuery(rentalId ?? 0).queryKey,
+        queryFn: async () => {
+            try {
+                const res = await axios.get(`/api/v1/receipts/invoice/rental/${rentalId}`);
+                return InvoiceDetailSchema.parse(res.data);
+            } catch (err) {
+                if (isAxiosError(err) && err.response?.status === 404) return null;
+                throw err;
+            }
+        },
+        enabled: !!rentalId,
+    });
+}
+
+export function usePenaltyInvoice(rentalId: number | null) {
+    return useQuery<InvoiceDetail | null>({
+        queryKey: penaltyInvoiceByRentalQuery(rentalId ?? 0).queryKey,
+        queryFn: async () => {
+            try {
+                const res = await axios.get(`/api/v1/receipts/overdue-invoice/rental/${rentalId}`);
+                return InvoiceDetailSchema.parse(res.data);
+            } catch (err) {
+                if (isAxiosError(err) && err.response?.status === 404) return null;
+                throw err;
+            }
+        },
+        enabled: !!rentalId,
+    });
+}
+
+export function useReceipt(rentalId: number | null, options?: { refetchInterval?: number | false }) {
+    return useQuery<ReceiptDetail | null>({
+        queryKey: receiptByRentalQuery(rentalId ?? 0).queryKey,
+        queryFn: async () => {
+            try {
+                const res = await axios.get(`/api/v1/receipts/receipt/rental/${rentalId}`);
+                return ReceiptDetailSchema.parse(res.data);
+            } catch (err) {
+                if (isAxiosError(err) && err.response?.status === 404) return null;
+                throw err;
+            }
+        },
+        enabled: !!rentalId,
         refetchInterval: options?.refetchInterval ?? false,
     });
 }
 
-export function useReceiptDetail(receiptNumber: string) {
-    return useQuery({
-        ...receiptQuery.detail(receiptNumber),
-        enabled: !!receiptNumber,
+export function usePenaltyReceipt(rentalId: number | null) {
+    return useQuery<ReceiptDetail | null>({
+        queryKey: penaltyReceiptByRentalQuery(rentalId ?? 0).queryKey,
+        queryFn: async () => {
+            try {
+                const res = await axios.get(`/api/v1/receipts/overdue-receipt/rental/${rentalId}`);
+                return ReceiptDetailSchema.parse(res.data);
+            } catch (err) {
+                if (isAxiosError(err) && err.response?.status === 404) return null;
+                throw err;
+            }
+        },
+        enabled: !!rentalId,
     });
 }

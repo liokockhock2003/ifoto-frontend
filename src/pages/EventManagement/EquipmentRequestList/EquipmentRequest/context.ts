@@ -15,6 +15,10 @@ export type EquipmentRequestContextValue = {
     notes: string;
     eventId: number;
 
+    // Sub-equipment quantities
+    subQty: Record<number, number>;
+    setSubQty: (id: number, qty: number) => void;
+
     // Cart methods
     addToCart: (id: number) => void;
     removeFromCart: (id: number) => void;
