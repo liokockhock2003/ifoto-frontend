@@ -2,7 +2,7 @@ import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
 import { useEquipmentStatuses, useSubEquipmentQuantityHolds } from '@/store/queries/equipment';
-import type { EquipmentStatusType, MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 import { EQUIPMENT_CONDITION_BADGE } from '@/constants/equipmentCondition';
 import { EQUIPMENT_STATUS_BADGE, EQUIPMENT_STATUS_LABEL } from '@/constants/equipmentStatus';
 
