@@ -62,6 +62,16 @@ export const InvoiceDetailSchema = z.object({
     rental: ReceiptRentalSchema,
 });
 
+// ── SSE event ─────────────────────────────────────────────────────────────────
+
+export const RentalEventSchema = z.object({
+    documentType: z.enum(['INVOICE', 'RECEIPT', 'OVERDUE_INVOICE', 'OVERDUE_RECEIPT']),
+    receiptNumber: z.string(),
+    rentalId: z.number(),
+});
+
+export type RentalEvent = z.infer<typeof RentalEventSchema>;
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type ReceiptRenter = z.infer<typeof ReceiptRenterSchema>;

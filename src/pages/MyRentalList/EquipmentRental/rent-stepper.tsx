@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { Rental } from '@/store/schemas/rental';
 
+import { useRentalEvents } from '@/hooks/use-rental-events';
 import { useEquipmentRentalContext } from './context';
 import { GeneratedReceipt } from './rent-stepper/generated-receipt';
 import { MakePayment } from './rent-stepper/make-payment';
@@ -76,6 +77,9 @@ export function RentStepper() {
         fromBillplzRedirect || goToReceipt ? 4 : prefilledRental ? 3 : 1
     );
     const [rental] = useState<Rental | null>(prefilledRental);
+
+    const rentalId = rental?.id ?? rentalIdFromSession;
+    const { isConnected: isSSEConnected } = useRentalEvents(rentalId);
 
     const goTo = (step: StepId) => setCurrentStep(step);
 
@@ -176,8 +180,8 @@ export function RentStepper() {
                         </StepperContent>
                         <StepperContent value={4}>
                             <GeneratedReceipt
-                                rentalId={rental?.id ?? rentalIdFromSession}
-                                isGenerating={fromBillplzRedirect}
+                                rentalId={rentalId}
+                                isSSEConnected={isSSEConnected}
                                 onBack={() => goTo(3)}
                             />
                         </StepperContent>

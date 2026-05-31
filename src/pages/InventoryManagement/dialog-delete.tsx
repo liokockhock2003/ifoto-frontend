@@ -31,7 +31,7 @@ export function MainEquipmentDeleteDialog({ open, onOpenChange, equipment, onDel
         if (!equipment) return;
         try {
             await mutation.mutateAsync({ mainEquipmentId: equipment.mainEquipmentId });
-            toast.success('A Main Equipment deleted');
+            toast.success('Main equipment deleted');
             onDeleted?.();
             onOpenChange(false);
         } catch (error) {
@@ -97,7 +97,7 @@ export function SubEquipmentDeleteDialog({ open, onOpenChange, equipment, onDele
         if (!equipment) return;
         try {
             await mutation.mutateAsync({ subEquipmentId: equipment.subEquipmentId });
-            toast.success('A Sub-Equipment deleted');
+            toast.success('Sub-equipment deleted');
             onDeleted?.();
             onOpenChange(false);
         } catch (error) {

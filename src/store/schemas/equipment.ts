@@ -27,7 +27,7 @@ export const MainEquipmentSchema = z.object({
     model: z.string(),
     serialNumber: z.string(),
     condition: z.string(),
-    status: EquipmentStatusTypeSchema,
+    status: EquipmentStatusTypeSchema.catch('AVAILABLE'),
     notes: z.string().nullable(),
     pricingCategoryId: z.number().int().nonnegative().nullish(),
     pricingCategory: z.string().nullish(),

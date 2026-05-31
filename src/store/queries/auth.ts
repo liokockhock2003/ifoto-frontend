@@ -1,5 +1,5 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { isAxiosError } from 'axios';
+import { isAxiosStatusError } from '@/utils/api-error';
 import { axios as axiosInstance } from '@/utils/axios-instance';
 import { QueryFactory } from '@/store/query-factory';
 import { extractApiErrorMessage } from '@/utils/api-error';
@@ -107,15 +107,13 @@ export function useLogin() {
             try {
                 return await mutation.mutationFn(input);
             } catch (err) {
-                if (isAxiosError(err)) {
-                    if (err.response?.status === 401) {
-                        throw new AuthApiError('Wrong username or password');
-                    }
-                    if (err.response?.status === 403) {
-                        throw new AuthApiError(
-                            err.response.data?.message ?? 'Email not verified. Please check your inbox.'
-                        );
-                    }
+                if (isAxiosStatusError(err, 401)) {
+                    throw new AuthApiError('Wrong username or password');
+                }
+                if (isAxiosStatusError(err, 403)) {
+                    throw new AuthApiError(
+                        (err.response?.data as { message?: string })?.message ?? 'Email not verified. Please check your inbox.'
+                    );
                 }
                 throw new AuthApiError(extractApiErrorMessage(err));
             }

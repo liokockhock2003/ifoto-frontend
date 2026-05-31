@@ -52,7 +52,7 @@ const createRentalMutation = rentalQuery.customMutation<CreateRentalPayload>({
     urlSuffix: '',
     inputSchema: CreateRentalPayloadSchema,
     responseSchema: RentalSchema,
-    toastMsg: 'Rental request submitted successfully',
+    toastMsg: 'Rental request submitted',
     invalidateKeys: () => [[...rentalKeys.list()]],
 });
 

@@ -83,7 +83,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('A Main Equipment updated');
+            toast.success('Main equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
@@ -226,7 +226,7 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('A Sub-Equipment updated');
+            toast.success('Sub-equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
