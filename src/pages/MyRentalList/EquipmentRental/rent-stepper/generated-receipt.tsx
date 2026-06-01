@@ -6,17 +6,17 @@ import { ReceiptView } from '../Receipts&Invoice/receipt-view';
 
 export function GeneratedReceipt({
     rentalId,
-    isGenerating,
+    isSSEConnected,
     onBack: _onBack,
 }: {
     rentalId: number | null;
-    isGenerating?: boolean;
+    isSSEConnected?: boolean;
     onBack: () => void;
 }) {
     return (
         <div className="space-y-4">
             {rentalId
-                ? <ReceiptView rentalId={rentalId} isGenerating={isGenerating} />
+                ? <ReceiptView rentalId={rentalId} isSSEConnected={isSSEConnected} />
                 : (
                     <Empty>
                         <EmptyHeader>

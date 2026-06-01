@@ -1,4 +1,5 @@
 import { Cell, Pie, PieChart } from 'recharts';
+import { PieChart as PieChartIcon } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
@@ -6,6 +7,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { useRentalStatusBreakdown } from '@/store/queries/report';
 import type { RentalStatusBreakdown } from '@/store/schemas/report';
 
@@ -44,37 +46,46 @@ export function ChartRentalStatus() {
                     <div className="flex aspect-square max-h-[240px] items-center justify-center mx-auto">
                         <div className="h-28 w-28 animate-pulse rounded-full bg-muted" />
                     </div>
+                ) : total === 0 ? (
+                    <Empty className="py-6">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon"><PieChartIcon /></EmptyMedia>
+                            <EmptyTitle className="text-sm">No rental data</EmptyTitle>
+                        </EmptyHeader>
+                    </Empty>
                 ) : (
-                    <ChartContainer config={chartConfig} className="max-h-[200px] mx-auto aspect-square">
-                        <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent hideLabel />} />
-                            <Pie
-                                data={chartData}
-                                dataKey="count"
-                                nameKey="name"
-                                innerRadius={35}
-                                outerRadius={90}
-                            >
-                                {chartData.map((entry) => (
-                                    <Cell key={entry.name} fill={entry.color} />
-                                ))}
-                            </Pie>
-                        </PieChart>
-                    </ChartContainer>
-                )}
-                <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5">
-                    {chartData.map((item) => (
-                        <div key={item.name} className="flex items-center gap-1.5 text-xs">
-                            <div
-                                className="h-2 w-2 shrink-0 rounded-full"
-                                style={{ backgroundColor: item.color }}
-                            />
-                            <span className="text-muted-foreground">{item.label}</span>
-                            <span className="font-semibold tabular-nums">{item.count}</span>
+                    <>
+                        <ChartContainer config={chartConfig} className="max-h-[200px] mx-auto aspect-square">
+                            <PieChart>
+                                <ChartTooltip content={<ChartTooltipContent hideLabel />} />
+                                <Pie
+                                    data={chartData}
+                                    dataKey="count"
+                                    nameKey="name"
+                                    innerRadius={35}
+                                    outerRadius={90}
+                                >
+                                    {chartData.map((entry) => (
+                                        <Cell key={entry.name} fill={entry.color} />
+                                    ))}
+                                </Pie>
+                            </PieChart>
+                        </ChartContainer>
+                        <div className="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-1.5">
+                            {chartData.map((item) => (
+                                <div key={item.name} className="flex items-center gap-1.5 text-xs">
+                                    <div
+                                        className="h-2 w-2 shrink-0 rounded-full"
+                                        style={{ backgroundColor: item.color }}
+                                    />
+                                    <span className="text-muted-foreground">{item.label}</span>
+                                    <span className="font-semibold tabular-nums">{item.count}</span>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
-                <p className="mt-2 text-center text-xs text-muted-foreground">{total} total rentals</p>
+                        <p className="mt-2 text-center text-xs text-muted-foreground">{total} total rentals</p>
+                    </>
+                )}
             </CardContent>
         </Card>
     );

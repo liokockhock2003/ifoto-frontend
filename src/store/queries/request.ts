@@ -66,14 +66,12 @@ const cancelRequestMutation = requestQuery.customMutation<WithId<object>>({
 const reviewRequestMutation = requestQuery.customMutation<WithId<ReviewRequestPayload>>({
     method: 'patch',
     urlSuffix: ({ id }) => `/${id}/review`,
-    toastMsg: 'Request reviewed',
     invalidateKeys: () => [requestKeys.all],
 });
 
 const markReturnedMutation = requestQuery.customMutation<WithId<object>>({
     method: 'patch',
     urlSuffix: ({ id }) => `/${id}/mark-returned`,
-    toastMsg: 'Marked as returned',
     invalidateKeys: () => [requestKeys.all],
 });
 

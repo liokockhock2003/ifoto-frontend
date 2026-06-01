@@ -1,4 +1,5 @@
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
+import { Package } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
@@ -6,6 +7,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { useEquipmentUtilization } from '@/store/queries/report';
 
 const chartConfig: ChartConfig = {
@@ -37,6 +39,13 @@ export function ChartEquipmentUtilization() {
             <CardContent>
                 {isLoading ? (
                     <div className="h-56 w-full animate-pulse rounded bg-muted" />
+                ) : chartData.length === 0 ? (
+                    <Empty className="py-6">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon"><Package /></EmptyMedia>
+                            <EmptyTitle className="text-sm">No utilization data</EmptyTitle>
+                        </EmptyHeader>
+                    </Empty>
                 ) : (
                     <div style={{ height: chartHeight }}>
                         <ChartContainer config={chartConfig} className="h-full w-full aspect-auto">

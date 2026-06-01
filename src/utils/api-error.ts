@@ -1,4 +1,16 @@
-import { isAxiosError } from 'axios';
+import { isAxiosError, type AxiosError } from 'axios';
+
+export function isAxiosStatusError(err: unknown, status: number): err is AxiosError {
+    return isAxiosError(err) && err.response?.status === status;
+}
+
+export function isNotFoundError(err: unknown): boolean {
+    return isAxiosStatusError(err, 404);
+}
+
+export function isRateLimitError(err: unknown): boolean {
+    return isAxiosStatusError(err, 429);
+}
 
 export function extractApiErrorMessage(err: unknown): string {
     if (isAxiosError(err)) {

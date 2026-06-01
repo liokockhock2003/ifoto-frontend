@@ -47,13 +47,13 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
     mainColumnHelper.accessor('serialNumber', {
         header: 'Serial No.',
         cell: (info) => (
-            <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>
+            <span className="font-mono text-xs text-muted-foreground">{info.getValue() ?? '—'}</span>
         ),
     }),
     mainColumnHelper.accessor('condition', {
         header: 'Condition',
         cell: (info) => {
-            const value: string = info.getValue();
+            const value = info.getValue();
             return (
                 <Badge variant="outline" className={EQUIPMENT_CONDITION_BADGE[value] ?? ''}>
                     {value}
@@ -81,7 +81,7 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
             </Badge>
         ),
     }),
-    mainColumnHelper.accessor('notes', {
+    mainColumnHelper.accessor('problems', {
         header: 'Notes',
         cell: (info) => (
             <span className="text-sm text-muted-foreground">{info.getValue() || '—'}</span>

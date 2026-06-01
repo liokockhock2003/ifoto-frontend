@@ -23,9 +23,10 @@ No test runner is configured. The backend must be running on port 8080 for API c
 - **Zod 4** for runtime schema validation
 - **TanStack React Table v8** for data tables
 - **Recharts** for charts (used in ReportingDashboard)
-- **@react-pdf/renderer** for PDF generation (rental receipts)
+- **@react-pdf/renderer** for PDF generation (rental receipts/invoices)
 - **react-day-picker** + **date-fns** for date inputs
 - **next-themes** for dark/light mode toggle
+- **sonner** for toast notifications
 - Path alias: `@/*` → `src/*`
 
 ## Architecture
@@ -35,41 +36,53 @@ No test runner is configured. The backend must be running on port 8080 for API c
 ```
 src/
 ├── main.tsx              # App entry: wraps with QueryClientProvider + AuthProvider + Router
-├── router.tsx            # Route definitions
+├── router.tsx            # Route definitions + RoleRedirect component
 ├── routerMenuItems.ts    # Sidebar nav items, gated by role
 ├── protected-route.tsx   # ProtectedRoute component (allowedRoles prop)
 ├── breadcrumbs.ts        # Breadcrumb path config
 ├── constants/
-│   └── roles.ts          # ROLE_LABELS map + getRoleLabel helper
+│   ├── roles.ts              # ROLE_LABELS map + getRoleLabel helper
+│   ├── equipmentStatus.ts    # Status types (AVAILABLE, BOOKED, MAINTENANCE, UNAVAILABLE, CONVOCATION, MRM), labels, badge classes. BOOKED and AVAILABLE are computed-only — excluded from EQUIPMENT_STATUS_OPTIONS (admin picker).
+│   ├── equipmentCondition.ts # Equipment condition mappings
+│   ├── rentalStatus.ts       # 9 rental status values with labels, badge classes, chart colors
+│   └── requestStatus.ts      # Equipment request status constants
 ├── hooks/
-│   └── use-mobile.tsx    # useIsMobile hook
+│   ├── use-mobile.tsx        # useIsMobile hook (breakpoint: 768px)
+│   └── use-rental-events.ts  # SSE hook — streams document-ready events for a rental and invalidates receipt/invoice cache
 ├── pages/
-│   ├── Auth/             # Login, Register, ForgotPassword, ResetPassword, VerifyEmail
-│   ├── UserManagement/   # Admin user list, edit roles/locked status, delete
-│   ├── InventoryManagement/     # Equipment inventory CRUD (EQUIPMENT_COMMITTEE)
-│   ├── RentalPricing/           # Rental pricing management (EQUIPMENT_COMMITTEE)
-│   ├── EquipmentBookingManagement/ # Review/approve rental bookings (EQUIPMENT_COMMITTEE)
-│   ├── EquipmentRentalManagement/  # Manage equipment rentals (EQUIPMENT_COMMITTEE)
-│   ├── EventManagement/         # Event CRUD (HIGH_COMMITTEE)
-│   ├── MyRentalList/            # Student/non-student rental list + new rental stepper + receipts
-│   └── ReportingDashboard/      # Analytics dashboard with KPI cards + charts (EQUIPMENT_COMMITTEE, HIGH_COMMITTEE)
+│   ├── Auth/                    # Login, Register, ForgotPassword, ResetPassword, VerifyEmail
+│   ├── UserManagement/          # Admin user list, edit roles/locked status, delete (ROLE_ADMIN)
+│   ├── InventoryManagement/     # Equipment inventory CRUD with status/quantity-hold dialogs (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── RentalPricing/           # Rental pricing management (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── RentalManagement/        # Review/approve/mark-returned rental bookings (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── EventEquipment/          # Review and manage event equipment requests (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── EventManagement/         # Event CRUD + nested EquipmentRequestList + EquipmentRequest (ROLE_HIGH_COMMITTEE, ROLE_EVENT_COMMITTEE)
+│   ├── MyRentalList/            # Student/non-student rental list + new rental stepper + receipts/invoices
+│   └── ReportingDashboard/      # Analytics dashboard with KPI cards + charts (ROLE_EQUIPMENT_COMMITTEE, ROLE_HIGH_COMMITTEE)
 ├── store/
 │   ├── auth-context.tsx  # AuthContext: user, login, logout, hasRole, updateUserRoles
 │   ├── query-client.ts   # QueryClient config (staleTime 30s, retry 0 in dev)
 │   ├── query-factory.ts  # Generic CRUD query/mutation builder (see below)
-│   ├── queries/          # Feature query hooks (auth, user, equipment, event, rental, rental-pricing, receipt, report)
-│   └── schemas/          # Zod schemas matching each query domain
+│   ├── queries/          # Feature query hooks: auth, user, equipment, event, rental, rental-pricing, receipt, report, request
+│   └── schemas/          # Zod schemas: auth, equipment, event, rental, rental-pricing, receipt, register, report, request, user
 ├── components/
-│   ├── Layout.tsx            # Shell with sidebar + outlet
-│   ├── app-sidebar.tsx       # Role-aware nav sidebar with role switcher
-│   ├── app-breadcrumb.tsx    # Breadcrumb component
-│   ├── data-table.tsx        # Reusable TanStack Table wrapper
-│   ├── date-picker.tsx       # Date picker using react-day-picker
-│   ├── committee-user-select.tsx  # User select for committee assignment
-│   ├── mode-toggle.tsx       # Dark/light mode toggle
-│   ├── theme-provider.tsx    # next-themes provider wrapper
-│   ├── reui/                 # Custom UI primitives (badge, stepper)
-│   └── ui/                   # shadcn/ui primitives (do not edit manually)
+│   ├── Layout.tsx                              # Shell with sidebar + outlet
+│   ├── app-sidebar.tsx                         # Role-aware nav sidebar with role switcher
+│   ├── app-breadcrumb.tsx                      # Breadcrumb component
+│   ├── cart-summary.tsx                        # Rental cart display
+│   ├── committee-user-select.tsx               # User select for committee assignment
+│   ├── data-table.tsx                          # Reusable TanStack Table wrapper
+│   ├── date-picker.tsx                         # Single date picker (react-day-picker)
+│   ├── range-date-picker.tsx                   # Date range picker
+│   ├── equipment-select.tsx                    # Equipment multi-select
+│   ├── equipment-request-confirmation-dialog.tsx  # Request confirmation modal
+│   ├── management-table.tsx                    # Management-oriented table variant
+│   ├── mode-toggle.tsx                         # Dark/light mode toggle
+│   ├── primary-tabs.tsx                        # Primary tab component
+│   ├── schedule-entry-form.tsx                 # Schedule form builder
+│   ├── theme-provider.tsx                      # next-themes provider wrapper
+│   ├── reui/                                   # Custom UI primitives (badge, stepper)
+│   └── ui/                                     # shadcn/ui primitives (do not edit manually)
 ├── lib/
 │   └── utils.ts          # cn() helper (clsx + tailwind-merge)
 └── utils/
@@ -86,6 +99,21 @@ Each feature page follows a consistent structure inside its directory:
 - `table-column-def.tsx` — TanStack Table column definitions
 - `table-row-actions.tsx` — row action buttons/dropdowns
 - `dialog-*.tsx` — individual dialog components (create, edit, delete, view, etc.)
+
+### EventManagement Sub-pages
+
+`EventManagement/` contains two nested sub-pages beyond the top-level event CRUD:
+- `EquipmentRequestList/` — per-event list of equipment requests (ROLE_EVENT_COMMITTEE); dialogs: view, cancel
+- `EquipmentRequest/` — create a new equipment request for an event; dialog: confirmation
+
+Routes: `/equipment-requests`, `/equipment-requests/:eventId`, `/equipment-requests/:eventId/new`
+
+### MyRentalList Sub-pages
+
+`MyRentalList/` contains:
+- Root — rental list with view/delete dialogs
+- `EquipmentRental/` — new rental stepper (`rent-stepper.tsx`) with steps: pick equipments, pick date range, make payment, generated invoice/receipt; dialogs: payment, success. Step 4 uses `useRentalEvents(rentalId)` to open an SSE connection that invalidates receipt/invoice queries as documents are generated server-side.
+- Receipt/Invoice views — `receipt-view.tsx`, `invoice-view.tsx`, `receipt-pdf.tsx`, `invoice-pdf.tsx`, `document-card.tsx`, `document-pdf.tsx`
 
 ### Authentication & Token Handling
 
@@ -104,6 +132,13 @@ Six roles (always prefixed with `ROLE_`): `ROLE_ADMIN`, `ROLE_STUDENT`, `ROLE_NO
 - Sidebar menu items in `routerMenuItems.ts` are filtered by `activeRole`.
 - `constants/roles.ts` exports `ROLE_LABELS` (display names) and `getRoleLabel(role)`.
 
+Role → default redirect (handled by `RoleRedirect` in `router.tsx`):
+- `ROLE_ADMIN` → `/user-management`
+- `ROLE_EQUIPMENT_COMMITTEE` → `/manage-inventory`
+- `ROLE_HIGH_COMMITTEE` → `/event-management`
+- `ROLE_EVENT_COMMITTEE` → `/equipment-requests`
+- `ROLE_STUDENT` / `ROLE_NON_STUDENT` → `/equipment-rent`
+
 ### QueryFactory Pattern
 
 `src/store/query-factory.ts` is a generic CRUD builder. Given a base URL and Zod schemas it produces:
@@ -114,8 +149,11 @@ Six roles (always prefixed with `ROLE_`): `ROLE_ADMIN`, `ROLE_STUDENT`, `ROLE_NO
 - `customQuery(options)` — parameterized GET where URL and query key are functions of a param (e.g. `/rental-volume?months=6`)
 - `customMutation(options)` — POST/PATCH/DELETE with optional request/response validation, automatic toast on success, and query invalidation
 - `mutationOption(type)` — standard create/edit/delete/soft-delete mutations with automatic URL construction
+- `customStream(options)` — SSE helper; returns only `{ url(param) }` (no React Query state). Use when a feature needs a streaming endpoint alongside its regular queries (see `receipt.ts` + `use-rental-events.ts`)
 
 All query hooks in `src/store/queries/` are thin wrappers around QueryFactory or raw `useQuery`/`useMutation`.
+
+Query config functions (the raw `QueryOptions` objects returned by `customQuery`) can be exported directly from a query file when other hooks or non-component code need to access the query key or prefetch the data. The `receipt.ts` file does this: it exports both the raw config functions (`invoiceByRentalQuery`, `receiptByRentalQuery`, etc.) and the `useQuery`-wrapped hooks (`useInvoice`, `useReceipt`, etc.). The hooks add 404→`null` handling and the `enabled` guard on top of the raw config.
 
 ### API Conventions
 
@@ -126,7 +164,6 @@ All query hooks in `src/store/queries/` are thin wrappers around QueryFactory or
 
 ### Stub Routes (not yet implemented)
 
-- `/equipment-requests` — Equipment Requests (ROLE_EVENT_COMMITTEE)
 - `/equipment-returns` — Return Rented Equipment (ROLE_STUDENT, ROLE_NON_STUDENT)
 - `/equipment-request-returns` — Return Requested Equipment (ROLE_EVENT_COMMITTEE)
 - `/equipment-return-management` — Equipment Return Management (ROLE_EQUIPMENT_COMMITTEE)
