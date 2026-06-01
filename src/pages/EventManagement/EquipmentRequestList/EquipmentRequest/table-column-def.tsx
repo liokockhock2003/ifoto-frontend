@@ -51,7 +51,7 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
     }),
     mainCol.accessor('serialNumber', {
         header: 'Serial No.',
-        cell: (info) => <span className="font-mono text-xs">{info.getValue()}</span>,
+        cell: (info) => <span className="font-mono text-xs">{info.getValue() ?? '—'}</span>,
     }),
     mainCol.accessor('condition', {
         header: 'Condition',

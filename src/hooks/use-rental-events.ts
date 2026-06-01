@@ -50,15 +50,28 @@ export function useRentalEvents(rentalId: number | null): { isConnected: boolean
                         const { value, done } = await reader.read();
                         if (done) break;
 
-                        buffer += decoder.decode(value, { stream: true });
-                        const lines = buffer.split('\n');
-                        buffer = lines.pop() ?? '';
+                        // Normalize CRLF and bare CR to LF before buffering
+                        buffer += decoder.decode(value, { stream: true })
+                            .replace(/\r\n/g, '\n')
+                            .replace(/\r/g, '\n');
 
-                        for (const line of lines) {
-                            if (!line.startsWith('data:')) continue;
+                        // SSE events are separated by blank lines (\n\n)
+                        const events = buffer.split('\n\n');
+                        buffer = events.pop() ?? ''; // last chunk may be incomplete
+
+                        for (const event of events) {
+                            if (!event.trim()) continue;
+
+                            // Per SSE spec, join multiple data: lines with \n
+                            const payload = event
+                                .split('\n')
+                                .filter((l) => l.startsWith('data:'))
+                                .map((l) => l.slice(5).replace(/^ /, ''))
+                                .join('\n');
+                            if (!payload) continue;
 
                             let parsed: unknown;
-                            try { parsed = JSON.parse(line.slice(5).trim()); } catch { continue; }
+                            try { parsed = JSON.parse(payload); } catch { continue; }
 
                             const result = RentalEventSchema.safeParse(parsed);
                             if (!result.success) continue;

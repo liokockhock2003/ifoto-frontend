@@ -1,9 +1,14 @@
-export const EQUIPMENT_CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
+export const EQUIPMENT_CONDITIONS = ['GOOD', 'FAIR', 'FAULTY'] as const;
 export type EquipmentCondition = typeof EQUIPMENT_CONDITIONS[number];
 
-export const EQUIPMENT_CONDITION_BADGE: Record<string, string> = {
-    Excellent: 'badge-success',
-    Good:      'badge-info',
-    Fair:      'badge-warning',
-    Poor:      'badge-danger',
+export const CONDITION_LABEL: Record<EquipmentCondition, string> = {
+    GOOD:   'Good',
+    FAIR:   'Fair',
+    FAULTY: 'Faulty',
+};
+
+export const EQUIPMENT_CONDITION_BADGE: Record<EquipmentCondition, string> = {
+    GOOD:   'badge-success',
+    FAIR:   'badge-warning',
+    FAULTY: 'badge-danger',
 };

@@ -8,6 +8,10 @@ export function isNotFoundError(err: unknown): boolean {
     return isAxiosStatusError(err, 404);
 }
 
+export function isRateLimitError(err: unknown): boolean {
+    return isAxiosStatusError(err, 429);
+}
+
 export function extractApiErrorMessage(err: unknown): string {
     if (isAxiosError(err)) {
         const data = err.response?.data;

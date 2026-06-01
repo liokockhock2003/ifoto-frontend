@@ -1,4 +1,6 @@
 import axios, { type InternalAxiosRequestConfig } from 'axios';
+import { toast } from 'sonner';
+import { isRateLimitError } from '@/utils/api-error';
 
 declare module 'axios' {
     interface AxiosRequestConfig {
@@ -63,6 +65,18 @@ api.interceptors.response.use(
 
         // Caller explicitly opts out from refresh flow (e.g. login/register/refresh)
         if (original?.skipAuthRefresh) {
+            return Promise.reject(error);
+        }
+
+        // 429 Too Many Requests — show toast with retry time, don't auto-retry
+        if (isRateLimitError(error)) {
+            const retryAfter = error.response?.headers?.['retry-after'];
+            const seconds = retryAfter ? parseInt(retryAfter, 10) : null;
+            toast.error(
+                seconds
+                    ? `Too many requests. Please try again in ${seconds}s.`
+                    : 'Too many requests. Please try again later.'
+            );
             return Promise.reject(error);
         }
 

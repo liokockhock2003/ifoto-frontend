@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 export const EquipmentStatusTypeSchema = z.enum([
-    'UNAVAILABLE', 'MAINTENANCE', 'CONVOCATION', 'MRM', 'AVAILABLE', 'BOOKED',
+    'UNAVAILABLE', 'MAINTENANCE', 'CONVOCATION', 'MRM', 'AVAILABLE', 'BOOKED', 'IN_USE',
 ]);
 
 export const EquipmentDateStatusSchema = z.object({
@@ -13,7 +13,7 @@ export const EquipmentDateStatusSchema = z.object({
 });
 
 export const EquipmentStatusPayloadSchema = z.object({
-    statusType: EquipmentStatusTypeSchema.exclude(['AVAILABLE', 'BOOKED']),
+    statusType: EquipmentStatusTypeSchema.exclude(['AVAILABLE', 'BOOKED', 'IN_USE']),
     startDate: z.string(),
     endDate: z.string(),
     notes: z.string().optional(),
@@ -25,10 +25,10 @@ export const MainEquipmentSchema = z.object({
     lensType: z.string().nullish(),
     brand: z.string(),
     model: z.string(),
-    serialNumber: z.string(),
-    condition: z.string(),
-    status: EquipmentStatusTypeSchema.catch('AVAILABLE'),
-    notes: z.string().nullable(),
+    serialNumber: z.string().nullable(),
+    condition: z.enum(['GOOD', 'FAIR', 'FAULTY']),
+    status: EquipmentStatusTypeSchema,
+    problems: z.string().nullable(),
     pricingCategoryId: z.number().int().nonnegative().nullish(),
     pricingCategory: z.string().nullish(),
     isForRent: z.boolean(),

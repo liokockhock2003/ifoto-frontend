@@ -62,7 +62,7 @@ function ItemsTable({ items }: { items: RentalItem[] }) {
                         <TableRow key={item.id}>
                             <TableCell>
                                 <p className="font-medium">{item.brand} {item.model}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{item.serialNumber}</p>
+                                <p className="text-xs text-muted-foreground font-mono">{item.serialNumber ?? '—'}</p>
                             </TableCell>
                             <TableCell className="text-muted-foreground hidden sm:table-cell">{item.equipmentType}</TableCell>
                             <TableCell className="text-right">

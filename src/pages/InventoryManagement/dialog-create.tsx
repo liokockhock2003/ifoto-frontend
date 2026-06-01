@@ -25,7 +25,7 @@ import { useCreateMainEquipment, useCreateSubEquipment } from '@/store/queries/e
 import { Switch } from '@/components/ui/switch';
 import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/equipment';
 
-import { EQUIPMENT_CONDITIONS as CONDITIONS } from '@/constants/equipmentCondition';
+import { EQUIPMENT_CONDITIONS as CONDITIONS, CONDITION_LABEL } from '@/constants/equipmentCondition';
 import { useInventoryManagementContext } from './context';
 import { MAIN_EQUIPMENT_CONFIG, SUB_EQUIPMENT_CONFIG, SUB_EQUIPMENT_KEYS, SUB_KIND_CONFIG, type SubKindConfig } from './provider';
 
@@ -46,8 +46,8 @@ const defaultMainForm = (kind: MainEquipmentKind): MainEquipmentPayload => ({
     brand: '',
     model: '',
     serialNumber: '',
-    condition: 'Good',
-    notes: '',
+    condition: 'GOOD',
+    problems: '',
     isForRent: false,
 });
 
@@ -118,7 +118,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.condition}
+                                    {CONDITION_LABEL[form.condition]}
                                     <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -129,7 +129,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                                         className={c === form.condition ? 'bg-accent' : ''}
                                         onSelect={() => setVal('condition')(c)}
                                     >
-                                        {c}
+                                        {CONDITION_LABEL[c]}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
@@ -147,8 +147,8 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                         </div>
                     </Field>
                     <Field className="sm:col-span-2">
-                        <FieldLabel>Notes</FieldLabel>
-                        <Textarea placeholder="Optional notes" value={form.notes ?? ''} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
+                        <FieldLabel>Problems</FieldLabel>
+                        <Textarea placeholder="Optional notes on problems" value={form.problems ?? ''} onChange={(e) => setForm((p) => ({ ...p, problems: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 

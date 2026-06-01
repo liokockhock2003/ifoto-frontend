@@ -1,4 +1,5 @@
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from 'recharts';
+import { TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     ChartContainer,
@@ -8,6 +9,7 @@ import {
     ChartTooltipContent,
     type ChartConfig,
 } from '@/components/ui/chart';
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { useRevenueOverTime } from '@/store/queries/report';
 import { useReportingDashboardContext } from './context';
 import { formatMonth } from './utils';
@@ -35,6 +37,13 @@ export function ChartRevenue() {
             <CardContent>
                 {isLoading ? (
                     <div className="aspect-video w-full animate-pulse rounded bg-muted" />
+                ) : chartData.length === 0 ? (
+                    <Empty className="py-6">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon"><TrendingUp /></EmptyMedia>
+                            <EmptyTitle className="text-sm">No revenue data</EmptyTitle>
+                        </EmptyHeader>
+                    </Empty>
                 ) : (
                     <ChartContainer config={chartConfig} className="max-h-[270px] w-full">
                         <LineChart data={chartData} margin={{ left: -10, right: 4 }}>
@@ -74,6 +83,7 @@ export function ChartRevenue() {
                         </LineChart>
                     </ChartContainer>
                 )}
+
             </CardContent>
         </Card>
     );

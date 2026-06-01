@@ -47,7 +47,7 @@ function fmtDate(d: string) {
 // ── Inline form ───────────────────────────────────────────────────────────────
 
 type FormState = {
-    statusType: Exclude<EquipmentStatusType, 'AVAILABLE' | 'BOOKED'>;
+    statusType: Exclude<EquipmentStatusType, 'AVAILABLE' | 'BOOKED' | 'IN_USE'>;
     startDate: string;
     endDate: string;
     notes: string;
@@ -73,7 +73,7 @@ function StatusForm({
 }) {
     const [form, setForm] = useState<FormState>(() =>
         editing
-            ? { statusType: editing.statusType as Exclude<EquipmentStatusType, 'AVAILABLE' | 'BOOKED'>, startDate: editing.startDate, endDate: editing.endDate, notes: editing.notes ?? '' }
+            ? { statusType: editing.statusType as Exclude<EquipmentStatusType, 'AVAILABLE' | 'BOOKED' | 'IN_USE'>, startDate: editing.startDate, endDate: editing.endDate, notes: editing.notes ?? '' }
             : defaultForm()
     );
 
