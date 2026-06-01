@@ -71,7 +71,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
         !mutation.isPending &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
-        form.serialNumber.trim() !== '';
+        (form.serialNumber ?? '').trim() !== '';
 
     async function handleSubmit() {
         try {
@@ -111,7 +111,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Serial Number</FieldLabel>
-                        <Input placeholder="e.g. SN-SONY-A7IV-001" value={form.serialNumber} onChange={set('serialNumber')} />
+                        <Input placeholder="e.g. SN-SONY-A7IV-001" value={form.serialNumber ?? ''} onChange={set('serialNumber')} />
                     </Field>
                     <Field>
                         <FieldLabel>Condition</FieldLabel>

@@ -77,7 +77,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
         !!equipment &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
-        form.serialNumber.trim() !== '';
+        (form.serialNumber ?? '').trim() !== '';
 
     async function handleSave() {
         if (!equipment) return;
@@ -115,7 +115,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Serial Number</FieldLabel>
-                        <Input value={form.serialNumber} onChange={set('serialNumber')} />
+                        <Input value={form.serialNumber ?? ''} onChange={set('serialNumber')} />
                     </Field>
                     <Field>
                         <FieldLabel>Condition</FieldLabel>
