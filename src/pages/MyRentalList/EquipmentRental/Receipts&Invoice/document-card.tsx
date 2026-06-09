@@ -11,10 +11,13 @@ const CLUB_EMAIL = 'kelabfotokreatifutmjb@gmail.com';
 const CLUB_ADDRESS_LINE1 = 'Universiti Teknologi Malaysia';
 const CLUB_ADDRESS_LINE2 = 'Johor Bahru 81310';
 const CLUB_ADDRESS_LINE3 = 'Johor, Malaysia';
-const SIGNER_NAME = 'MUHAMMAD ALIF NABIL BIN JUNAIDI';
-const SIGNER_POSITION = 'EXCO ALATAN KELAB FOTOKREATIF'
+const SIGNER_POSITION = 'EXCO ALATAN KELAB FOTOKREATIF';
 
 // ── Normalized document data ──────────────────────────────────────────────────
+
+type CommitteeDoc =
+    | { type: 'invoice'; bankName: string; accountNo: string; accountName: string; signature: string | null }
+    | { type: 'receipt'; approvedBy: string; signature: string | null };
 
 export type DocumentData = {
     docNumber: string;
@@ -24,6 +27,7 @@ export type DocumentData = {
     rental: ReceiptRental;
     payment: ReceiptPayment | null;
     isPenalty: boolean;
+    committee: CommitteeDoc | null;
 };
 
 export function receiptToDoc(r: ReceiptDetail, isPenalty: boolean): DocumentData {
@@ -35,6 +39,9 @@ export function receiptToDoc(r: ReceiptDetail, isPenalty: boolean): DocumentData
         rental: r.rental,
         payment: r.payment,
         isPenalty,
+        committee: r.committee
+            ? { type: 'receipt', approvedBy: r.committee.approvedBy, signature: r.committee.signature }
+            : null,
     };
 }
 
@@ -47,6 +54,9 @@ export function invoiceToDoc(i: InvoiceDetail): DocumentData {
         rental: i.rental,
         payment: null,
         isPenalty: i.documentType === 'OVERDUE_INVOICE',
+        committee: i.committee
+            ? { type: 'invoice', bankName: i.committee.bankName, accountNo: i.committee.accountNo, accountName: i.committee.accountName, signature: i.committee.signature }
+            : null,
     };
 }
 
@@ -100,7 +110,7 @@ export function DocumentCard({
                         <p className="text-foreground text-s">{data.renter.email}</p>
                         <p className="text-foreground text-s">{data.renter.phoneNumber}</p>
                     </div>
-                    <span className="text-4xl font-bold tracking-widest">{data.title}</span>
+                    <span className="text-4xl font-bold tracking-wide font-[Playfair_Display]">{data.title}</span>
                 </div>
 
                 <div className="flex justify-between gap-4 text-sm">
@@ -111,13 +121,10 @@ export function DocumentCard({
                         <p className="text-foreground text-s">{CLUB_ADDRESS_LINE3}</p>
                     </div>
                     <div className="space-y-0.5 text-right">
-
                         <p className="font-bold">{isReceipt ? 'RNo#' : 'INo#'}: {data.docNumber}</p>
                         <p className="text-foreground text-s">DATE: {fmtDocDate(data.issuedAt)}</p>
                     </div>
                 </div>
-
-                {/* <hr /> */}
 
                 {/* Items table */}
                 <table className="w-full text-sm">
@@ -132,7 +139,7 @@ export function DocumentCard({
                     </thead>
                     <tbody>
                         {data.rental.items.map((item, i) => (
-                            <tr key={item.serialNumber} className="border-b last:border-b-0">
+                            <tr key={item.serialNumber ?? i} className="border-b last:border-b-0">
                                 <td className="py-3 text-muted-foreground">{i + 1}.</td>
                                 <td className="py-3">
                                     <span className="font-medium">{item.brand} {item.model}</span>
@@ -185,8 +192,18 @@ export function DocumentCard({
                     <div className="flex items-end justify-between pt-4">
                         <div className="space-y-1">
                             <p className="font-semibold text-m">Received By :</p>
-                            <div className="w-40 border-b border mt-24 mb-4" />
-                            <p className="text-xs text-foreground">{SIGNER_NAME}</p>
+                            {data.committee?.type === 'receipt' && data.committee.signature ? (
+                                <img
+                                    src={`data:image/png;base64,${data.committee.signature}`}
+                                    alt="Signature"
+                                    className="h-16 object-contain"
+                                />
+                            ) : (
+                                <div className="w-40 border-b border mt-24 mb-4" />
+                            )}
+                            <p className="text-xs text-foreground">
+                                {data.committee?.type === 'receipt' ? data.committee.approvedBy : '—'}
+                            </p>
                             <p className="text-xs text-foreground">({SIGNER_POSITION})</p>
                             <p className="text-2xl mt-4">Thank you!</p>
                         </div>
@@ -194,12 +211,22 @@ export function DocumentCard({
                     </div>
                 ) : (
                     <div className="flex items-end justify-between pt-4">
-                        <div className="space-y-1">
-                            <p className="text-2xl mt-4">Thank you!</p>
+                        <div className="space-y-1 text-sm">
+                            <p className="text-2xl mb-3">Thank you!</p>
+                            {data.committee?.type === 'invoice' ? (
+                                <>
+                                    <p className="font-semibold text-base">Payment Information</p>
+                                    <p className="text-foreground font-medium">{data.committee.bankName}</p>
+                                    <p className="text-muted-foreground">Account Name: <span className="text-foreground font-medium">{data.committee.accountName}</span></p>
+                                    <p className="text-muted-foreground">Account No.: <span className="text-foreground font-medium">{data.committee.accountNo}</span></p>
+                                </>
+                            ) : (
+                                <p className="text-muted-foreground text-xs italic">Bank details not available. Contact committee.</p>
+                            )}
                         </div>
-                        <div className="space-y-1 justify-end items-end text-right">
-                            <p className="text-2xl font-semibold mt-4">Accepted by</p>
-                            <p className="text-m">{data.renter.fullName}</p>
+                        <div className="text-right text-sm">
+                            <p className="text-foreground text-xl mb-1.5 font-[Playfair_Display]">Accepted by</p>
+                            <p className="uppercase">{data.renter.fullName}</p>
                         </div>
                     </div>
                 )}

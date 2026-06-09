@@ -40,7 +40,7 @@ export function EquipmentRequestRowActions({ row }: EquipmentRequestRowActionsPr
                         View Details
                     </DropdownMenuItem>
 
-                    {request.status === 'PENDING_REVIEW' && (
+                    {(request.status === 'PENDING_REVIEW' || request.status === 'APPROVED') && (
                         <>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem

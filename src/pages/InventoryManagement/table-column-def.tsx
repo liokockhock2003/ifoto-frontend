@@ -61,8 +61,7 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
             );
         },
     }),
-    mainColumnHelper.display({
-        id: 'todayStatus',
+    mainColumnHelper.accessor('status', {
         header: 'Today Status',
         cell: ({ row }) => {
             const s = row.original.status;

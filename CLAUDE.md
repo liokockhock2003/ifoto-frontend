@@ -22,9 +22,11 @@ No test runner is configured. The backend must be running on port 8080 for API c
 - **shadcn/ui** (New York style) + **Radix UI** + **Tailwind CSS v4**
 - **Zod 4** for runtime schema validation
 - **TanStack React Table v8** for data tables
+- **FullCalendar 6** (daygrid + timegrid + interaction) for logistics calendar views
 - **Recharts** for charts (used in ReportingDashboard)
 - **@react-pdf/renderer** for PDF generation (rental receipts/invoices)
-- **react-day-picker** + **date-fns** for date inputs
+- **react-day-picker** + **date-fns** for date range inputs
+- **@mui/x-date-pickers** for datetime inputs (rental/request logistics)
 - **next-themes** for dark/light mode toggle
 - **sonner** for toast notifications
 - Path alias: `@/*` → `src/*`
@@ -42,23 +44,26 @@ src/
 ├── breadcrumbs.ts        # Breadcrumb path config
 ├── constants/
 │   ├── roles.ts              # ROLE_LABELS map + getRoleLabel helper
-│   ├── equipmentStatus.ts    # Status types (AVAILABLE, BOOKED, MAINTENANCE, UNAVAILABLE, CONVOCATION, MRM), labels, badge classes. BOOKED and AVAILABLE are computed-only — excluded from EQUIPMENT_STATUS_OPTIONS (admin picker).
-│   ├── equipmentCondition.ts # Equipment condition mappings
-│   ├── rentalStatus.ts       # 9 rental status values with labels, badge classes, chart colors
-│   └── requestStatus.ts      # Equipment request status constants
+│   ├── equipmentStatus.ts    # 8 status types; AVAILABLE/BOOKED/IN_USE/PARTIALLY_AVAILABLE are computed-only — excluded from EQUIPMENT_STATUS_OPTIONS (admin picker); MAINTENANCE/UNAVAILABLE/CONVOCATION/MRM are admin-settable
+│   ├── equipmentCondition.ts # Equipment condition mappings (GOOD, FAIR, FAULTY)
+│   ├── rentalStatus.ts       # 10 rental status values with labels, badge classes, chart colors
+│   ├── requestStatus.ts      # 6 equipment request status constants
+│   ├── paymentStatus.ts      # PAYMENT_STATUS_LABEL + PAYMENT_METHOD_LABEL maps
+│   └── malaysianBanks.ts     # MALAYSIAN_BANKS array (17 banks) for bank-details form
 ├── hooks/
 │   ├── use-mobile.tsx        # useIsMobile hook (breakpoint: 768px)
 │   └── use-rental-events.ts  # SSE hook — streams document-ready events for a rental and invalidates receipt/invoice cache
 ├── pages/
 │   ├── Auth/                    # Login, Register, ForgotPassword, ResetPassword, VerifyEmail
 │   ├── UserManagement/          # Admin user list, edit roles/locked status, delete (ROLE_ADMIN)
-│   ├── InventoryManagement/     # Equipment inventory CRUD with status/quantity-hold dialogs (ROLE_EQUIPMENT_COMMITTEE)
-│   ├── RentalPricing/           # Rental pricing management (ROLE_EQUIPMENT_COMMITTEE)
-│   ├── RentalManagement/        # Review/approve/mark-returned rental bookings (ROLE_EQUIPMENT_COMMITTEE)
-│   ├── EventEquipment/          # Review and manage event equipment requests (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── InventoryManagement/     # Equipment inventory CRUD + nested status/quantity-hold schedule management (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── RentalPricing/           # Rental pricing bulk-update table (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── RentalManagement/        # Review/approve/mark-returned rental bookings + logistics calendar (ROLE_EQUIPMENT_COMMITTEE)
+│   ├── EventEquipment/          # Review and manage event equipment requests + logistics calendar (ROLE_EQUIPMENT_COMMITTEE)
 │   ├── EventManagement/         # Event CRUD + nested EquipmentRequestList + EquipmentRequest (ROLE_HIGH_COMMITTEE, ROLE_EVENT_COMMITTEE)
 │   ├── MyRentalList/            # Student/non-student rental list + new rental stepper + receipts/invoices
-│   └── ReportingDashboard/      # Analytics dashboard with KPI cards + charts (ROLE_EQUIPMENT_COMMITTEE, ROLE_HIGH_COMMITTEE)
+│   ├── ReportingDashboard/      # Analytics dashboard with KPI cards + charts (ROLE_EQUIPMENT_COMMITTEE, ROLE_HIGH_COMMITTEE)
+│   └── CommitteeBankDetails/    # Save/edit committee bank account info (ROLE_EQUIPMENT_COMMITTEE)
 ├── store/
 │   ├── auth-context.tsx  # AuthContext: user, login, logout, hasRole, updateUserRoles
 │   ├── query-client.ts   # QueryClient config (staleTime 30s, retry 0 in dev)
@@ -72,14 +77,20 @@ src/
 │   ├── cart-summary.tsx                        # Rental cart display
 │   ├── committee-user-select.tsx               # User select for committee assignment
 │   ├── data-table.tsx                          # Reusable TanStack Table wrapper
+│   ├── expandable-data-table.tsx               # Table variant with expandable rows
+│   ├── management-table.tsx                    # Management-oriented table variant
+│   ├── primary-tabs.tsx                        # Primary tab component
 │   ├── date-picker.tsx                         # Single date picker (react-day-picker)
 │   ├── range-date-picker.tsx                   # Date range picker
-│   ├── equipment-select.tsx                    # Equipment multi-select
+│   ├── date-time-picker.tsx                    # DateTime picker (@mui/x-date-pickers)
+│   ├── mui-providers.tsx                       # Material-UI LocalizationProvider wrapper
+│   ├── equipment-select.tsx                    # Equipment multi-select dropdown
+│   ├── equipment-schedules.tsx                 # Displays status windows and quantity holds (calendar-aware conflict view)
+│   ├── available-equipment-tables.tsx          # Main/sub equipment availability tables filtered by date range
 │   ├── equipment-request-confirmation-dialog.tsx  # Request confirmation modal
-│   ├── management-table.tsx                    # Management-oriented table variant
+│   ├── full-calendar.tsx                       # FullCalendar wrapper (daygrid/timegrid + interaction)
+│   ├── schedule-entry-form.tsx                 # Form builder for date-range schedule entries
 │   ├── mode-toggle.tsx                         # Dark/light mode toggle
-│   ├── primary-tabs.tsx                        # Primary tab component
-│   ├── schedule-entry-form.tsx                 # Schedule form builder
 │   ├── theme-provider.tsx                      # next-themes provider wrapper
 │   ├── reui/                                   # Custom UI primitives (badge, stepper)
 │   └── ui/                                     # shadcn/ui primitives (do not edit manually)
@@ -100,6 +111,24 @@ Each feature page follows a consistent structure inside its directory:
 - `table-row-actions.tsx` — row action buttons/dropdowns
 - `dialog-*.tsx` — individual dialog components (create, edit, delete, view, etc.)
 
+### InventoryManagement Sub-pages
+
+`InventoryManagement/` contains two nested calendar-based schedule managers:
+- `StatusScheduleManagement/` — per-equipment status scheduling calendar (route: `/status/:mainEquipmentId`)
+- `QuantityScheduleManagement/` — per-sub-equipment quantity hold scheduling calendar (route: `/holds/:subEquipmentId`)
+
+### RentalManagement Sub-pages
+
+`RentalManagement/` contains:
+- Root — paginated rental list with review/approve/reject/mark-returned actions
+- `RentalLogisticManagement/` — logistics calendar view (`/rental-management/calendar` or `/rental-management/calendar/:rentalId`); shows rental pickup/return windows, allows editing logistics and assigned equipment
+
+### EventEquipment Sub-pages
+
+`EventEquipment/` contains:
+- Root — paginated event equipment request list with review/approve/reject/mark-returned actions
+- `EELogisticManagement/` — logistics calendar view (`/event-equipment/calendar` or `/event-equipment/calendar/:requestId`); mirrors RentalLogisticManagement but for event requests
+
 ### EventManagement Sub-pages
 
 `EventManagement/` contains two nested sub-pages beyond the top-level event CRUD:
@@ -115,12 +144,19 @@ Routes: `/equipment-requests`, `/equipment-requests/:eventId`, `/equipment-reque
 - `EquipmentRental/` — new rental stepper (`rent-stepper.tsx`) with steps: pick equipments, pick date range, make payment, generated invoice/receipt; dialogs: payment, success. Step 4 uses `useRentalEvents(rentalId)` to open an SSE connection that invalidates receipt/invoice queries as documents are generated server-side.
 - Receipt/Invoice views — `receipt-view.tsx`, `invoice-view.tsx`, `receipt-pdf.tsx`, `invoice-pdf.tsx`, `document-card.tsx`, `document-pdf.tsx`
 
+### CommitteeBankDetails
+
+`CommitteeBankDetails/` — single-page form for equipment committee to save/edit their bank account details (account holder name, bank name, account number). Uses `GET/PUT /api/v1/users/me/bank-details`. Includes `bank-name-combobox.tsx` driven by `MALAYSIAN_BANKS` constant.
+
+Route: `/committee-bank-details` (ROLE_EQUIPMENT_COMMITTEE)
+
 ### Authentication & Token Handling
 
-- **Access token**: stored in memory only (inside `AuthContext`); injected into every request via Axios request interceptor.
+- **Access token**: stored in `sessionStorage` (key `__ift_at__`); survives same-tab page refreshes but is cleared when the tab closes. Injected into every request via Axios request interceptor.
 - **Refresh token**: delivered as an `httpOnly` cookie; sent automatically via `withCredentials: true`.
-- **Session restore**: on page load, `AuthContext` reads user profile from `localStorage` and calls `/api/v1/auth/refresh` to rehydrate the in-memory token.
-- **401 handling**: Axios response interceptor queues concurrent failing requests, attempts one refresh call, retries queued requests on success, or redirects to `/login` on failure. The `skipAuthRefresh` flag on a request config opts out of this queue (used for login/refresh endpoints themselves).
+- **Session restore**: on page load, `AuthContext` checks `sessionStorage` for an existing token and decodes its `exp` claim. If the token is present and not within 60 seconds of expiry, the user is restored from `localStorage` immediately — no network call. Otherwise (absent, expired, or nearly expired) calls `/api/v1/auth/refresh` once. `isTokenExpired(token, bufferSeconds?)` in `axios-instance.ts` handles the JWT decode.
+- **401 handling**: Axios response interceptor uses a single shared `refreshPromise` lock. All concurrent 401s chain onto the same in-flight refresh instead of each firing a separate call — avoids the second call failing when the backend rotates the refresh token on first use. On success all waiters retry with the new token; on failure all reject and the user is redirected to `/login`. The `skipAuthRefresh` flag on a request config opts out of this flow entirely (used for login/refresh endpoints themselves).
+- **Rate-limit guard**: `/auth/refresh` is only called when a valid token is not already in `sessionStorage`, i.e. once per new tab/window or when the token is expired — never on every same-tab page reload.
 
 ### RBAC
 
@@ -162,6 +198,28 @@ Query config functions (the raw `QueryOptions` objects returned by `customQuery`
 - Responses are validated against Zod schemas before being returned to components.
 - Pagination params: `page` (0-indexed), `size`, `role`, `search`.
 
+### Key API Endpoints
+
+| Area | Method | Path |
+|------|--------|------|
+| Auth | POST | `/api/v1/auth/login`, `/register`, `/logout`, `/refresh`, `/forgot-password`, `/reset-password` |
+| Auth | GET | `/api/v1/auth/verify-email?token=X` |
+| Users | GET/PATCH/DELETE | `/api/v1/users`, `/api/v1/users/:username` |
+| Bank Details | GET/PUT | `/api/v1/users/me/bank-details` |
+| Equipment | GET | `/api/v1/equipment`, `/api/v1/equipment/available?startDate&endDate&context&excludeRentalId?&excludeRequestId?` |
+| Equipment | POST/PUT/DELETE | `/api/v1/equipment/main[/:id]`, `/api/v1/equipment/sub[/:id]` |
+| Eq. Statuses | GET/POST/PATCH/DELETE | `/api/v1/equipment/main/:id/statuses[/:statusId]` |
+| Qty Holds | GET/POST/PATCH/DELETE | `/api/v1/equipment/sub/:id/quantity-holds[/:holdId]` |
+| Events | GET/POST/PUT/DELETE | `/api/v1/events[/:id]`, `/api/v1/events/my`, `/api/v1/events/users/:userId` |
+| Rentals | GET | `/api/v1/rentals`, `/api/v1/rentals/my`, `/api/v1/rentals/my-approvals`, `/api/v1/rentals/:id/equipment-schedules` |
+| Rentals | POST/PATCH/DELETE | `/api/v1/rentals[/:id]`, `/:id/review`, `/:id/pay`, `/:id/confirm-manual-payment`, `/:id/mark-picked-up`, `/:id/mark-returned`, `/:id/logistics`, `/:id/equipment` |
+| Requests | GET | `/api/v1/event-equipment-requests`, `/event/:eventId`, `/:id/equipment-schedules` |
+| Requests | POST/PATCH/DELETE | `/api/v1/event-equipment-requests[/:id]`, `/:id/review`, `/:id/mark-picked-up`, `/:id/mark-returned`, `/:id/logistics`, `/:id/equipment`, `/trigger-active` |
+| Pricing | GET/PUT | `/api/v1/rental-pricing`, `/rental-pricing/bulk` |
+| Receipts | GET | `/api/v1/receipts/invoice/rental/:id`, `/overdue-invoice/rental/:id`, `/receipt/rental/:id`, `/overdue-receipt/rental/:id` |
+| SSE | GET | `/api/v1/receipts/events/rental/:id` |
+| Reports | GET | `/api/v1/reports/kpi`, `/rental-status`, `/rental-volume?months=X`, `/revenue?months=X`, `/equipment-utilization` |
+
 ### Stub Routes (not yet implemented)
 
 - `/equipment-returns` — Return Rented Equipment (ROLE_STUDENT, ROLE_NON_STUDENT)
@@ -170,4 +228,4 @@ Query config functions (the raw `QueryOptions` objects returned by `customQuery`
 
 ## Environment
 
-The app is developed on WSL2. `vite.config.ts` sets `server.host: '0.0.0.0'` and `hmr.clientPort: 5173` for WSL compatibility. A Dockerfile with an nginx multi-stage build exists for production deployment.
+The app is developed on WSL2. `vite.config.ts` sets `server.host: '0.0.0.0'` and `hmr.clientPort: 5173` for WSL compatibility. A Dockerfile with an nginx multi-stage build exists for production deployment. The nginx config proxies `/api/` to `http://backend:8080` (Docker Compose service name).

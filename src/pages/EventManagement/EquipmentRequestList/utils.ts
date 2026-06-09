@@ -18,3 +18,17 @@ export function formatDateRange(start: string | null | undefined, end: string | 
     return `${s.toLocaleDateString('en-MY', { day: 'numeric', month: 'short' })} – ${e.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: sameYear ? undefined : 'numeric' })} ${e.getFullYear()}`;
 }
 
+export function formatDateTimeRange(start: string | null | undefined, end: string | null | undefined) {
+    if (!start || !end) return '—';
+    const opts: Intl.DateTimeFormatOptions = {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    };
+    const s = new Date(start);
+    const e = new Date(end);
+    return `${s.toLocaleString('en-MY', opts)} – ${e.toLocaleString('en-MY', opts)}`;
+}
+

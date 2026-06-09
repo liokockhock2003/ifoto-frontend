@@ -1,15 +1,18 @@
+import type { ColumnDef } from '@tanstack/react-table';
+
 import { Badge } from '@/components/ui/badge';
+import { DataTable } from '@/components/data-table';
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
+import { Field, FieldLabel, FieldDescription } from '@/components/ui/field';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { Rental, RentalItem, RentalSubItem } from '@/store/schemas/rental';
 import { RENTAL_STATUS_LABEL, type RentalStatus } from '@/constants/rentalStatus';
+import { PAYMENT_STATUS_LABEL, PAYMENT_METHOD_LABEL } from '@/constants/paymentStatus';
 import { statusVariant } from './table-column-def';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -27,95 +30,73 @@ function fmtDate(date: string | null) {
     });
 }
 
-// ── Sub-components ────────────────────────────────────────────────────────────
-
-function InfoRow({ label, value }: { label: string; value: React.ReactNode }) {
-    return (
-        <div className="flex justify-between gap-4 text-sm">
-            <span className="text-muted-foreground shrink-0">{label}</span>
-            <span className="text-right font-medium">{value}</span>
-        </div>
-    );
+function fmtDatetime(dt: string | null) {
+    if (!dt) return '—';
+    return new Date(dt).toLocaleString('en-MY', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+    });
 }
 
-function SectionHeading({ children }: { children: React.ReactNode }) {
-    return (
-        <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground pt-1">
-            {children}
-        </p>
-    );
-}
+const FIELD_LABEL_CLASS = 'text-xs font-semibold uppercase tracking-wider text-muted-foreground';
+const FIELD_VALUE_CLASS = 'text-sm font-medium text-foreground';
 
-function ItemsTable({ items }: { items: RentalItem[] }) {
-    return (
-        <div className="rounded-md border overflow-hidden">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Equipment</TableHead>
-                        <TableHead className="hidden sm:table-cell">Type</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {items.map((item) => (
-                        <TableRow key={item.id}>
-                            <TableCell>
-                                <p className="font-medium">{item.brand} {item.model}</p>
-                                <p className="text-xs text-muted-foreground font-mono">{item.serialNumber ?? '—'}</p>
-                            </TableCell>
-                            <TableCell className="text-muted-foreground hidden sm:table-cell">{item.equipmentType}</TableCell>
-                            <TableCell className="text-right">
-                                <p>{fmt(item.baseAmount)}</p>
-                                {item.latePenaltyAmount > 0 && (
-                                    <p className="text-xs text-destructive">+{fmt(item.latePenaltyAmount)} penalty</p>
-                                )}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    );
-}
+const itemColumns: ColumnDef<RentalItem>[] = [
+    {
+        accessorKey: 'model',
+        header: 'Equipment',
+        cell: ({ row }) => (
+            <div>
+                <p className="font-medium">{row.original.brand} {row.original.model}</p>
+                <p className="text-xs text-muted-foreground font-mono">{row.original.serialNumber ?? '—'}</p>
+            </div>
+        ),
+    },
+    { accessorKey: 'equipmentType', header: 'Type', cell: ({ row }) => <span className="text-muted-foreground">{row.original.equipmentType}</span> },
+    {
+        accessorKey: 'baseAmount',
+        header: () => <div className="text-right">Amount</div>,
+        cell: ({ row }) => (
+            <div className="text-right">
+                <p>{fmt(row.original.baseAmount)}</p>
+                {row.original.latePenaltyAmount > 0 && (
+                    <p className="text-xs text-destructive">+{fmt(row.original.latePenaltyAmount)} penalty</p>
+                )}
+            </div>
+        ),
+    },
+];
 
-function SubItemsTable({ items }: { items: RentalSubItem[] }) {
-    return (
-        <div className="rounded-md border overflow-hidden">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Accessory</TableHead>
-                        <TableHead className="text-right hidden sm:table-cell">Qty</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {items.map((item) => (
-                        <TableRow key={item.id}>
-                            <TableCell>
-                                <p className="font-medium">{item.brand ? `${item.brand} ` : ''}{item.equipmentType}</p>
-                            </TableCell>
-                            <TableCell className="text-right text-muted-foreground hidden sm:table-cell">
-                                {item.borrowedQuantity}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {item.itemTotalAmount != null ? (
-                                    <>
-                                        <p>{fmt(item.itemTotalAmount)}</p>
-                                        {(item.latePenaltyAmount ?? 0) > 0 && (
-                                            <p className="text-xs text-destructive">+{fmt(item.latePenaltyAmount!)} penalty</p>
-                                        )}
-                                    </>
-                                ) : '—'}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </div>
-    );
-}
+const subItemColumns: ColumnDef<RentalSubItem>[] = [
+    {
+        accessorKey: 'equipmentType',
+        header: 'Accessory',
+        cell: ({ row }) => <p className="font-medium">{row.original.brand ? `${row.original.brand} ` : ''}{row.original.equipmentType}</p>,
+    },
+    {
+        accessorKey: 'borrowedQuantity',
+        header: () => <div className="text-right">Qty</div>,
+        cell: ({ row }) => <div className="text-right text-muted-foreground">{row.original.borrowedQuantity}</div>,
+    },
+    {
+        accessorKey: 'itemTotalAmount',
+        header: () => <div className="text-right">Amount</div>,
+        cell: ({ row }) =>
+            row.original.itemTotalAmount != null ? (
+                <div className="text-right">
+                    <p>{fmt(row.original.itemTotalAmount)}</p>
+                    {(row.original.latePenaltyAmount ?? 0) > 0 && (
+                        <p className="text-xs text-destructive">+{fmt(row.original.latePenaltyAmount!)} penalty</p>
+                    )}
+                </div>
+            ) : (
+                <div className="text-right">—</div>
+            ),
+    },
+];
 
 // ── RentalViewDialog ──────────────────────────────────────────────────────────
 
@@ -132,91 +113,115 @@ export function RentalViewDialog({ open, onOpenChange, rental }: RentalViewDialo
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-lg text-foreground">
                 <DialogHeader>
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <DialogTitle className="text-primary font-mono text-base">{rental.rentalNumber}</DialogTitle>
+                    <DialogTitle className="flex items-center gap-3 flex-wrap">
+                        <span className="font-mono text-base text-primary">{rental.rentalNumber}</span>
                         <Badge variant="outline" className={statusVariant(rental.status)}>
                             {RENTAL_STATUS_LABEL[rental.status as RentalStatus] ?? rental.status.replace(/_/g, ' ')}
                         </Badge>
-                    </div>
+                    </DialogTitle>
                 </DialogHeader>
 
                 <ScrollArea className="max-h-[70vh] pr-4">
-                    <div className="space-y-4">
-                        {/* Overview */}
-                        <div className="space-y-2">
-                            <SectionHeading>Overview</SectionHeading>
-                            <InfoRow label="Submitted" value={new Date(rental.createdAt).toLocaleString('en-MY')} />
-                            <InfoRow label="Renter" value={rental.renterUsername} />
-                            <InfoRow label="Payment Method" value={rental.paymentMethod} />
-                            <InfoRow label="Payment Status" value={rental.paymentStatus} />
-                        </div>
-
-                        <Separator />
-
-                        {/* Dates */}
-                        <div className="space-y-2">
-                            <SectionHeading>Dates</SectionHeading>
-                            <InfoRow label="Requested Start" value={fmtDate(rental.requestedStartDate)} />
-                            <InfoRow label="Requested End" value={fmtDate(rental.requestedEndDate)} />
-                            <InfoRow label="Approved Start" value={fmtDate(rental.approvedStartDate)} />
-                            <InfoRow label="Approved End" value={fmtDate(rental.approvedEndDate)} />
+                    <div className="space-y-6">
+                        {/* Info grid */}
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Submitted</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{new Date(rental.createdAt).toLocaleString('en-MY')}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Renter</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{rental.renterUsername}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Payment Method</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{PAYMENT_METHOD_LABEL[rental.paymentMethod] ?? rental.paymentMethod}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Payment Status</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{PAYMENT_STATUS_LABEL[rental.paymentStatus] ?? rental.paymentStatus}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Program Start</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmtDate(rental.programStartDate)}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Program End</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmtDate(rental.programEndDate)}</FieldDescription>
+                            </Field>
                             {rental.durationDays !== null && (
-                                <InfoRow label="Duration" value={`${rental.durationDays} day${rental.durationDays !== 1 ? 's' : ''}`} />
+                                <Field className="gap-0.5">
+                                    <FieldLabel className={FIELD_LABEL_CLASS}>Duration</FieldLabel>
+                                    <FieldDescription className={FIELD_VALUE_CLASS}>{`${rental.durationDays} day${rental.durationDays !== 1 ? 's' : ''}`}</FieldDescription>
+                                </Field>
                             )}
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Pickup Schedule</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmtDatetime(rental.pickupDatetime)}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Return Schedule</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmtDatetime(rental.returnDatetime)}</FieldDescription>
+                            </Field>
+                            {rental.pickedUpAt && (
+                                <Field className="gap-0.5">
+                                    <FieldLabel className={FIELD_LABEL_CLASS}>Picked Up At</FieldLabel>
+                                    <FieldDescription className={FIELD_VALUE_CLASS}>{fmtDatetime(rental.pickedUpAt)}</FieldDescription>
+                                </Field>
+                            )}
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Base Amount</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmt(rental.totalBaseAmount)}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Penalty</FieldLabel>
+                                <FieldDescription className={FIELD_VALUE_CLASS}>{fmt(rental.totalPenaltyAmount)}</FieldDescription>
+                            </Field>
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Total</FieldLabel>
+                                <FieldDescription className="text-sm font-semibold text-primary">{fmt(rental.totalAmount)}</FieldDescription>
+                            </Field>
                         </div>
-
-                        <Separator />
-
-                        {/* Financials */}
-                        <div className="space-y-2">
-                            <SectionHeading>Financials</SectionHeading>
-                            <InfoRow label="Base Amount" value={fmt(rental.totalBaseAmount)} />
-                            <InfoRow label="Penalty" value={fmt(rental.totalPenaltyAmount)} />
-                            <InfoRow
-                                label="Total"
-                                value={<span className="text-primary font-semibold">{fmt(rental.totalAmount)}</span>}
-                            />
-                        </div>
-
-                        <Separator />
 
                         {/* Notes */}
-                        {(rental.renterNotes || rental.committeeNotes || rental.rejectionReason) && (
-                            <>
-                                <div className="space-y-2">
-                                    <SectionHeading>Notes</SectionHeading>
-                                    {rental.renterNotes && (
-                                        <InfoRow label="Your Notes" value={rental.renterNotes} />
-                                    )}
-                                    {rental.committeeNotes && (
-                                        <InfoRow label="Committee Notes" value={rental.committeeNotes} />
-                                    )}
-                                    {rental.rejectionReason && (
-                                        <InfoRow
-                                            label="Rejection Reason"
-                                            value={<span className="text-destructive">{rental.rejectionReason}</span>}
-                                        />
-                                    )}
-                                </div>
-                                <Separator />
-                            </>
+                        {rental.renterNotes && (
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Your Notes</FieldLabel>
+                                <FieldDescription className="text-sm text-foreground rounded-md bg-muted px-3 py-2 whitespace-pre-wrap">{rental.renterNotes}</FieldDescription>
+                            </Field>
+                        )}
+                        {rental.committeeNotes && (
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Committee Notes</FieldLabel>
+                                <FieldDescription className="text-sm text-foreground rounded-md bg-muted px-3 py-2 whitespace-pre-wrap">{rental.committeeNotes}</FieldDescription>
+                            </Field>
+                        )}
+                        {rental.rejectionReason && (
+                            <Field className="gap-0.5">
+                                <FieldLabel className={FIELD_LABEL_CLASS}>Rejection Reason</FieldLabel>
+                                <FieldDescription className="text-sm text-destructive rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 whitespace-pre-wrap">{rental.rejectionReason}</FieldDescription>
+                            </Field>
                         )}
 
                         {/* Items */}
-                        <div className="space-y-2">
-                            <SectionHeading>Equipment ({rental.items.length})</SectionHeading>
-                            <ItemsTable items={rental.items} />
-                        </div>
+                        <DataTable
+                            columns={itemColumns}
+                            data={rental.items}
+                            title="Equipment"
+                            totalElements={rental.items.length}
+                            emptyMessage="No equipment"
+                            headerActions={<></>}
+                        />
 
                         {/* Sub-items */}
                         {(rental.subItems ?? []).length > 0 && (
-                            <>
-                                <Separator />
-                                <div className="space-y-2">
-                                    <SectionHeading>Accessories ({(rental.subItems ?? []).length})</SectionHeading>
-                                    <SubItemsTable items={rental.subItems!} />
-                                </div>
-                            </>
+                            <DataTable
+                                columns={subItemColumns}
+                                data={rental.subItems!}
+                                title="Accessories"
+                                totalElements={(rental.subItems ?? []).length}
+                                headerActions={<></>}
+                            />
                         )}
                     </div>
                 </ScrollArea>

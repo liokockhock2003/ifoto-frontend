@@ -1,150 +1,205 @@
-import { useEffect, useRef, useState } from 'react';
-import { ChevronDown, ClipboardList, Search } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { CalendarRange, ClipboardList, Search } from 'lucide-react';
 
 import { DataTable } from '@/components/data-table';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuRadioGroup,
-    DropdownMenuRadioItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { PrimaryTabsList, PrimaryTabsTrigger } from '@/components/primary-tabs';
 
-import { REQUEST_STATUS_LABEL, REQUEST_STATUS_VALUES, type RequestStatus } from '@/constants/requestStatus';
+import type { RequestStatus } from '@/constants/requestStatus';
+import type { EquipmentRequest } from '@/store/schemas/request';
 import { useRequestManagementContext } from './context';
 import { RequestManagementProvider } from './provider';
 import { requestManagementColumns } from './table-column-def';
 
-// ── Header controls ───────────────────────────────────────────────────────────
+// Tabs are driven by request status.
+const STATUS_TABS: { value: RequestStatus; label: string }[] = [
+    { value: 'PENDING_REVIEW', label: 'Pending Review' },
+    { value: 'APPROVED', label: 'Approved' },
+    { value: 'ACTIVE', label: 'Active' },
+    { value: 'RETURNED', label: 'Returned' },
+    { value: 'REJECTED', label: 'Rejected' },
+    { value: 'CANCELLED', label: 'Cancelled' },
+];
 
-function SearchInput() {
-    const { filters, setSearch } = useRequestManagementContext();
-    const [value, setValue] = useState(filters.search ?? '');
-    const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+type ApprovedScope = 'all' | 'mine';
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const next = e.target.value;
-        setValue(next);
-        if (debounceRef.current) clearTimeout(debounceRef.current);
-        debounceRef.current = setTimeout(() => {
-            setSearch(next || undefined);
-        }, 300);
-    };
+// ── Shared controls ───────────────────────────────────────────────────────────
 
-    useEffect(() => {
-        setValue(filters.search ?? '');
-    }, [filters.search]);
-
-    useEffect(() => {
-        return () => {
-            if (debounceRef.current) clearTimeout(debounceRef.current);
-        };
-    }, []);
-
+function SearchInput({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     return (
         <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <Input
                 placeholder="Search requests..."
                 value={value}
-                onChange={handleChange}
+                onChange={(e) => onChange(e.target.value)}
                 className="w-full pl-9 sm:w-52 rounded-4xl"
             />
         </div>
     );
 }
 
-function StatusFilter() {
-    const { filters, setStatus } = useRequestManagementContext();
-
+function RequestTable({
+    data,
+    title,
+    headerActions,
+    emptyMessage,
+}: {
+    data: EquipmentRequest[];
+    title: string;
+    headerActions: React.ReactNode;
+    emptyMessage: string;
+}) {
+    const { isLoading, isError, error, refetch } = useRequestManagementContext();
     return (
-        <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="sm" className="h-9 rounded-4xl gap-1.5 text-muted-foreground">
-                    {filters.status ? (REQUEST_STATUS_LABEL[filters.status as RequestStatus] ?? filters.status.replace(/_/g, ' ')) : 'All statuses'}
-                    <ChevronDown className="h-3.5 w-3.5" />
-                </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuRadioGroup
-                    value={filters.status ?? ''}
-                    onValueChange={(val) => setStatus(val || undefined)}
-                >
-                    <DropdownMenuRadioItem value="">All statuses</DropdownMenuRadioItem>
-                    <DropdownMenuSeparator />
-                    {REQUEST_STATUS_VALUES.map((s) => (
-                        <DropdownMenuRadioItem key={s} value={s}>
-                            {REQUEST_STATUS_LABEL[s]}
-                        </DropdownMenuRadioItem>
-                    ))}
-                </DropdownMenuRadioGroup>
-                {filters.status && (
-                    <>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                            className="justify-center text-muted-foreground"
-                            onSelect={() => setStatus(undefined)}
-                        >
-                            Clear filter
-                        </DropdownMenuItem>
-                    </>
-                )}
-            </DropdownMenuContent>
-        </DropdownMenu>
+        <DataTable
+            columns={requestManagementColumns}
+            data={data}
+            isLoading={isLoading}
+            isError={isError}
+            error={error ?? undefined}
+            onRetry={() => void refetch()}
+            title={title}
+            totalElements={data.length}
+            headerActions={headerActions}
+            emptyMessage={emptyMessage}
+        />
     );
 }
 
 // ── Page content ──────────────────────────────────────────────────────────────
 
 function RequestManagementContent() {
-    const {
-        requests,
-        filters,
-        totalElements,
-        totalPages,
-        isLoading,
-        isError,
-        error,
-        setPage,
-        refetch,
-    } = useRequestManagementContext();
+    const { allRequests, currentUsername } = useRequestManagementContext();
+    const navigate = useNavigate();
+
+    const [search, setSearch] = useState('');
+    const [approvedScope, setApprovedScope] = useState<ApprovedScope>('all');
+
+    const q = search.trim().toLowerCase();
+    const matchesSearch = (r: EquipmentRequest) =>
+        !q ||
+        r.requestNumber.toLowerCase().includes(q) ||
+        r.eventName.toLowerCase().includes(q) ||
+        r.requestedByUsername.toLowerCase().includes(q);
+
+    // The approving committee owns a request from approval to finish, so the page-level
+    // "approved by me" switch scopes every status — except Pending Review, which has no
+    // reviewer yet and must always show the full queue.
+    const inScope = (s: RequestStatus, r: EquipmentRequest) =>
+        s === 'PENDING_REVIEW' || approvedScope === 'all' || r.reviewedByUsername === currentUsername;
+
+    const countByStatus = (s: RequestStatus) =>
+        allRequests.filter((r) => r.status === s && inScope(s, r)).length;
+
+    const listFor = (s: RequestStatus) =>
+        allRequests.filter((r) => r.status === s && inScope(s, r) && matchesSearch(r));
+
+    const searchOnly = <SearchInput value={search} onChange={setSearch} />;
 
     return (
         <div className="space-y-4 p-2 sm:p-6">
-            <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-                    <ClipboardList className="h-5 w-5 text-primary" />
+            <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
+                        <ClipboardList className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-xl text-primary font-semibold tracking-tight">Event's Equipment</h1>
+                        <p className="text-sm text-muted-foreground">Review and action equipment requests from event committees.</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 className="text-xl text-primary font-semibold tracking-tight">Event's Equipment</h1>
-                    <p className="text-sm text-muted-foreground">Review and action equipment requests from event committees.</p>
-                </div>
+                <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-muted-foreground"
+                    onClick={() => navigate('/event-equipment/calendar')}
+                >
+                    <CalendarRange className="h-4 w-4" />
+                    <span className="hidden sm:inline">Calendar Mode</span>
+                </Button>
             </div>
 
-            <DataTable
-                columns={requestManagementColumns}
-                data={requests}
-                isLoading={isLoading}
-                isError={isError}
-                error={error ?? undefined}
-                onRetry={() => void refetch()}
-                title="All Equipment Requests"
-                totalElements={totalElements}
-                headerActions={
+            <Tabs defaultValue="PENDING_REVIEW">
+                <div className="flex items-center justify-between gap-4">
+                    <PrimaryTabsList>
+                        {STATUS_TABS.map((t) => (
+                            <PrimaryTabsTrigger key={t.value} value={t.value}>
+                                {t.label} ({countByStatus(t.value)})
+                            </PrimaryTabsTrigger>
+                        ))}
+                    </PrimaryTabsList>
                     <div className="flex items-center gap-2">
-                        <SearchInput />
-                        <StatusFilter />
+                        <Switch
+                            id="approver-scope"
+                            checked={approvedScope === 'mine'}
+                            onCheckedChange={(c) => setApprovedScope(c ? 'mine' : 'all')}
+                        />
+                        <Label htmlFor="approver-scope" className="text-sm text-muted-foreground whitespace-nowrap">
+                            Approved by me
+                        </Label>
                     </div>
-                }
-                page={filters.page}
-                totalPages={totalPages}
-                onPageChange={setPage}
-                emptyMessage="No requests found."
-            />
+                </div>
+
+                <TabsContent value="PENDING_REVIEW">
+                    <RequestTable
+                        data={listFor('PENDING_REVIEW')}
+                        title="Pending Review"
+                        headerActions={searchOnly}
+                        emptyMessage="No requests pending review."
+                    />
+                </TabsContent>
+
+                <TabsContent value="APPROVED">
+                    <RequestTable
+                        data={listFor('APPROVED')}
+                        title="Approved Requests"
+                        headerActions={searchOnly}
+                        emptyMessage="No approved requests."
+                    />
+                </TabsContent>
+
+                <TabsContent value="ACTIVE">
+                    <RequestTable
+                        data={listFor('ACTIVE')}
+                        title="Active"
+                        headerActions={searchOnly}
+                        emptyMessage="No active requests."
+                    />
+                </TabsContent>
+
+                <TabsContent value="RETURNED">
+                    <RequestTable
+                        data={listFor('RETURNED')}
+                        title="Returned"
+                        headerActions={searchOnly}
+                        emptyMessage="No returned requests."
+                    />
+                </TabsContent>
+
+                <TabsContent value="REJECTED">
+                    <RequestTable
+                        data={listFor('REJECTED')}
+                        title="Rejected"
+                        headerActions={searchOnly}
+                        emptyMessage="No rejected requests."
+                    />
+                </TabsContent>
+
+                <TabsContent value="CANCELLED">
+                    <RequestTable
+                        data={listFor('CANCELLED')}
+                        title="Cancelled"
+                        headerActions={searchOnly}
+                        emptyMessage="No cancelled requests."
+                    />
+                </TabsContent>
+            </Tabs>
         </div>
     );
 }

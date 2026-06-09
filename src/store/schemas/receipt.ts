@@ -11,7 +11,7 @@ export const ReceiptRentalItemSchema = z.object({
     equipmentType: z.string(),
     brand: z.string(),
     model: z.string(),
-    serialNumber: z.string(),
+    serialNumber: z.string().nullable(),
     baseAmount: z.number(),
     penaltyAmount: z.number(),
     itemTotal: z.number(),
@@ -29,8 +29,8 @@ export const ReceiptRentalSubItemSchema = z.object({
 
 export const ReceiptRentalSchema = z.object({
     rentalNumber: z.string(),
-    approvedStartDate: z.string(),
-    approvedEndDate: z.string(),
+    programStartDate: z.string(),
+    programEndDate: z.string(),
     durationDays: z.number(),
     totalBaseAmount: z.number(),
     totalPenaltyAmount: z.number(),
@@ -46,12 +46,25 @@ export const ReceiptPaymentSchema = z.object({
     paymentChannel: z.string().nullable(),
 });
 
+export const CommitteeReceiptSchema = z.object({
+    approvedBy: z.string(),
+    signature:  z.string().nullable(),
+});
+
+export const CommitteeInvoiceSchema = z.object({
+    bankName:    z.string(),
+    accountNo:   z.string(),
+    accountName: z.string(),
+    signature:   z.string().nullable(),
+});
+
 export const ReceiptDetailSchema = z.object({
     receiptNumber: z.string(),
     issuedAt: z.string(),
     renter: ReceiptRenterSchema,
     rental: ReceiptRentalSchema,
     payment: ReceiptPaymentSchema,
+    committee: CommitteeReceiptSchema.nullable(),
 });
 
 export const InvoiceDetailSchema = z.object({
@@ -60,6 +73,7 @@ export const InvoiceDetailSchema = z.object({
     issuedAt: z.string(),
     renter: ReceiptRenterSchema,
     rental: ReceiptRentalSchema,
+    committee: CommitteeInvoiceSchema.nullable(),
 });
 
 // ── SSE event ─────────────────────────────────────────────────────────────────
@@ -79,5 +93,7 @@ export type ReceiptRentalItem = z.infer<typeof ReceiptRentalItemSchema>;
 export type ReceiptRentalSubItem = z.infer<typeof ReceiptRentalSubItemSchema>;
 export type ReceiptRental = z.infer<typeof ReceiptRentalSchema>;
 export type ReceiptPayment = z.infer<typeof ReceiptPaymentSchema>;
+export type CommitteeReceipt = z.infer<typeof CommitteeReceiptSchema>;
+export type CommitteeInvoice = z.infer<typeof CommitteeInvoiceSchema>;
 export type ReceiptDetail = z.infer<typeof ReceiptDetailSchema>;
 export type InvoiceDetail = z.infer<typeof InvoiceDetailSchema>;

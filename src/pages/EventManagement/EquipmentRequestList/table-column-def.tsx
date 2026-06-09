@@ -30,16 +30,10 @@ export const requestColumns: ColumnDef<EquipmentRequest, any>[] = [
         cell: (info) => info.getValue(),
     }),
     col.display({
-        id: 'requestedDates',
-        header: 'Requested Dates',
+        id: 'dates',
+        header: 'Dates',
         cell: ({ row }) =>
-            formatDateRange(row.original.requestedStartDate, row.original.requestedEndDate),
-    }),
-    col.display({
-        id: 'approvedDates',
-        header: 'Approved Dates',
-        cell: ({ row }) =>
-            formatDateRange(row.original.approvedStartDate, row.original.approvedEndDate),
+            formatDateRange(row.original.startDatetime, row.original.endDatetime),
     }),
     col.display({
         id: 'actions',

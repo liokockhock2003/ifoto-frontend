@@ -1,9 +1,129 @@
 import { useState } from 'react';
-import { Minus, Plus } from 'lucide-react';
+import { Clock, Minus, MoreHorizontal, Plus } from 'lucide-react';
 
+import { Card, CardContent } from '@/components/ui/card';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Skeleton } from '@/components/ui/skeleton';
-import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+import type { BoundaryNote, SubBoundaryNote, MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+
+function fmtDatetime(dt: string) {
+    const d = new Date(dt);
+    const date = d.toLocaleDateString('en-MY', { day: 'numeric', month: 'short' });
+    const time = d.toLocaleTimeString('en-MY', { hour: '2-digit', minute: '2-digit', hour12: true }).toLowerCase();
+    return `${date}, ${time}`;
+}
+
+function BoundaryNotesHover({ notes }: { notes: BoundaryNote[] }) {
+    const groupMap = new Map<string, BoundaryNote[]>();
+    notes.forEach((note) => {
+        const key = note.rentalId != null
+            ? `rental-${note.rentalId}`
+            : `status-${note.statusId ?? 'none'}`;
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key)!.push(note);
+    });
+
+    const earliest = (group: BoundaryNote[]) =>
+        Math.min(...group.flatMap((n) =>
+            [n.availableAfter, n.mustReturnBefore]
+                .filter(Boolean)
+                .map((d) => new Date(d!).getTime()),
+        ));
+
+    const sortedGroups = [...groupMap.values()].sort((a, b) => earliest(a) - earliest(b));
+
+    return (
+        <HoverCard openDelay={150} closeDelay={100}>
+            <HoverCardTrigger asChild>
+                <button type="button" className="flex items-center gap-0.5 text-[10px] text-amber-600 mt-0.5 hover:text-amber-700 transition-colors">
+                    <Clock className="h-2.5 w-2.5 shrink-0" />
+                    <span>Partially available</span>
+                    <MoreHorizontal className="h-2.5 w-2.5 shrink-0" />
+                </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-64 p-2 space-y-2">
+                {sortedGroups.map((group, i) => (
+                    <Card key={i} className="shadow-none">
+                        <CardContent className="p-3 space-y-1 text-xs text-foreground">
+                            {group.map((note, j) => (
+                                <div key={j} className="space-y-0.5">
+                                    {note.mustReturnBefore && (
+                                        <p className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3 shrink-0" />
+                                            Must return by {fmtDatetime(note.mustReturnBefore)}
+                                        </p>
+                                    )}
+                                    {note.availableAfter && (
+                                        <p className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3 shrink-0" />
+                                            Available from {fmtDatetime(note.availableAfter)}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                ))}
+            </HoverCardContent>
+        </HoverCard>
+    );
+}
+
+function SubBoundaryNotesHover({ notes }: { notes: SubBoundaryNote[] }) {
+    const groupMap = new Map<string, SubBoundaryNote[]>();
+    notes.forEach((note) => {
+        const key = note.rentalId != null ? `rental-${note.rentalId}` : `hold-${note.holdId ?? 'none'}`;
+        if (!groupMap.has(key)) groupMap.set(key, []);
+        groupMap.get(key)!.push(note);
+    });
+
+    const earliest = (group: SubBoundaryNote[]) =>
+        Math.min(...group.flatMap((n) =>
+            [n.availableAfter, n.mustReturnBefore]
+                .filter(Boolean)
+                .map((d) => new Date(d!).getTime()),
+        ));
+
+    const sortedGroups = [...groupMap.values()].sort((a, b) => earliest(a) - earliest(b));
+
+    return (
+        <HoverCard openDelay={150} closeDelay={100}>
+            <HoverCardTrigger asChild>
+                <button type="button" className="flex items-center gap-0.5 text-[10px] text-amber-600 mt-0.5 hover:text-amber-700 transition-colors">
+                    <Clock className="h-2.5 w-2.5 shrink-0" />
+                    <span>Partially available</span>
+                    <MoreHorizontal className="h-2.5 w-2.5 shrink-0" />
+                </button>
+            </HoverCardTrigger>
+            <HoverCardContent className="w-64 p-2 space-y-2">
+                {sortedGroups.map((group, i) => (
+                    <Card key={i} className="shadow-none">
+                        <CardContent className="p-3 space-y-1 text-xs text-foreground">
+                            {group.map((note, j) => (
+                                <div key={j} className="space-y-0.5">
+                                    <p className="font-medium">Qty in use: {note.quantity}</p>
+                                    {note.mustReturnBefore && (
+                                        <p className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3 shrink-0" />
+                                            Must return by {fmtDatetime(note.mustReturnBefore)}
+                                        </p>
+                                    )}
+                                    {note.availableAfter && (
+                                        <p className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3 shrink-0" />
+                                            Available from {fmtDatetime(note.availableAfter)}
+                                        </p>
+                                    )}
+                                </div>
+                            ))}
+                        </CardContent>
+                    </Card>
+                ))}
+            </HoverCardContent>
+        </HoverCard>
+    );
+}
 
 export type ItemInfo = {
     mainEquipmentId: number;
@@ -126,6 +246,12 @@ export function EquipmentSelect({
         }
     });
 
+    // Boundary notes lookup — keyed by mainEquipmentId from the availability response
+    const boundaryNotesLookup = new Map<number, NonNullable<(typeof availableEquipment)[number]['boundaryNotes']>>();
+    availableEquipment.forEach((e) => {
+        if (e.boundaryNotes?.length) boundaryNotesLookup.set(e.mainEquipmentId, e.boundaryNotes);
+    });
+
     const addableEquipment = availableEquipment.filter((e) => !value.includes(e.mainEquipmentId));
 
     function remove(id: number) {
@@ -162,7 +288,8 @@ export function EquipmentSelect({
                                             <p className="text-xs font-medium">
                                                 {e.equipmentType} · {e.brand} {e.model}
                                             </p>
-                                            <p className="text-xs text-muted-foreground">{e.serialNumber}</p>
+                                            <p className="text-xs text-muted-foreground">{e.serialNumber ?? '—'}</p>
+                                            {e.boundaryNotes?.length ? <BoundaryNotesHover notes={e.boundaryNotes} /> : null}
                                         </div>
                                         <button
                                             type="button"
@@ -203,6 +330,7 @@ export function EquipmentSelect({
                                                 {info?.serialNumber && (
                                                     <p className="text-xs text-muted-foreground">{info.serialNumber}</p>
                                                 )}
+                                                {(() => { const notes = boundaryNotesLookup.get(id); return notes?.length ? <BoundaryNotesHover notes={notes} /> : null; })()}
                                             </div>
                                             <button
                                                 type="button"
@@ -240,6 +368,8 @@ export function EquipmentSelect({
                             <div className="divide-y pr-3">
                                 {addableSubEquipment.map((e) => {
                                     const qty = getEffectiveQty(e.subEquipmentId);
+                                    const partialQty = e.boundaryNotes?.reduce((sum, n) => sum + n.quantity, 0) ?? 0;
+                                    const maxQty = e.availableQuantity + partialQty;
                                     return (
                                         <div key={e.subEquipmentId} className="flex items-center justify-between px-2 py-1.5 gap-1">
                                             <div className="min-w-0 flex-1">
@@ -249,10 +379,11 @@ export function EquipmentSelect({
                                                 <p className="text-xs text-muted-foreground">
                                                     Available: {e.availableQuantity} / {e.totalQuantity}
                                                 </p>
+                                                {e.boundaryNotes?.length ? <SubBoundaryNotesHover notes={e.boundaryNotes} /> : null}
                                             </div>
                                             <button
                                                 type="button"
-                                                disabled={qty >= e.availableQuantity}
+                                                disabled={qty >= maxQty}
                                                 onClick={() => setSubQty(e.subEquipmentId, qty + 1)}
                                                 className="shrink-0 p-1 rounded text-muted-foreground hover:text-primary hover:bg-primary/10 disabled:opacity-30 transition-colors"
                                             >

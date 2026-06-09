@@ -15,6 +15,7 @@ type RangeDatePickerProps = {
     onEndChange: (value: string) => void;
     placeholder?: string;
     disabled?: boolean;
+    minDate?: Date;
     className?: string;
 };
 
@@ -31,6 +32,7 @@ export function RangeDatePicker({
     onEndChange,
     placeholder = 'Pick a date range',
     disabled,
+    minDate,
     className,
 }: RangeDatePickerProps) {
     const [open, setOpen] = React.useState(false);
@@ -71,7 +73,8 @@ export function RangeDatePicker({
                     mode="range"
                     selected={{ from, to }}
                     onSelect={handleSelect}
-                    className="border rounded-2xl w-48 sm:w-94"
+                    disabled={minDate ? { before: minDate } : undefined}
+                    className="border rounded-2xl w-48 sm:w-88"
                     numberOfMonths={2}
                     autoFocus
                 />

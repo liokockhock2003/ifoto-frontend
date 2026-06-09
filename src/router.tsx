@@ -10,15 +10,20 @@ import ResetPasswordPage from '@/pages/Auth/reset-password'
 import VerifyEmailPage from '@/pages/Auth/verify-email'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
+import StatusScheduleMainPage from '@/pages/InventoryManagement/StatusScheduleManagement/main-page'
+import QuantityScheduleMainPage from '@/pages/InventoryManagement/QuantityScheduleManagement/main-page'
 import EventManagementMainPage from '@/pages/EventManagement/main-page'
 import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
 import EquipmentRentalMainPage from '@/pages/MyRentalList/EquipmentRental/main-page'
 import RentalListPage from '@/pages/MyRentalList/main-page'
 import RentalManagementMainPage from '@/pages/RentalManagement/main-page'
+import RentalLogisticMainPage from '@/pages/RentalManagement/RentalLogisticManagement/main-page'
 import EventEquipmentMainPage from '@/pages/EventEquipment/main-page'
+import RequestLogisticMainPage from '@/pages/EventEquipment/EELogisticManagement/main-page'
 import ReportingDashboardMainPage from '@/pages/ReportingDashboard/main-page'
 import EquipmentRequestListMainPage from '@/pages/EventManagement/EquipmentRequestList/main-page'
 import EquipmentRequestMainPage from '@/pages/EventManagement/EquipmentRequestList/EquipmentRequest/main-page'
+import CommitteeBankDetailsMainPage from '@/pages/CommitteeBankDetails/main-page'
 
 function RoleRedirect() {
     const { isAuthenticated, isLoading, hasRole } = useAuth();
@@ -76,6 +81,22 @@ export const router = createBrowserRouter([
                         element: (
                             <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
                                 <RentalPricingMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'status/:mainEquipmentId',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <StatusScheduleMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'holds/:subEquipmentId',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <QuantityScheduleMainPage />
                             </ProtectedRoute>
                         ),
                     },
@@ -154,25 +175,85 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'rental-management',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <RentalManagementMainPage />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <RentalManagementMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'calendar',
+                        children: [
+                            {
+                                index: true,
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RentalLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                            {
+                                path: ':rentalId',
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RentalLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 path: 'event-equipment',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <EventEquipmentMainPage />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <EventEquipmentMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'calendar',
+                        children: [
+                            {
+                                index: true,
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RequestLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                            {
+                                path: ':requestId',
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RequestLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 path: 'reporting-dashboard',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
                         <ReportingDashboardMainPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'committee-bank-details',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                        <CommitteeBankDetailsMainPage />
                     </ProtectedRoute>
                 ),
             },

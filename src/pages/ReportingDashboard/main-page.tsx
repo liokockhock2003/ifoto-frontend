@@ -1,4 +1,6 @@
 import { BarChart3 } from 'lucide-react';
+import { Tabs } from '@/components/ui/tabs';
+import { PrimaryTabsList, PrimaryTabsTrigger } from '@/components/primary-tabs';
 import { ReportingDashboardProvider } from './provider';
 import { useReportingDashboardContext } from './context';
 import { KpiCards } from './kpi-cards';
@@ -24,20 +26,18 @@ function DashboardContent() {
                         <p className="text-sm text-muted-foreground">Equipment rental analytics and performance metrics</p>
                     </div>
                 </div>
-                <div className="flex items-center gap-1 rounded-lg border p-1">
-                    {MONTH_OPTIONS.map((m) => (
-                        <button
-                            key={m}
-                            onClick={() => setMonths(m)}
-                            className={`rounded px-3 py-1 text-xs font-medium transition-colors ${months === m
-                                ? 'bg-primary text-primary-foreground'
-                                : 'text-muted-foreground hover:text-foreground'
-                                }`}
-                        >
-                            {m}M
-                        </button>
-                    ))}
-                </div>
+                <Tabs
+                    value={String(months)}
+                    onValueChange={(v) => setMonths(Number(v) as (typeof MONTH_OPTIONS)[number])}
+                >
+                    <PrimaryTabsList>
+                        {MONTH_OPTIONS.map((m) => (
+                            <PrimaryTabsTrigger key={m} value={String(m)} className="text-xs">
+                                {m}M
+                            </PrimaryTabsTrigger>
+                        ))}
+                    </PrimaryTabsList>
+                </Tabs>
             </div>
 
             <KpiCards />

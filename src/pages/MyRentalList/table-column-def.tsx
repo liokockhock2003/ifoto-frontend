@@ -32,11 +32,11 @@ export const rentalListColumns: ColumnDef<Rental, any>[] = [
             );
         },
     }),
-    columnHelper.accessor('requestedStartDate', {
+    columnHelper.accessor('programStartDate', {
         header: 'Start Date',
         cell: (info) => info.getValue(),
     }),
-    columnHelper.accessor('requestedEndDate', {
+    columnHelper.accessor('programEndDate', {
         header: 'End Date',
         cell: (info) => info.getValue(),
     }),

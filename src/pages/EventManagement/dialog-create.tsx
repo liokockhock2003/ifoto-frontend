@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { RangeDatePicker } from '@/components/range-date-picker';
+import { DateTimePicker } from '@/components/date-time-picker';
 import {
     Dialog,
     DialogContent,
@@ -25,8 +25,8 @@ type EventCreateDialogProps = {
 const defaultForm = (): CreateEventPayload => ({
     eventName: '',
     description: '',
-    startDate: '',
-    endDate: '',
+    startDatetime: '',
+    endDatetime: '',
     location: '',
     isActive: true,
     committeeUserIds: [],
@@ -52,13 +52,17 @@ export function EventCreateDialog({ open, onOpenChange }: EventCreateDialogProps
     const canSubmit =
         !mutation.isPending &&
         form.eventName.trim() !== '' &&
-        form.startDate !== '' &&
-        form.endDate !== '' &&
+        form.startDatetime !== '' &&
+        form.endDatetime !== '' &&
         form.location.trim() !== '';
 
     async function handleSubmit() {
         try {
-            await mutation.mutateAsync(form);
+            await mutation.mutateAsync({
+                ...form,
+                startDatetime: form.startDatetime + ':00',
+                endDatetime: form.endDatetime + ':00',
+            });
             onOpenChange(false);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to create event');
@@ -82,13 +86,19 @@ export function EventCreateDialog({ open, onOpenChange }: EventCreateDialogProps
                             onChange={set('eventName')}
                         />
                     </Field>
-                    <Field className="sm:col-span-2">
-                        <FieldLabel>Date Range</FieldLabel>
-                        <RangeDatePicker
-                            startDate={form.startDate}
-                            endDate={form.endDate}
-                            onStartChange={setVal('startDate')}
-                            onEndChange={setVal('endDate')}
+                    <Field>
+                        <FieldLabel>Start</FieldLabel>
+                        <DateTimePicker
+                            value={form.startDatetime}
+                            onChange={setVal('startDatetime')}
+                        />
+                    </Field>
+                    <Field>
+                        <FieldLabel>End</FieldLabel>
+                        <DateTimePicker
+                            value={form.endDatetime}
+                            onChange={setVal('endDatetime')}
+                            minDate={form.startDatetime || undefined}
                         />
                     </Field>
                     <Field className="sm:col-span-2">

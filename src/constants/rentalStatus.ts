@@ -5,6 +5,7 @@ export type { RentalStatus };
 export const RENTAL_STATUS_VALUES: RentalStatus[] = [
     'PENDING_REVIEW',
     'APPROVED',
+    'PICKED_UP',
     'REJECTED',
     'CANCELLED',
     'PENDING_PAYMENT',
@@ -17,6 +18,7 @@ export const RENTAL_STATUS_VALUES: RentalStatus[] = [
 export const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
     PENDING_REVIEW: 'Pending Review',
     APPROVED: 'Approved',
+    PICKED_UP: 'Picked Up',
     REJECTED: 'Rejected',
     CANCELLED: 'Cancelled',
     PENDING_PAYMENT: 'Pending Payment',
@@ -29,6 +31,7 @@ export const RENTAL_STATUS_LABEL: Record<RentalStatus, string> = {
 export const RENTAL_STATUS_BADGE: Record<RentalStatus, string> = {
     PENDING_REVIEW: 'badge-warning',
     APPROVED: 'badge-success',
+    PICKED_UP: 'badge-info',
     REJECTED: 'badge-danger',
     CANCELLED: 'badge-danger',
     PENDING_PAYMENT: 'badge-warning',

@@ -64,6 +64,23 @@ export const UpdateUserResponseSchema = z.object({
     locked: z.boolean(),
 });
 
+export const CommitteeBankDetailsSchema = z.object({
+    bankName:    z.string(),
+    accountNo:   z.string(),
+    accountName: z.string(),
+    username:    z.string(),
+    signature:   z.string().nullable(),
+});
+
+export const CommitteeBankDetailsPayloadSchema = z.object({
+    bankName:  z.string().min(1),
+    accountNo: z.string().min(1),
+    signature: z.string().nullable(),
+});
+
+export type CommitteeBankDetails = z.infer<typeof CommitteeBankDetailsSchema>;
+export type CommitteeBankDetailsPayload = z.infer<typeof CommitteeBankDetailsPayloadSchema>;
+
 export type User = z.infer<typeof UserSchema>;
 export type Sort = z.infer<typeof SortSchema>;
 export type Pageable = z.infer<typeof PageableSchema>;

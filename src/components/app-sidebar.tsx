@@ -1,5 +1,5 @@
 import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { LogOut, User2 } from 'lucide-react'
+import { Landmark, LogOut, User2 } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -113,6 +113,15 @@ export function AppSidebar() {
                                     <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
                                 </div>
                             </SidebarMenuButton>
+                            {hasRole('ROLE_EQUIPMENT_COMMITTEE') && (
+                                <NavLink
+                                    to="/committee-bank-details"
+                                    title="Bank Details"
+                                    className="shrink-0 p-2.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
+                                >
+                                    <Landmark className="size-4" />
+                                </NavLink>
+                            )}
                             <button
                                 onClick={() => logout()}
                                 className="shrink-0 p-2.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group-data-[collapsible=icon]:hidden"

@@ -1,7 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { Field, FieldLabel } from '@/components/ui/field';
-import { RangeDatePicker } from '@/components/range-date-picker';
 import { Textarea } from '@/components/ui/textarea';
+import { DateTimePicker } from '@/components/date-time-picker';
 
 // ── ScheduleEntryForm ─────────────────────────────────────────────────────────
 
@@ -53,14 +53,13 @@ export function ScheduleEntryForm({
                         className="resize-none"
                     />
                 </Field>
-                <Field className="sm:col-span-2">
-                    <FieldLabel>Date Range</FieldLabel>
-                    <RangeDatePicker
-                        startDate={startDate}
-                        endDate={endDate}
-                        onStartChange={onStartChange}
-                        onEndChange={onEndChange}
-                    />
+                <Field>
+                    <FieldLabel>Start Date & Time</FieldLabel>
+                    <DateTimePicker value={startDate} onChange={onStartChange} />
+                </Field>
+                <Field>
+                    <FieldLabel>End Date & Time</FieldLabel>
+                    <DateTimePicker value={endDate} onChange={onEndChange} minDate={startDate || undefined} />
                 </Field>
             </div>
             <div className="flex gap-2">

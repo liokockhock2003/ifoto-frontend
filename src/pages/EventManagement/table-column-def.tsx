@@ -11,10 +11,12 @@ function formatDate(iso: string | undefined | null) {
     if (!iso) return '—';
     const date = new Date(iso);
     if (isNaN(date.getTime())) return '—';
-    return date.toLocaleDateString('en-MY', {
+    return date.toLocaleString('en-MY', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
     });
 }
 
@@ -23,12 +25,12 @@ export const eventColumns: ColumnDef<Event, any>[] = [
         header: 'Event Name',
         cell: (info) => <span className="font-medium">{info.getValue()}</span>,
     }),
-    col.accessor('startDate', {
-        header: 'Start Date',
+    col.accessor('startDatetime', {
+        header: 'Start',
         cell: (info) => formatDate(info.getValue()),
     }),
-    col.accessor('endDate', {
-        header: 'End Date',
+    col.accessor('endDatetime', {
+        header: 'End',
         cell: (info) => formatDate(info.getValue()),
     }),
     col.accessor('location', {

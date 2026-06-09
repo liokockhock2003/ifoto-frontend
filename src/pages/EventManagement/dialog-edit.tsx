@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { RangeDatePicker } from '@/components/range-date-picker';
+import { DateTimePicker } from '@/components/date-time-picker';
 import {
     Dialog,
     DialogContent,
@@ -27,8 +27,8 @@ function toForm(event: Event | null): Omit<UpdateEventPayload, 'id'> {
     return {
         eventName: event?.eventName ?? '',
         description: event?.description ?? '',
-        startDate: event?.startDate ?? '',
-        endDate: event?.endDate ?? '',
+        startDatetime: event?.startDatetime?.slice(0, 16) ?? '',
+        endDatetime: event?.endDatetime?.slice(0, 16) ?? '',
         location: event?.location ?? '',
         isActive: event?.isActive ?? true,
         committeeUserIds: event?.eventCommittee.map((m) => m.id) ?? [],
@@ -56,14 +56,19 @@ export function EventEditDialog({ open, onOpenChange, event }: EventEditDialogPr
         !mutation.isPending &&
         !!event &&
         (form.eventName ?? '').trim() !== '' &&
-        form.startDate !== '' &&
-        form.endDate !== '' &&
+        form.startDatetime !== '' &&
+        form.endDatetime !== '' &&
         (form.location ?? '').trim() !== '';
 
     async function handleSave() {
         if (!event) return;
         try {
-            await mutation.mutateAsync({ ...form, id: event.eventId });
+            await mutation.mutateAsync({
+                ...form,
+                id: event.eventId,
+                startDatetime: form.startDatetime ? form.startDatetime + ':00' : undefined,
+                endDatetime: form.endDatetime ? form.endDatetime + ':00' : undefined,
+            });
             onOpenChange(false);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Failed to update event');
@@ -86,13 +91,19 @@ export function EventEditDialog({ open, onOpenChange, event }: EventEditDialogPr
                         <FieldLabel>Event Name</FieldLabel>
                         <Input value={form.eventName ?? ''} onChange={set('eventName')} />
                     </Field>
-                    <Field className="sm:col-span-2">
-                        <FieldLabel>Date Range</FieldLabel>
-                        <RangeDatePicker
-                            startDate={form.startDate ?? ''}
-                            endDate={form.endDate ?? ''}
-                            onStartChange={setVal('startDate')}
-                            onEndChange={setVal('endDate')}
+                    <Field>
+                        <FieldLabel>Start</FieldLabel>
+                        <DateTimePicker
+                            value={form.startDatetime ?? ''}
+                            onChange={setVal('startDatetime')}
+                        />
+                    </Field>
+                    <Field>
+                        <FieldLabel>End</FieldLabel>
+                        <DateTimePicker
+                            value={form.endDatetime ?? ''}
+                            onChange={setVal('endDatetime')}
+                            minDate={form.startDatetime || undefined}
                         />
                     </Field>
                     <Field className="sm:col-span-2">

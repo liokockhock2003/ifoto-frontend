@@ -47,8 +47,8 @@ type StepId = (typeof STEPS)[number]['id'];
 function PreFillFromRental({ rental }: { rental: Rental }) {
     const { setStartDate, setEndDate } = useEquipmentRentalContext();
     useEffect(() => {
-        setStartDate(rental.requestedStartDate);
-        setEndDate(rental.requestedEndDate);
+        setStartDate(rental.programStartDate);
+        setEndDate(rental.programEndDate);
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rental.id]);
     return null;

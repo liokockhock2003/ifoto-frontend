@@ -26,11 +26,11 @@ export function RentalRowActions({ row }: RentalRowActionsProps) {
     const [deleteOpen, setDeleteOpen] = useState(false);
     const rental = row.original;
 
-    const showPayNow = rental.status === 'APPROVED' || rental.status === 'PENDING_PAYMENT';
+    const showPayNow = rental.status === 'PICKED_UP' || rental.status === 'PENDING_PAYMENT';
     const showPayPenalty = rental.status === 'RETURNED' && rental.totalPenaltyAmount > 0 && rental.paymentStatus !== 'PENALTY_PAID';
     const showInvoice = rental.status !== 'PENDING_REVIEW';
     const showReceipt = (['PAID', 'ACTIVE', 'OVERDUE', 'RETURNED'] as const).includes(rental.status as 'PAID' | 'ACTIVE' | 'OVERDUE' | 'RETURNED');
-    const showCancel = rental.status === 'PENDING_REVIEW';
+    const showCancel = rental.status === 'PENDING_REVIEW' || rental.status === 'APPROVED';
 
     return (
         <>

@@ -32,7 +32,7 @@ export const RentalItemSchema = z.object({
     equipmentType: z.string(),
     brand: z.string(),
     model: z.string(),
-    serialNumber: z.string(),
+    serialNumber: z.string().nullable(),
     pricingCategory: z.string().nullable().optional(),
     baseAmount: z.number(),
     latePenaltyAmount: z.number(),
@@ -42,6 +42,7 @@ export const RentalItemSchema = z.object({
 export const RentalStatusSchema = z.enum([
     'PENDING_REVIEW',
     'APPROVED',
+    'PICKED_UP',
     'REJECTED',
     'CANCELLED',
     'PENDING_PAYMENT',
@@ -58,14 +59,18 @@ export const RentalSchema = z.object({
     status: RentalStatusSchema,
     paymentMethod: z.string(),
     paymentStatus: z.string(),
-    requestedStartDate: z.string(),
-    requestedEndDate: z.string(),
-    approvedStartDate: z.string().nullable(),
-    approvedEndDate: z.string().nullable(),
+    programStartDate: z.string(),
+    programEndDate: z.string(),
+    pickupDatetime: z.string().nullable(),
+    returnDatetime: z.string().nullable(),
+    pickedUpAt: z.string().nullable(),
     durationDays: z.number().nullable(),
     totalBaseAmount: z.number(),
     totalPenaltyAmount: z.number(),
     totalAmount: z.number(),
+    reviewedByUsername: z.string().nullable(),
+    reviewedByFullName: z.string().nullable(),
+    approvedAt: z.string().nullable(),
     rejectionReason: z.string().nullable(),
     committeeNotes: z.string().nullable(),
     renterNotes: z.string().nullable(),
@@ -77,7 +82,12 @@ export const RentalSchema = z.object({
 const ApproveRentalPayloadSchema = z.object({
     action: z.literal('APPROVE'),
     equipmentIds: z.array(z.number().int().positive()).optional(),
+    // Optional: when provided, the backend rebuilds the rental's sub-items with these
+    // entries; when omitted, the renter's original accessories are preserved.
+    subEquipmentEntries: z.array(SubEquipmentEntrySchema).optional(),
     committeeNotes: z.string().optional(),
+    pickupDatetime: z.string().optional(),
+    returnDatetime: z.string().optional(),
 });
 
 const RejectRentalPayloadSchema = z.object({
@@ -92,7 +102,7 @@ export const ReviewRentalPayloadSchema = z.discriminatedUnion('action', [
 ]);
 
 export const PaymentPayloadSchema = z.object({
-    paymentMethod: z.enum(['ONLINE', 'CASH']),
+    paymentMethod: z.enum(['ONLINE', 'CASH', 'BANK_TRANSFER']),
 });
 
 export const PaymentResponseSchema = z.object({
@@ -124,6 +134,16 @@ export const PaginatedRentalSchema = z.object({
     numberOfElements: z.number(),
 });
 
+export const UpdateLogisticsPayloadSchema = z.object({
+    pickupDatetime: z.string(),
+    returnDatetime: z.string(),
+});
+
+export const UpdateEquipmentPayloadSchema = z.object({
+    equipmentIds: z.array(z.number().int().positive()),
+    subEquipmentEntries: z.array(SubEquipmentEntrySchema).optional(),
+});
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 export type SubEquipmentEntry = z.infer<typeof SubEquipmentEntrySchema>;
@@ -137,3 +157,5 @@ export type PaginatedRental = z.infer<typeof PaginatedRentalSchema>;
 export type ReviewRentalPayload = z.infer<typeof ReviewRentalPayloadSchema>;
 export type PaymentPayload = z.infer<typeof PaymentPayloadSchema>;
 export type PaymentResponse = z.infer<typeof PaymentResponseSchema>;
+export type UpdateLogisticsPayload = z.infer<typeof UpdateLogisticsPayloadSchema>;
+export type UpdateEquipmentPayload = z.infer<typeof UpdateEquipmentPayloadSchema>;

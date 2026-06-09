@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @plugin "tailwindcss-animate";
@@ -88,14 +89,14 @@
     /* ── Semantic badge colours ───────────────────────────── */
     --badge-success-bg: oklch(0.94 0.07 148);
     --badge-success-fg: oklch(0.32 0.13 148);
-    --badge-info-bg:    oklch(0.93 0.04 232);
-    --badge-info-fg:    oklch(0.33 0.09 232);
+    --badge-info-bg: oklch(0.93 0.04 232);
+    --badge-info-fg: oklch(0.33 0.09 232);
     --badge-warning-bg: oklch(0.95 0.10 84);
     --badge-warning-fg: oklch(0.38 0.13 73);
-    --badge-danger-bg:  oklch(0.94 0.04 21);
-    --badge-danger-fg:  oklch(0.46 0.18 21);
+    --badge-danger-bg: oklch(0.94 0.04 21);
+    --badge-danger-fg: oklch(0.46 0.18 21);
     --background: oklch(0.9779 0.0042 56.3756);
-    --foreground: oklch(0.2178 0 0);
+    --foreground: oklch(14.479% 0.00002 271.152);
     --card: oklch(0.9779 0.0042 56.3756);
     --card-foreground: oklch(0.2178 0 0);
     --popover: oklch(0.9779 0.0042 56.3756);
@@ -105,7 +106,7 @@
     --secondary: oklch(0.9625 0.0385 89.0943);
     --secondary-foreground: oklch(0.4847 0.1022 75.1153);
     --muted: oklch(0.9431 0.0068 53.4442);
-    --muted-foreground: oklch(0.4444 0.0096 73.6390);
+    --muted-foreground: oklch(54.517% 0.00006 271.152);
     --accent: oklch(0.9619 0.0580 95.6174);
     --accent-foreground: oklch(0.3958 0.1331 25.7230);
     --destructive: oklch(0.4437 0.1613 26.8994);
@@ -160,14 +161,14 @@
     /* ── Semantic badge colours (dark) ────────────────────── */
     --badge-success-bg: oklch(0.26 0.07 148);
     --badge-success-fg: oklch(0.80 0.13 148);
-    --badge-info-bg:    oklch(0.25 0.05 232);
-    --badge-info-fg:    oklch(0.77 0.09 232);
+    --badge-info-bg: oklch(0.25 0.05 232);
+    --badge-info-fg: oklch(0.77 0.09 232);
     --badge-warning-bg: oklch(0.30 0.09 80);
     --badge-warning-fg: oklch(0.88 0.12 80);
-    --badge-danger-bg:  oklch(0.27 0.06 21);
-    --badge-danger-fg:  oklch(0.80 0.16 21);
+    --badge-danger-bg: oklch(0.27 0.06 21);
+    --badge-danger-fg: oklch(0.80 0.16 21);
     --background: oklch(0.2161 0.0061 56.0434);
-    --foreground: oklch(0.9699 0.0013 106.4238);
+    --foreground: oklch(100% 0.00011 271.152);
     --card: oklch(0.2685 0.0063 34.2976);
     --card-foreground: oklch(0.9699 0.0013 106.4238);
     --popover: oklch(0.2685 0.0063 34.2976);
@@ -177,7 +178,7 @@
     --secondary: oklch(0.4732 0.1247 46.2007);
     --secondary-foreground: oklch(0.9619 0.0580 95.6174);
     --muted: oklch(0.2291 0.0060 56.0708);
-    --muted-foreground: oklch(0.8687 0.0043 56.3660);
+    --muted-foreground: oklch(74.607% 0.00226 15.147);
     --accent: oklch(0.5553 0.1455 48.9975);
     --accent-foreground: oklch(0.9619 0.0580 95.6174);
     --destructive: oklch(0.6368 0.2078 25.3313);
@@ -229,8 +230,8 @@
 }
 
 @layer base {
-  body {
-    letter-spacing: var(--tracking-normal);
+    body {
+        letter-spacing: var(--tracking-normal);
     }
 }
 
@@ -240,19 +241,54 @@
         color: var(--badge-success-fg);
         border-color: transparent;
     }
+
     .badge-info {
         background-color: var(--badge-info-bg);
         color: var(--badge-info-fg);
         border-color: transparent;
     }
+
     .badge-warning {
         background-color: var(--badge-warning-bg);
         color: var(--badge-warning-fg);
         border-color: transparent;
     }
+
     .badge-danger {
         background-color: var(--badge-danger-bg);
         color: var(--badge-danger-fg);
         border-color: transparent;
     }
+}
+
+/* ── FullCalendar theming ─────────────────────────────────────────────────────
+   Map FullCalendar's --fc-* variables onto the app tokens. Because .dark swaps
+   those token values, this single block themes both light and dark mode. */
+.fc {
+    --fc-border-color: var(--border);
+    --fc-page-bg-color: var(--background);
+    --fc-neutral-bg-color: var(--muted);
+    --fc-neutral-text-color: var(--muted-foreground);
+    --fc-today-bg-color: color-mix(in oklch, var(--accent) 50%, transparent);
+    --fc-button-bg-color: var(--primary);
+    --fc-button-border-color: var(--primary);
+    --fc-button-hover-bg-color: color-mix(in oklch, var(--primary) 88%, black);
+    --fc-button-hover-border-color: color-mix(in oklch, var(--primary) 88%, black);
+    --fc-button-active-bg-color: color-mix(in oklch, var(--primary) 80%, black);
+    --fc-button-active-border-color: color-mix(in oklch, var(--primary) 80%, black);
+    --fc-button-text-color: var(--primary-foreground);
+    font-size: 0.85rem;
+    color: var(--foreground);
+}
+
+.fc .fc-toolbar-title {
+    font-size: 1rem;
+    font-weight: 600;
+}
+
+/* Event chips style themselves via the Tailwind classes passed from the calendar. */
+.fc .fc-daygrid-event {
+    border-radius: var(--radius);
+    padding: 0 0.25rem;
+    font-weight: 500;
 }
