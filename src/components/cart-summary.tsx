@@ -1,6 +1,7 @@
+import { useEffect } from 'react';
 import { ShoppingCart } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
@@ -58,13 +59,17 @@ export function CartSummary({
     cancelLabel = 'Cancel',
     isSubmitDisabled,
 }: CartSummaryProps) {
+    useEffect(() => {
+        if (error) toast.error(error.message);
+    }, [error]);
+
     const hasPricing = lineItems.some((i) => i.price !== undefined);
     const hasTypes = lineItems.some((i) => i.type);
     const priceCols = hasPricing ? 1 : 0;
     const typeCols = hasTypes ? 1 : 0;
 
     return (
-        <div className="rounded-lg border bg-muted/40 p-4 space-y-3">
+        <div className="rounded-lg border bg-muted/40 p-4 space-y-3 text-foreground">
             {/* Header */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -135,13 +140,6 @@ export function CartSummary({
                     className="text-xs resize-none"
                 />
             </div>
-
-            {/* Error */}
-            {error && (
-                <Alert variant="destructive" className="py-2">
-                    <AlertDescription className="text-xs">{error.message}</AlertDescription>
-                </Alert>
-            )}
 
             {/* Actions */}
             <div className="flex gap-2">

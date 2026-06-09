@@ -258,6 +258,10 @@ export function useAvailableEquipment(filters: AvailableEquipmentFilters) {
     return useQuery({
         ...availableEquipmentListQuery(filters),
         enabled: !!filters.startDate && !!filters.endDate,
+        select: (data: EquipmentListResponse) => ({
+            mainEquipment: [...data.mainEquipment].sort((a, b) => a.mainEquipmentId - b.mainEquipmentId),
+            subEquipment: [...data.subEquipment].sort((a, b) => a.subEquipmentId - b.subEquipmentId),
+        }),
     });
 }
 

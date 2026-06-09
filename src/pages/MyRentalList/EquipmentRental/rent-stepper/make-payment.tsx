@@ -1,4 +1,4 @@
-import { Banknote, CreditCard, X } from 'lucide-react';
+import { Banknote, CreditCard, Building2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,12 +18,12 @@ export function MakePayment({
     rental: Rental | null;
     onNext: () => void;
 }) {
-    const [paymentMethod, setPaymentMethod] = useState<'ONLINE' | 'CASH'>('ONLINE');
+    const [paymentMethod, setPaymentMethod] = useState<'ONLINE' | 'CASH' | 'BANK_TRANSFER'>('ONLINE');
     const [cancelOpen, setCancelOpen] = useState(false);
     const { mutate, isPending, error } = usePayRental();
-    const isPendingReview = rental?.status === 'PENDING_REVIEW';
+    const canCancel = rental?.status === 'PENDING_REVIEW' || rental?.status === 'APPROVED';
     const showPaymentMethod =
-        rental?.status === 'APPROVED' ||
+        rental?.status === 'PICKED_UP' ||
         rental?.status === 'PENDING_PAYMENT' ||
         (rental?.status === 'RETURNED' && (rental.totalPenaltyAmount ?? 0) > 0 && rental.paymentStatus !== 'PENALTY_PAID');
 
@@ -53,8 +53,8 @@ export function MakePayment({
                         <p className="text-xs font-medium">Payment Method</p>
                         <RadioGroup
                             value={paymentMethod}
-                            onValueChange={(v) => setPaymentMethod(v as 'ONLINE' | 'CASH')}
-                            className="grid grid-cols-2 gap-3 max-w-sm"
+                            onValueChange={(v) => setPaymentMethod(v as 'ONLINE' | 'CASH' | 'BANK_TRANSFER')}
+                            className="grid grid-cols-3 gap-3 max-w-lg"
                         >
                             <FieldLabel className="cursor-pointer transition-colors">
                                 <Field orientation="horizontal">
@@ -80,7 +80,24 @@ export function MakePayment({
                                     <RadioGroupItem value="CASH" />
                                 </Field>
                             </FieldLabel>
+                            <FieldLabel className="cursor-pointer transition-colors">
+                                <Field orientation="horizontal">
+                                    <FieldContent>
+                                        <FieldTitle>
+                                            <Building2 className="h-4 w-4" />
+                                            Bank Transfer
+                                        </FieldTitle>
+                                        <FieldDescription>Transfer to committee account</FieldDescription>
+                                    </FieldContent>
+                                    <RadioGroupItem value="BANK_TRANSFER" />
+                                </Field>
+                            </FieldLabel>
                         </RadioGroup>
+                        {paymentMethod === 'BANK_TRANSFER' && (
+                            <p className="text-xs text-muted-foreground mt-2">
+                                Transfer the amount shown on your invoice to the committee's bank account, then wait for confirmation.
+                            </p>
+                        )}
                     </div>
 
                     {error && (
@@ -90,7 +107,7 @@ export function MakePayment({
                     )}
 
                     <div className="flex gap-2">
-                        {isPendingReview && (
+                        {canCancel && (
                             <Button
                                 variant="outline"
                                 size="sm"

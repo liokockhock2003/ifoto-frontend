@@ -1,4 +1,13 @@
-import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
+import { Document, Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer';
+
+Font.register({
+    family: 'Playfair Display',
+    fonts: [
+        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff2', fontWeight: 'normal' },
+        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2', fontWeight: 'bold' },
+        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2', fontStyle: 'italic' },
+    ],
+});
 
 import type { DocumentData } from './document-card';
 import { fmtRM, fmtDocDate } from './document-card';
@@ -11,7 +20,6 @@ const CLUB_EMAIL = 'kelabfotokreatifutmjb@gmail.com';
 const CLUB_ADDRESS_LINE1 = 'Universiti Teknologi Malaysia';
 const CLUB_ADDRESS_LINE2 = 'Johor Bahru 81310';
 const CLUB_ADDRESS_LINE3 = 'Johor, Malaysia';
-const SIGNER_NAME = 'MUHAMMAD ALIF NABIL BIN JUNAIDI';
 const SIGNER_POSITION = 'EXCO ALATAN KELAB FOTOKREATIF';
 
 const s = StyleSheet.create({
@@ -35,7 +43,7 @@ const s = StyleSheet.create({
     attnLeft: { flex: 1 },
     attn: { fontFamily: 'Helvetica-Bold', fontSize: 11, marginBottom: 2 },
     infoText: { fontSize: 12, color: '#333', lineHeight: 1.3 },
-    docTitle: { fontSize: 34, fontFamily: 'Helvetica-Bold', letterSpacing: 3, color: '#111', textAlign: 'right' },
+    docTitle: { fontSize: 34, fontFamily: 'Playfair Display', fontWeight: 'bold', letterSpacing: 3, color: '#111', textAlign: 'right' },
 
     // Info row 2: club address left, doc number + date right
     infoRow2: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
@@ -77,14 +85,19 @@ const s = StyleSheet.create({
 
     // Footer — receipt
     receivedBy: { fontSize: 13, fontFamily: 'Helvetica-Bold' },
-    sigLine: { borderBottomWidth: 1, borderBottomColor: '#111', width: 200, marginTop: 90, marginBottom: 6 },
+    sigBlock: { position: 'relative', width: 200, height: 100, marginTop: 8, marginBottom: 6 },
+    sigLineAbsolute: { position: 'absolute', bottom: 0, left: 0, right: 0, borderBottomWidth: 1, borderBottomColor: '#111' },
+    sigImageAbsolute: { position: 'absolute', width: 120, height: 60, bottom: 8, left: 0, objectFit: 'contain' },
     signerName: { fontSize: 12, color: '#111' },
     signerPosition: { fontSize: 11, color: '#555' },
     paidStamp: { width: 160, height: 160 },
 
-    // Footer — invoice
-    acceptedBy: { fontSize: 18, fontFamily: 'Helvetica-Bold', color: '#111', textAlign: 'right' },
-    acceptedName: { fontSize: 12, color: '#333', textAlign: 'right' },
+    // Footer — invoice bank details
+    bankDetailsBlock: { textAlign: 'right', alignItems: 'flex-end' },
+    bankDetailsTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', textAlign: 'right', marginBottom: 4 },
+    bankDetailsRow: { fontSize: 11, color: '#444', textAlign: 'right', marginBottom: 2 },
+    bankDetailsBold: { fontFamily: 'Helvetica-Bold', color: '#111' },
+    noBankDetails: { fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'right' },
 });
 
 export function DocumentPdfDocument({ data }: { data: DocumentData }) {
@@ -139,7 +152,7 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                     <Text style={[s.tableHeaderCell, s.colTotal]}>Total</Text>
                 </View>
                 {data.rental.items.map((item, i) => (
-                    <View key={item.serialNumber} style={s.tableRow}>
+                    <View key={item.serialNumber ?? i} style={s.tableRow}>
                         <Text style={[s.tableCell, s.colNo]}>{i + 1}.</Text>
                         <Text style={[s.tableCell, s.colItem]}>{item.brand} {item.model} ({item.equipmentType})</Text>
                         <Text style={[s.tableCell, s.colQty]}>1</Text>
@@ -184,8 +197,15 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                     <View style={s.footer}>
                         <View>
                             <Text style={s.receivedBy}>Received By :</Text>
-                            <View style={s.sigLine} />
-                            <Text style={s.signerName}>{SIGNER_NAME}</Text>
+                            <View style={s.sigBlock}>
+                                {data.committee?.type === 'receipt' && data.committee.signature && (
+                                    <Image src={`data:image/png;base64,${data.committee.signature}`} style={s.sigImageAbsolute} />
+                                )}
+                                <View style={s.sigLineAbsolute} />
+                            </View>
+                            <Text style={s.signerName}>
+                                {data.committee?.type === 'receipt' ? data.committee.approvedBy : '—'}
+                            </Text>
                             <Text style={s.signerPosition}>({SIGNER_POSITION})</Text>
                             <Text style={s.thankYou}>Thank you!</Text>
                         </View>
@@ -195,10 +215,20 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                     <View style={s.footer}>
                         <View>
                             <Text style={s.thankYou}>Thank you!</Text>
+                            {data.committee?.type === 'invoice' ? (
+                                <>
+                                    <Text style={[s.bankDetailsTitle, { textAlign: 'left', marginTop: 12 }]}>Payment Information</Text>
+                                    <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}><Text style={s.bankDetailsBold}>{data.committee.bankName}</Text></Text>
+                                    <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}>Account Name: <Text style={s.bankDetailsBold}>{data.committee.accountName}</Text></Text>
+                                    <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}>Account No.: <Text style={s.bankDetailsBold}>{data.committee.accountNo}</Text></Text>
+                                </>
+                            ) : (
+                                <Text style={[s.noBankDetails, { textAlign: 'left', marginTop: 8 }]}>Bank details not available. Contact committee.</Text>
+                            )}
                         </View>
-                        <View>
-                            <Text style={s.acceptedBy}>Accepted by</Text>
-                            <Text style={s.acceptedName}>{data.renter.fullName}</Text>
+                        <View style={{ alignItems: 'flex-end' }}>
+                            <Text style={{ fontSize: 11, color: '#555', marginBottom: 6, fontFamily: 'Playfair Display', fontStyle: 'italic' }}>Accepted by</Text>
+                            <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold' }}>{data.renter.fullName.toUpperCase()}</Text>
                         </View>
                     </View>
                 )}

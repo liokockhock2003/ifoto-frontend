@@ -3,8 +3,13 @@
 export const SEGMENT_LABELS: Record<string, string> = {
     'manage-inventory':               'Inventory Management',
     'rental-pricing':                 'Rental Pricing',
+    'status':                         'Manage Status',
+    'holds':                          'Manage Holds',
     'user-management':                'User Management',
     'event-management':               'Event Management',
+    'rental-management':              'Rental Management',
+    'event-equipment':                'Event Equipment',
+    'calendar':                       'Calendar',
     'equipment-rent':                 'Equipment Rental',
     'new':                            'New Rental',
     'equipment-returns':              'Return Rented Equipment',
@@ -14,4 +19,5 @@ export const SEGMENT_LABELS: Record<string, string> = {
     'equipment-request-management':   "Event's Equipment",
     'equipment-return-management':    'Equipment Return Management',
     'reporting-dashboard':            'Reporting Dashboard',
+    'committee-bank-details':         'Committee Bank Details',
 };

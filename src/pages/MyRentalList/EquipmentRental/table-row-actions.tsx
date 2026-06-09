@@ -8,10 +8,10 @@ import { useEquipmentRentalContext } from './context';
 
 export function SubEquipmentQuantityCell({
     subEquipmentId,
-    availableQuantity,
+    maxQuantity,
 }: {
     subEquipmentId: number;
-    availableQuantity: number;
+    maxQuantity: number;
 }) {
     const { subQty, setSubQty, startDate, endDate } = useEquipmentRentalContext();
     const qty = subQty[subEquipmentId] ?? 0;
@@ -24,7 +24,7 @@ export function SubEquipmentQuantityCell({
         );
     }
 
-    if (availableQuantity === 0) {
+    if (maxQuantity === 0) {
         return <Badge variant="outline" className="badge-danger">Fully booked</Badge>;
     }
 
@@ -48,7 +48,7 @@ export function SubEquipmentQuantityCell({
                 variant="outline"
                 size="icon"
                 className="h-7 w-7"
-                disabled={qty >= availableQuantity}
+                disabled={qty >= maxQuantity}
                 onClick={() => setSubQty(subEquipmentId, qty + 1)}
             >
                 <Plus className="h-3 w-3" />

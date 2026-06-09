@@ -32,13 +32,13 @@ export const requestManagementColumns: ColumnDef<EquipmentRequest, any>[] = [
             );
         },
     }),
-    columnHelper.accessor('requestedStartDate', {
-        header: 'Start Date',
-        cell: (info) => info.getValue(),
+    columnHelper.accessor('startDatetime', {
+        header: 'Start',
+        cell: (info) => new Date(info.getValue()).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' }),
     }),
-    columnHelper.accessor('requestedEndDate', {
-        header: 'End Date',
-        cell: (info) => info.getValue(),
+    columnHelper.accessor('endDatetime', {
+        header: 'End',
+        cell: (info) => new Date(info.getValue()).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' }),
     }),
     columnHelper.accessor('createdAt', {
         header: 'Submitted',

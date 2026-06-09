@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Row } from '@tanstack/react-table';
 import { CalendarDays, MoreHorizontal, PackageMinus, Pencil, Trash2 } from 'lucide-react';
 
@@ -14,8 +15,6 @@ import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
 
 import { MainEquipmentDeleteDialog, SubEquipmentDeleteDialog } from './dialog-delete';
 import { MainEquipmentEditDialog, SubEquipmentEditDialog } from './dialog-edit';
-import { SubEquipmentQuantityHoldDialog } from './dialog-quantity-hold';
-import { EquipmentStatusDialog } from './dialog-status';
 
 // ── Main Equipment ────────────────────────────────────────────────────────────
 
@@ -24,9 +23,9 @@ type MainEquipmentRowActionsProps = {
 };
 
 export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
+    const navigate = useNavigate();
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
-    const [openStatus, setOpenStatus] = useState(false);
 
     return (
         <>
@@ -42,7 +41,13 @@ export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setOpenStatus(true)}>
+                    <DropdownMenuItem
+                        onClick={() =>
+                            navigate(`/manage-inventory/status/${row.original.mainEquipmentId}`, {
+                                state: { breadcrumbLabel: `${row.original.brand} ${row.original.model}` },
+                            })
+                        }
+                    >
                         <CalendarDays className="mr-2 h-4 w-4" />
                         Manage Status
                     </DropdownMenuItem>
@@ -62,11 +67,6 @@ export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
                 onOpenChange={setOpenEdit}
                 equipment={row.original}
             />
-            <EquipmentStatusDialog
-                open={openStatus}
-                onOpenChange={setOpenStatus}
-                equipment={row.original}
-            />
             <MainEquipmentDeleteDialog
                 open={openDelete}
                 onOpenChange={setOpenDelete}
@@ -83,9 +83,9 @@ type SubEquipmentRowActionsProps = {
 };
 
 export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
+    const navigate = useNavigate();
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
-    const [openHolds, setOpenHolds] = useState(false);
 
     return (
         <>
@@ -101,7 +101,17 @@ export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => setOpenHolds(true)}>
+                    <DropdownMenuItem
+                        onClick={() =>
+                            navigate(`/manage-inventory/holds/${row.original.subEquipmentId}`, {
+                                state: {
+                                    breadcrumbLabel:
+                                        row.original.equipmentType +
+                                        (row.original.brand ? ` — ${row.original.brand}` : ''),
+                                },
+                            })
+                        }
+                    >
                         <PackageMinus className="mr-2 h-4 w-4" />
                         Manage Holds
                     </DropdownMenuItem>
@@ -119,11 +129,6 @@ export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
             <SubEquipmentEditDialog
                 open={openEdit}
                 onOpenChange={setOpenEdit}
-                equipment={row.original}
-            />
-            <SubEquipmentQuantityHoldDialog
-                open={openHolds}
-                onOpenChange={setOpenHolds}
                 equipment={row.original}
             />
             <SubEquipmentDeleteDialog

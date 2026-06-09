@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { AlertTriangle } from 'lucide-react';
 
 import { CartSummary, type CartLineItem } from '@/components/cart-summary';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EquipmentRequestConfirmationDialog } from '@/components/equipment-request-confirmation-dialog';
-import { DataTable } from '@/components/data-table';
+import { AvailableEquipmentTables, MAIN_EQUIPMENT_FILTERS } from '@/components/available-equipment-tables';
 import { useAuth } from '@/store/auth-context';
 import { useAvailableEquipment } from '@/store/queries/equipment';
 import { useRentalPricingList } from '@/store/queries/rental-pricing';
@@ -12,6 +14,7 @@ import type { RentalPricing } from '@/store/schemas/rental-pricing';
 
 import { useEquipmentRentalContext } from '../context';
 import { createAvailableEquipmentColumns, createAvailableSubEquipmentColumns } from '../table-column-def';
+import { Separator } from '@/components/ui/separator';
 
 function calcDays(start: string, end: string): number {
     const s = new Date(start).setHours(0, 0, 0, 0);
@@ -107,21 +110,53 @@ function RentalCartSummary({ onBack }: { onBack: () => void }) {
 
     return (
         <>
-            <CartSummary
-                lineItems={lineItems}
-                totalItemCount={totalItemCount}
-                totalPrice={totalPrice}
-                startDate={startDate}
-                endDate={endDate}
-                notes={notes}
-                onNotesChange={setNotes}
-                onSubmit={() => setConfirmOpen(true)}
-                isPending={isPending}
-                error={error ?? null}
-                submitLabel="Review & Submit"
-                onCancel={onBack}
-                isSubmitDisabled={totalItemCount === 0}
-            />
+            <div className="flex flex-col sm:flex-row gap-4">
+                <div className="w-full sm:w-1/2">
+                    <CartSummary
+                        lineItems={lineItems}
+                        totalItemCount={totalItemCount}
+                        totalPrice={totalPrice}
+                        startDate={startDate}
+                        endDate={endDate}
+                        notes={notes}
+                        onNotesChange={setNotes}
+                        onSubmit={() => setConfirmOpen(true)}
+                        isPending={isPending}
+                        error={error ?? null}
+                        submitLabel="Review & Submit"
+                        onCancel={onBack}
+                        isSubmitDisabled={totalItemCount === 0}
+                    />
+                </div>
+                <Card className="w-full sm:w-1/2 self-start border-warning/40 bg-warning/5">
+                    <CardHeader className="pb-2 pt-4 px-4">
+                        <CardTitle className="text-xs font-semibold uppercase tracking-wide text-warning-foreground flex items-center gap-1.5">
+                            <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+                            Important Notes
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent className="px-4 pb-4 space-y-3">
+                        <div className="flex gap-2 text-xs text-warning-foreground">
+                            <span className="mt-0.5 shrink-0">•</span>
+                            <span>
+                                <span className="font-semibold">Partially available equipment: </span>Some items may have restricted availability windows due to overlapping bookings. If no fully available equipment exists, please review the availability time of partially available equipment carefully to ensure your intended pickup and return schedule does not conflict before proceeding.
+                            </span>
+                        </div>
+                        <div className="flex gap-2 text-xs text-warning-foreground">
+                            <span className="mt-0.5 shrink-0">•</span>
+                            <span>
+                                <span className="font-semibold">Camera & Lens compatibility: </span> Please ensure that your selected camera body and lens are fully compatible prior to submission. We strongly recommend verifying mount type and specifications beforehand. For technical guidance, contact Ipan at <span className="font-semibold">[Ipan's number]</span>.
+                            </span>
+                        </div>
+                        <div className="flex gap-2 text-xs text-warning-foreground">
+                            <span className="mt-0.5 shrink-0">•</span>
+                            <span>
+                                <span className="font-semibold">Program details: </span>If this rental is for a program or event, please provide program details in the notes field, including the program name, date, and venue where applicable.
+                            </span>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
             <EquipmentRequestConfirmationDialog
                 open={confirmOpen}
                 onOpenChange={setConfirmOpen}
@@ -147,7 +182,7 @@ export function PickEquipments({
     onBack: () => void;
 }) {
     const { startDate, endDate } = useEquipmentRentalContext();
-    const { data, isLoading, isError, error, refetch } = useAvailableEquipment({
+    const { data, isLoading } = useAvailableEquipment({
         startDate: startDate ?? '',
         endDate: endDate ?? '',
         context: 'RENTAL',
@@ -164,47 +199,23 @@ export function PickEquipments({
         return map;
     }, [pricingList, memberType]);
 
-    const equipmentColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap), [pricingMap]);
+    const cameraColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap), [pricingMap]);
+    const lensColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap, { showLensType: true }), [pricingMap]);
     const subEquipmentColumns = useMemo(() => createAvailableSubEquipmentColumns(pricingMap), [pricingMap]);
 
-    const cameras = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Camera');
-    const lenses = (data?.mainEquipment ?? []).filter((e) => e.equipmentType === 'Lens');
-    const subEquipment = data?.subEquipment ?? [];
-
     return (
-        <div className="space-y-4">
+        <div className="space-y-6">
             <RentalCartSummary onBack={onBack} />
-            <DataTable
-                columns={equipmentColumns}
-                data={cameras}
+            <Separator className="bg-border-muted-foreground" />
+            <AvailableEquipmentTables
+                mainEquipment={data?.mainEquipment ?? []}
+                subEquipment={data?.subEquipment ?? []}
                 isLoading={isLoading}
-                isError={isError}
-                error={error ?? undefined}
-                onRetry={() => void refetch()}
-                title="Cameras"
-                totalElements={cameras.length}
-                emptyMessage="No cameras available."
+                cameraColumns={cameraColumns}
+                lensColumns={lensColumns}
+                subColumns={subEquipmentColumns}
+                mainFilters={MAIN_EQUIPMENT_FILTERS}
             />
-            <DataTable
-                columns={equipmentColumns}
-                data={lenses}
-                isLoading={isLoading}
-                isError={isError}
-                error={error ?? undefined}
-                onRetry={() => void refetch()}
-                title="Lenses"
-                totalElements={lenses.length}
-                emptyMessage="No lenses available."
-            />
-            {subEquipment.length > 0 && (
-                <DataTable
-                    columns={subEquipmentColumns}
-                    data={subEquipment}
-                    title="Accessories"
-                    totalElements={subEquipment.length}
-                    emptyMessage="No accessories available."
-                />
-            )}
         </div>
     );
 }

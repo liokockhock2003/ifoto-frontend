@@ -1,6 +1,6 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
-import { extractApiErrorMessage } from '@/utils/api-error';
+import { extractApiErrorMessage, isNotFoundError } from '@/utils/api-error';
 import { QueryFactory } from '@/store/query-factory';
 import {
     UserSchema,
@@ -8,11 +8,15 @@ import {
     UserPageResponseSchema,
     UpdateUserPayloadSchema,
     UpdateUserResponseSchema,
+    CommitteeBankDetailsSchema,
+    CommitteeBankDetailsPayloadSchema,
     type UserListFilters,
     type User,
     type UserPageResponse,
     type UpdateUserPayload,
     type UpdateUserResponse,
+    type CommitteeBankDetails,
+    type CommitteeBankDetailsPayload,
 } from '@/store/schemas/user';
 
 const usersQuery = QueryFactory<User, UserListFilters>(
@@ -116,3 +120,61 @@ export function useDeleteUser() {
 
 // Backward-compatible aliases for existing UI wiring.
 export const useReplaceUserRoles = useUpdateUser;
+
+// ── Committee bank details ─────────────────────────────────────────────────────
+
+const bankDetailsQuery = QueryFactory<CommitteeBankDetails, unknown, CommitteeBankDetailsPayload>(
+    'bank-details',
+    {
+        single: CommitteeBankDetailsSchema,
+        list: CommitteeBankDetailsSchema.array(),
+    },
+    '/api/v1/users/me/bank-details',
+);
+
+const bankDetailsGetQuery = bankDetailsQuery.customQuery<CommitteeBankDetails, void>({
+    responseSchema: CommitteeBankDetailsSchema,
+    urlSuffix: () => '',
+    queryKeySuffix: () => [],
+});
+
+const bankDetailsUpdateMutation = bankDetailsQuery.customMutation<CommitteeBankDetailsPayload>({
+    method: 'put',
+    urlSuffix: '',
+    inputSchema: CommitteeBankDetailsPayloadSchema,
+    responseSchema: CommitteeBankDetailsSchema,
+    toastMsg: 'Bank details saved',
+    invalidateKeys: () => [[...bankDetailsQuery.qk()]],
+});
+
+export const bankDetailsKeys = {
+    all: bankDetailsQuery.qk(),
+};
+
+export function useGetBankDetails() {
+    const opts = bankDetailsGetQuery(undefined as void);
+    return useQuery<CommitteeBankDetails | null>({
+        queryKey: opts.queryKey,
+        queryFn: async (ctx) => {
+            try {
+                return await opts.queryFn!(ctx as never);
+            } catch (err) {
+                if (isNotFoundError(err)) return null;
+                throw err;
+            }
+        },
+    });
+}
+
+export function useUpdateBankDetails() {
+    return useMutation<CommitteeBankDetails, Error, CommitteeBankDetailsPayload>({
+        ...bankDetailsUpdateMutation,
+        mutationFn: async (input) => {
+            try {
+                return await bankDetailsUpdateMutation.mutationFn(input);
+            } catch (err) {
+                throw new Error(extractApiErrorMessage(err));
+            }
+        },
+    });
+}

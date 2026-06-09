@@ -5,10 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { type ColumnDef } from '@tanstack/react-table';
 
 import { DataTable } from '@/components/data-table';
+import { ExpandableDataTable, type FilterDef } from '@/components/expandable-data-table';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { PrimaryTabsList, PrimaryTabsTrigger } from '@/components/primary-tabs';
-import type { SubEquipment } from '@/store/schemas/equipment';
+import type { EquipmentStatusType, SubEquipment } from '@/store/schemas/equipment';
+import { EQUIPMENT_CONDITIONS, CONDITION_LABEL } from '@/constants/equipmentCondition';
+import { EQUIPMENT_STATUS_LABEL } from '@/constants/equipmentStatus';
 
 import { useInventoryManagementContext } from './context';
 import { MainEquipmentCreateDialog, SubEquipmentCreateDialog } from './dialog-create';
@@ -42,6 +45,23 @@ const TABS: { value: TabValue; label: string }[] = [
 
 const MAIN_TAB_SET = new Set<string>(MAIN_EQUIPMENT_KEYS);
 const SUB_TAB_SET = new Set<string>(SUB_EQUIPMENT_KEYS);
+
+// Condition + today-status filters for the main-equipment (camera/lens) tables.
+const MAIN_EQUIPMENT_FILTERS: FilterDef[] = [
+    {
+        id: 'condition',
+        label: 'Condition',
+        options: EQUIPMENT_CONDITIONS.map((c) => ({ value: c, label: CONDITION_LABEL[c] ?? c })),
+    },
+    {
+        id: 'status',
+        label: 'Status',
+        options: (Object.keys(EQUIPMENT_STATUS_LABEL) as EquipmentStatusType[]).map((s) => ({
+            value: s,
+            label: EQUIPMENT_STATUS_LABEL[s],
+        })),
+    },
+];
 
 const SUB_TAB_COLUMNS: Partial<Record<SubEquipmentTabValue, ColumnDef<SubEquipment, any>[]>> = {
     batteryCameras: batteryColumns,
@@ -104,30 +124,26 @@ function InventoryManagementContent() {
                 </div>
 
                 <TabsContent value="cameras">
-                    <DataTable
+                    <ExpandableDataTable
                         columns={cameraColumns}
                         data={ctx.cameras}
                         isLoading={ctx.isLoading}
-                        isError={ctx.isError}
-                        error={ctx.error ?? undefined}
-                        onRetry={() => void ctx.refetch()}
-                        title="Camera"
-                        totalElements={ctx.cameras.length}
-                        emptyMessage="No cameras found."
+                        title="Cameras"
+                        groupBy={(row) => row.brand}
+                        searchable
+                        filters={MAIN_EQUIPMENT_FILTERS}
                     />
                 </TabsContent>
 
                 <TabsContent value="lenses">
-                    <DataTable
+                    <ExpandableDataTable
                         columns={lensColumns}
                         data={ctx.lenses}
                         isLoading={ctx.isLoading}
-                        isError={ctx.isError}
-                        error={ctx.error ?? undefined}
-                        onRetry={() => void ctx.refetch()}
-                        title="Lens"
-                        totalElements={ctx.lenses.length}
-                        emptyMessage="No lenses found."
+                        title="Lenses"
+                        groupBy={(row) => row.brand ?? 'Other'}
+                        searchable
+                        filters={MAIN_EQUIPMENT_FILTERS}
                     />
                 </TabsContent>
 

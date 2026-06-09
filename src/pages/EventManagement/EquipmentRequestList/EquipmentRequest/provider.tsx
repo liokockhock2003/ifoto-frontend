@@ -16,8 +16,8 @@ export function EquipmentRequestProvider({ children }: EquipmentRequestProviderP
 
     const myEventsQuery = useMyEvents();
     const event = myEventsQuery.data?.find((e) => e.eventId === eventId);
-    const startDate = event?.startDate ?? '';
-    const endDate = event?.endDate ?? '';
+    const startDate = event?.startDatetime?.slice(0, 10) ?? '';
+    const endDate = event?.endDatetime?.slice(0, 10) ?? '';
 
     const equipmentQuery = useAvailableEquipment({
         startDate: startDate ?? '',
