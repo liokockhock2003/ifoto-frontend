@@ -26,8 +26,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
     // ── URL / key helpers (plain functions, no self-reference) ────────────────
     const qk = () => [model];
     const lists = (filters?: TFilters) => [...qk(), 'list', filters];
-    const details = (id: number) => [...qk(), 'detail', `${id}`];
-    const createUrl = (id?: number) => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
+    const createUrl = (id?: number | string) => `${baseUrl}${id !== undefined ? `/${id}` : ''}`;
 
     // ── Axios method dispatcher (avoids indexing the full AxiosInstance) ───────
     const dispatch = (
@@ -50,8 +49,6 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
         schemas,
         qk,
         lists,
-        details,
-        createUrl,
 
         // ── List query ────────────────────────────────────────────────────────
         list(options?: QueryHandlerOptions<TModel[]>) {
@@ -124,27 +121,47 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
             };
         },
 
-        // ── Detail query ──────────────────────────────────────────────────────
-        detail(id: number, options?: QueryHandlerOptions<TModel>) {
-            const action: Required<QueryHandlerOptions<TModel>> = {
-                onSuccess: (data) => data,
-                onError: (error) => console.error(error),
-                urlManipulation: () => createUrl(id),
-                ...options,
-            };
+        // ── Custom parameterized query (dynamic path segment, any response shape) ──
+        customQuery<TResponse, TParam = number | string>(options: {
+            responseSchema: ZodType<TResponse>;
+            urlSuffix: (param: TParam) => string;
+            queryKeySuffix: (param: TParam) => unknown[];
+            requestConfig?: AxiosRequestConfig;
+            onSuccess?: (data: TResponse) => TResponse | Promise<TResponse>;
+            onError?: (error: unknown) => void;
+        }) {
+            const {
+                responseSchema,
+                urlSuffix,
+                queryKeySuffix,
+                requestConfig,
+                onSuccess = (data) => data,
+                onError = (error: unknown) => console.error(error),
+            } = options;
 
-            return queryOptions({
-                queryKey: details(id),
-                queryFn: async () => {
-                    try {
-                        const res = await axios.get(action.urlManipulation(''));
-                        return action.onSuccess(schemas.single.parse(res.data));
-                    } catch (error) {
-                        action.onError(error);
-                        throw error;
-                    }
-                },
-            });
+            return (param: TParam, config?: { enabled?: boolean }) =>
+                queryOptions({
+                    queryKey: [...qk(), ...queryKeySuffix(param)],
+                    queryFn: async () => {
+                        try {
+                            const res = await axios.get(`${baseUrl}${urlSuffix(param)}`, requestConfig);
+                            return onSuccess(responseSchema.parse(res.data));
+                        } catch (error) {
+                            onError(error);
+                            throw error;
+                        }
+                    },
+                    enabled: config?.enabled ?? true,
+                });
+        },
+
+        // ── SSE stream helper (returns url builder only — no React Query state) ──
+        customStream<TParam = number>(options: {
+            urlSuffix: (param: TParam) => string;
+        }) {
+            return {
+                url: (param: TParam) => `${baseUrl}${options.urlSuffix(param)}`,
+            };
         },
 
         // ── Custom mutation (arbitrary URL/method, still uses schema + toast) ──
@@ -179,7 +196,7 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
                     return responseSchema.parse(res.data);
                 },
                 onSuccess: (data: TModel, variables: TInput) => {
-                    if (toastMsg) toast(toastMsg);
+                    if (toastMsg) toast.success(toastMsg);
 
                     const keysToInvalidate = invalidateKeys?.(data, variables);
                     if (keysToInvalidate && keysToInvalidate.length > 0) {
@@ -191,54 +208,6 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
             };
         },
 
-        // ── Mutation option ───────────────────────────────────────────────────
-        mutationOption(_action: {
-            type: 'create' | 'edit' | 'delete' | 'soft-delete';
-            onSuccess?: (data: TModel) => void;
-            urlManipulation?: (url: string) => string;
-            toastMsg?: string | ((prevValue: TPayload) => string);
-        }) {
-            const {
-                type,
-                onSuccess = () => { },
-                urlManipulation = (u: string) => u,
-                toastMsg: description,
-            } = _action;
-
-            return {
-                mutationFn: async (payload: TPayload) => {
-                    const validatedPayload = schemas.payload?.parse(payload) ?? payload;
-                    const { id, ...others } = validatedPayload as { id?: number } & Record<string, unknown>;
-
-                    type MutationMethod = 'get' | 'post' | 'patch' | 'delete';
-                    const [method, extendedUrl, body] = (
-                        {
-                            create: ['post', '', others],
-                            edit: ['patch', `/${id ?? ''}`, others],
-                            delete: ['delete', `/${id ?? ''}`, undefined],
-                            'soft-delete': ['patch', `/${id ?? ''}/soft-delete`, undefined],
-                        } as Record<string, [MutationMethod, string, unknown]>
-                    )[type];
-
-                    const url = urlManipulation(`${baseUrl}${extendedUrl}`);
-                    const res = await dispatch(method, url, body);
-                    return schemas.single.parse(res.data);
-                },
-
-                onSuccess: async (data: TModel, variables: TPayload) => {
-                    const toastDescription =
-                        typeof description === 'string'
-                            ? description
-                            : typeof description === 'function'
-                                ? description(variables)
-                                : ({ create: 'Created', edit: 'Updated', delete: 'Deleted', 'soft-delete': 'Archived' })[type];
-
-                    toast(toastDescription);
-                    onSuccess(data);
-                    invalidateQuery(lists(), details((data as { id?: number }).id ?? 0));
-                },
-            };
-        },
     };
 
     return qObject;

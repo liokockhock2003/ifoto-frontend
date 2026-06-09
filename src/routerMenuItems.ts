@@ -4,10 +4,7 @@ import {
     CalendarCog,
     ClipboardList,
     Package,
-    PackageCheck,
-    RotateCcw,
     ShoppingCart,
-    Undo2,
     UserCog,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -42,12 +39,7 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Equipment Rental',
                 icon: ShoppingCart,
                 allowedRoles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
-            },
-            {
-                to: '/equipment-returns',
-                label: 'Return Rented Equipment',
-                icon: Undo2,
-                allowedRoles: ['ROLE_STUDENT', 'ROLE_NON_STUDENT'],
+                activePaths: ['/equipment-rent/new'],
             },
         ],
     },
@@ -59,12 +51,7 @@ export const menuGroups: MenuGroup[] = [
                 label: 'Equipment Request',
                 icon: ClipboardList,
                 allowedRoles: ['ROLE_EVENT_COMMITTEE'],
-            },
-            {
-                to: '/equipment-request-returns',
-                label: 'Return Requested Equipment',
-                icon: RotateCcw,
-                allowedRoles: ['ROLE_EVENT_COMMITTEE'],
+                activePaths: ['/equipment-requests/*'],
             },
         ],
     },
@@ -94,18 +81,18 @@ export const menuGroups: MenuGroup[] = [
                 icon: Package,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
                 activePaths: ['/manage-inventory/rental-pricing'],
-                
+
             },
             {
-                to: '/equipment-booking-management',
-                label: 'Equipment Booking Management',
+                to: '/rental-management',
+                label: 'Rental Management',
                 icon: CalendarCheck,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
             },
             {
-                to: '/equipment-return-management',
-                label: 'Equipment Return Management',
-                icon: PackageCheck,
+                to: '/event-equipment',
+                label: "Event's Equipment",
+                icon: ClipboardList,
                 allowedRoles: ['ROLE_EQUIPMENT_COMMITTEE'],
             },
             {

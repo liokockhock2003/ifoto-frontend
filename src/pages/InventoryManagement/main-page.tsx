@@ -5,9 +5,13 @@ import { useNavigate } from 'react-router-dom';
 import { type ColumnDef } from '@tanstack/react-table';
 
 import { DataTable } from '@/components/data-table';
+import { ExpandableDataTable, type FilterDef } from '@/components/expandable-data-table';
 import { Button } from '@/components/ui/button';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import type { SubEquipment } from '@/store/schemas/equipment';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
+import { PrimaryTabsList, PrimaryTabsTrigger } from '@/components/primary-tabs';
+import type { EquipmentStatusType, SubEquipment } from '@/store/schemas/equipment';
+import { EQUIPMENT_CONDITIONS, CONDITION_LABEL } from '@/constants/equipmentCondition';
+import { EQUIPMENT_STATUS_LABEL } from '@/constants/equipmentStatus';
 
 import { useInventoryManagementContext } from './context';
 import { MainEquipmentCreateDialog, SubEquipmentCreateDialog } from './dialog-create';
@@ -36,19 +40,36 @@ type SubEquipmentTabValue = keyof typeof SUB_EQUIPMENT_CONFIG;
 
 const TABS: { value: TabValue; label: string }[] = [
     ...MAIN_EQUIPMENT_KEYS.map((value) => ({ value, label: MAIN_EQUIPMENT_CONFIG[value].label })),
-    ...SUB_EQUIPMENT_KEYS.map((value)  => ({ value, label: SUB_EQUIPMENT_CONFIG[value].label  })),
+    ...SUB_EQUIPMENT_KEYS.map((value) => ({ value, label: SUB_EQUIPMENT_CONFIG[value].label })),
 ];
 
 const MAIN_TAB_SET = new Set<string>(MAIN_EQUIPMENT_KEYS);
-const SUB_TAB_SET  = new Set<string>(SUB_EQUIPMENT_KEYS);
+const SUB_TAB_SET = new Set<string>(SUB_EQUIPMENT_KEYS);
+
+// Condition + today-status filters for the main-equipment (camera/lens) tables.
+const MAIN_EQUIPMENT_FILTERS: FilterDef[] = [
+    {
+        id: 'condition',
+        label: 'Condition',
+        options: EQUIPMENT_CONDITIONS.map((c) => ({ value: c, label: CONDITION_LABEL[c] ?? c })),
+    },
+    {
+        id: 'status',
+        label: 'Status',
+        options: (Object.keys(EQUIPMENT_STATUS_LABEL) as EquipmentStatusType[]).map((s) => ({
+            value: s,
+            label: EQUIPMENT_STATUS_LABEL[s],
+        })),
+    },
+];
 
 const SUB_TAB_COLUMNS: Partial<Record<SubEquipmentTabValue, ColumnDef<SubEquipment, any>[]>> = {
-    batteryCameras:   batteryColumns,
+    batteryCameras: batteryColumns,
     chargerBatteries: batteryColumns,
-    speedlights:      speedlightColumns,
-    sdCfCards:        sdCfCardColumns,
-    tripods:          tripodColumns,
-    lainLain:         lainLainColumns,
+    speedlights: speedlightColumns,
+    sdCfCards: sdCfCardColumns,
+    tripods: tripodColumns,
+    lainLain: lainLainColumns,
 };
 
 // ── Page content ──────────────────────────────────────────────────────────────
@@ -61,7 +82,7 @@ function InventoryManagementContent() {
     const [openCreateSub, setOpenCreateSub] = useState(false);
     const [activeTab, setActiveTab] = useState<TabValue>('cameras');
 
-    const activeKind  = MAIN_TAB_SET.has(activeTab) ? 'main' : 'sub';
+    const activeKind = MAIN_TAB_SET.has(activeTab) ? 'main' : 'sub';
     const activeLabel = TABS.find((t) => t.value === activeTab)?.label ?? '';
 
     return (
@@ -84,17 +105,13 @@ function InventoryManagementContent() {
 
             <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
                 <div className="flex items-center justify-between gap-4">
-                    <TabsList className="bg-primary/10 border border-primary/20 flex-wrap h-auto gap-1">
+                    <PrimaryTabsList>
                         {TABS.map((tab) => (
-                            <TabsTrigger
-                                key={tab.value}
-                                value={tab.value}
-                                className="font-semibold data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm"
-                            >
+                            <PrimaryTabsTrigger key={tab.value} value={tab.value}>
                                 {tab.label}
-                            </TabsTrigger>
+                            </PrimaryTabsTrigger>
                         ))}
-                    </TabsList>
+                    </PrimaryTabsList>
 
                     <Button
                         type="button"
@@ -107,30 +124,26 @@ function InventoryManagementContent() {
                 </div>
 
                 <TabsContent value="cameras">
-                    <DataTable
+                    <ExpandableDataTable
                         columns={cameraColumns}
                         data={ctx.cameras}
                         isLoading={ctx.isLoading}
-                        isError={ctx.isError}
-                        error={ctx.error ?? undefined}
-                        onRetry={() => void ctx.refetch()}
-                        title="Camera"
-                        totalElements={ctx.cameras.length}
-                        emptyMessage="No cameras found."
+                        title="Cameras"
+                        groupBy={(row) => row.brand}
+                        searchable
+                        filters={MAIN_EQUIPMENT_FILTERS}
                     />
                 </TabsContent>
 
                 <TabsContent value="lenses">
-                    <DataTable
+                    <ExpandableDataTable
                         columns={lensColumns}
                         data={ctx.lenses}
                         isLoading={ctx.isLoading}
-                        isError={ctx.isError}
-                        error={ctx.error ?? undefined}
-                        onRetry={() => void ctx.refetch()}
-                        title="Lens"
-                        totalElements={ctx.lenses.length}
-                        emptyMessage="No lenses found."
+                        title="Lenses"
+                        groupBy={(row) => row.brand ?? 'Other'}
+                        searchable
+                        filters={MAIN_EQUIPMENT_FILTERS}
                     />
                 </TabsContent>
 

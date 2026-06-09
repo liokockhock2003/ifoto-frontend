@@ -9,6 +9,13 @@ import type { User } from '@/store/schemas/user';
 
 import { UserTableRowActions } from './table-row-actions';
 
+function fmtEventDate(iso: string | undefined | null) {
+    if (!iso) return '—';
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('en-MY', { day: 'numeric', month: 'short', year: 'numeric' });
+}
+
 function EventCommitteeBadge({ userId }: { userId: number }) {
     const [open, setOpen] = useState(false);
     const { data, isLoading } = useEventsByCommittee(userId, { enabled: open });
@@ -43,7 +50,7 @@ function EventCommitteeBadge({ userId }: { userId: number }) {
                                 <li key={event.eventId} className="py-2">
                                     <p className="text-sm font-medium">{event.eventName}</p>
                                     <p className="text-xs text-muted-foreground">
-                                        {event.startDate} – {event.endDate} · {event.location}
+                                        {fmtEventDate(event.startDatetime)} – {fmtEventDate(event.endDatetime)} · {event.location}
                                     </p>
                                 </li>
                             ))}

@@ -1,6 +1,7 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Row } from '@tanstack/react-table';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { ClipboardList, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -11,6 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import type { Event } from '@/store/schemas/event';
 
+import { useEventManagementContext } from './context';
 import { EventDeleteDialog } from './dialog-delete';
 import { EventEditDialog } from './dialog-edit';
 
@@ -19,8 +21,24 @@ type EventRowActionsProps = {
 };
 
 export function EventRowActions({ row }: EventRowActionsProps) {
+    const { isEventCommittee } = useEventManagementContext();
+    const navigate = useNavigate();
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
+
+    if (isEventCommittee) {
+        return (
+            <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => void navigate(`/equipment-requests/${row.original.eventId}`, { state: { breadcrumbLabel: row.original.eventName } })}
+            >
+                <ClipboardList className="mr-2 h-4 w-4" />
+                View Requests
+            </Button>
+        );
+    }
 
     return (
         <>

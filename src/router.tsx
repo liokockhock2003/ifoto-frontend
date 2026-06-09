@@ -2,6 +2,7 @@ import { createBrowserRouter, Navigate } from 'react-router-dom'
 import Layout from '@/components/Layout'
 import AuthLayout from '@/pages/Auth/layout'
 import ProtectedRoute from '@/protected-route'
+import { useAuth } from '@/store/auth-context'
 import LoginPage from '@/pages/Auth/login'
 import RegisterPage from '@/pages/Auth/register'
 import ForgotPasswordPage from '@/pages/Auth/forgot-password'
@@ -9,12 +10,35 @@ import ResetPasswordPage from '@/pages/Auth/reset-password'
 import VerifyEmailPage from '@/pages/Auth/verify-email'
 import UserManagementMainPage from '@/pages/UserManagement/main-page'
 import InventoryManagementMainPage from '@/pages/InventoryManagement/main-page'
+import StatusScheduleMainPage from '@/pages/InventoryManagement/StatusScheduleManagement/main-page'
+import QuantityScheduleMainPage from '@/pages/InventoryManagement/QuantityScheduleManagement/main-page'
 import EventManagementMainPage from '@/pages/EventManagement/main-page'
 import RentalPricingMainPage from '@/pages/RentalPricing/main-page'
+import EquipmentRentalMainPage from '@/pages/MyRentalList/EquipmentRental/main-page'
+import RentalListPage from '@/pages/MyRentalList/main-page'
+import RentalManagementMainPage from '@/pages/RentalManagement/main-page'
+import RentalLogisticMainPage from '@/pages/RentalManagement/RentalLogisticManagement/main-page'
+import EventEquipmentMainPage from '@/pages/EventEquipment/main-page'
+import RequestLogisticMainPage from '@/pages/EventEquipment/EELogisticManagement/main-page'
+import ReportingDashboardMainPage from '@/pages/ReportingDashboard/main-page'
+import EquipmentRequestListMainPage from '@/pages/EventManagement/EquipmentRequestList/main-page'
+import EquipmentRequestMainPage from '@/pages/EventManagement/EquipmentRequestList/EquipmentRequest/main-page'
+import CommitteeBankDetailsMainPage from '@/pages/CommitteeBankDetails/main-page'
 
-const ComingSoon = ({ title }: { title: string }) => (
-    <div className="p-8 text-2xl text-primary font-semibold">{title} — Coming Soon</div>
-)
+function RoleRedirect() {
+    const { isAuthenticated, isLoading, hasRole } = useAuth();
+    if (isLoading) return (
+        <div className="flex h-full items-center justify-center p-8">
+            <span className="text-muted-foreground text-sm">Loading...</span>
+        </div>
+    );
+    if (!isAuthenticated) return <Navigate to="/login" replace />;
+    if (hasRole('ROLE_ADMIN')) return <Navigate to="/user-management" replace />;
+    if (hasRole('ROLE_EQUIPMENT_COMMITTEE')) return <Navigate to="/manage-inventory" replace />;
+    if (hasRole('ROLE_HIGH_COMMITTEE')) return <Navigate to="/event-management" replace />;
+    if (hasRole('ROLE_EVENT_COMMITTEE')) return <Navigate to="/equipment-requests" replace />;
+    return <Navigate to="/equipment-rent" replace />;
+}
 
 export const router = createBrowserRouter([
     {
@@ -39,7 +63,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 index: true,
-                element: <ProtectedRoute><ComingSoon title="Home" /></ProtectedRoute>,
+                element: <RoleRedirect />,
             },
             {
                 path: 'manage-inventory',
@@ -60,6 +84,22 @@ export const router = createBrowserRouter([
                             </ProtectedRoute>
                         ),
                     },
+                    {
+                        path: 'status/:mainEquipmentId',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <StatusScheduleMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'holds/:subEquipmentId',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <QuantityScheduleMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
                 ],
             },
             {
@@ -72,19 +112,58 @@ export const router = createBrowserRouter([
             },
             {
                 path: 'equipment-requests',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
-                        <ComingSoon title="Equipment Requests" />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
+                                <EventManagementMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: ':eventId',
+                        children: [
+                            {
+                                index: true,
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
+                                        <EquipmentRequestListMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                            {
+                                path: 'new',
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
+                                        <EquipmentRequestMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 path: 'equipment-rent',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
-                        <ComingSoon title="Equipment Rent" />
-                    </ProtectedRoute>
-                ),
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
+                                <RentalListPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'new',
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
+                                <EquipmentRentalMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                ],
             },
             {
                 path: 'event-management',
@@ -95,42 +174,86 @@ export const router = createBrowserRouter([
                 ),
             },
             {
-                path: 'equipment-returns',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_STUDENT", "ROLE_NON_STUDENT"]}>
-                        <ComingSoon title="Return Rented Equipment" />
-                    </ProtectedRoute>
-                ),
+                path: 'rental-management',
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <RentalManagementMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'calendar',
+                        children: [
+                            {
+                                index: true,
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RentalLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                            {
+                                path: ':rentalId',
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RentalLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                        ],
+                    },
+                ],
             },
             {
-                path: 'equipment-request-returns',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EVENT_COMMITTEE"]}>
-                        <ComingSoon title="Return Requested Equipment" />
-                    </ProtectedRoute>
-                ),
-            },
-            {
-                path: 'equipment-booking-management',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <ComingSoon title="Equipment Booking Management" />
-                    </ProtectedRoute>
-                ),
-            },
-            {
-                path: 'equipment-return-management',
-                element: (
-                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
-                        <ComingSoon title="Equipment Return Management" />
-                    </ProtectedRoute>
-                ),
+                path: 'event-equipment',
+                children: [
+                    {
+                        index: true,
+                        element: (
+                            <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                <EventEquipmentMainPage />
+                            </ProtectedRoute>
+                        ),
+                    },
+                    {
+                        path: 'calendar',
+                        children: [
+                            {
+                                index: true,
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RequestLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                            {
+                                path: ':requestId',
+                                element: (
+                                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                                        <RequestLogisticMainPage />
+                                    </ProtectedRoute>
+                                ),
+                            },
+                        ],
+                    },
+                ],
             },
             {
                 path: 'reporting-dashboard',
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE", "ROLE_HIGH_COMMITTEE"]}>
-                        <ComingSoon title="Reporting Dashboard" />
+                        <ReportingDashboardMainPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'committee-bank-details',
+                element: (
+                    <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
+                        <CommitteeBankDetailsMainPage />
                     </ProtectedRoute>
                 ),
             },

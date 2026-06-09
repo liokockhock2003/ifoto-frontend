@@ -20,6 +20,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useUpdateMainEquipment, useUpdateSubEquipment } from '@/store/queries/equipment';
 import { Switch } from '@/components/ui/switch';
 import type {
@@ -29,14 +30,9 @@ import type {
     SubEquipmentUpdatePayload,
 } from '@/store/schemas/equipment';
 
+import { EQUIPMENT_CONDITIONS as CONDITIONS, CONDITION_LABEL } from '@/constants/equipmentCondition';
 import { useInventoryManagementContext } from './context';
 import { SUB_KIND_CONFIG, subKindFromType } from './provider';
-import { QuantityFields } from './quantity-fields';
-
-// ── Shared ────────────────────────────────────────────────────────────────────
-
-const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
-const STATUSES = ['Available', 'In Use', 'Maintenance', 'Unavailable'] as const;
 
 // ── Main Equipment Edit Dialog ─────────────────────────────────────────────────
 
@@ -54,9 +50,8 @@ function toMainForm(equipment: MainEquipment | null): MainEquipmentUpdatePayload
         brand: equipment?.brand ?? '',
         model: equipment?.model ?? '',
         serialNumber: equipment?.serialNumber ?? '',
-        condition: equipment?.condition ?? 'Good',
-        status: equipment?.status ?? 'Available',
-        notes: equipment?.notes ?? '',
+        condition: equipment?.condition ?? 'GOOD',
+        problems: equipment?.problems ?? '',
         isForRent: equipment?.isForRent ?? false,
     };
 }
@@ -82,13 +77,13 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
         !!equipment &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
-        form.serialNumber.trim() !== '';
+        (form.serialNumber ?? '').trim() !== '';
 
     async function handleSave() {
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('A Main Equipment updated');
+            toast.success('Main equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
@@ -120,14 +115,14 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Serial Number</FieldLabel>
-                        <Input value={form.serialNumber} onChange={set('serialNumber')} />
+                        <Input value={form.serialNumber ?? ''} onChange={set('serialNumber')} />
                     </Field>
                     <Field>
                         <FieldLabel>Condition</FieldLabel>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.condition}
+                                    {CONDITION_LABEL[form.condition]}
                                     <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -138,29 +133,7 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                                         className={c === form.condition ? 'bg-accent' : ''}
                                         onSelect={() => setVal('condition')(c)}
                                     >
-                                        {c}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </Field>
-                    <Field>
-                        <FieldLabel>Status</FieldLabel>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.status}
-                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
-                                {STATUSES.map((s) => (
-                                    <DropdownMenuItem
-                                        key={s}
-                                        className={s === form.status ? 'bg-accent' : ''}
-                                        onSelect={() => setVal('status')(s)}
-                                    >
-                                        {s}
+                                        {CONDITION_LABEL[c]}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
@@ -178,8 +151,8 @@ export function MainEquipmentEditDialog({ open, onOpenChange, equipment, onUpdat
                         </div>
                     </Field>
                     <Field className="sm:col-span-2">
-                        <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes} onChange={set('notes')} />
+                        <FieldLabel>Problems</FieldLabel>
+                        <Textarea value={form.problems ?? ''} onChange={(e) => setForm((p) => ({ ...p, problems: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 
@@ -213,8 +186,6 @@ function toSubForm(equipment: SubEquipment | null): SubEquipmentUpdatePayload {
         brand: equipment?.brand ?? null,
         capacity: equipment?.capacity ?? 1,
         totalQuantity: equipment?.totalQuantity ?? 1,
-        usedQuantity: equipment?.usedQuantity ?? 0,
-        availableQuantity: equipment?.availableQuantity ?? 1,
         notes: equipment?.notes ?? '',
     };
 }
@@ -255,7 +226,7 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
         if (!equipment) return;
         try {
             await mutation.mutateAsync(form);
-            toast.success('A Sub-Equipment updated');
+            toast.success('Sub-equipment updated');
             onUpdated?.();
             onOpenChange(false);
         } catch (error) {
@@ -329,14 +300,13 @@ export function SubEquipmentEditDialog({ open, onOpenChange, equipment, onUpdate
                         </Field>
                     )}
 
-                    <QuantityFields
-                        className="sm:col-span-2"
-                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
-                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
-                    />
+                    <Field>
+                        <FieldLabel>Total Quantity</FieldLabel>
+                        <Input type="number" min={1} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
+                    </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input value={form.notes} onChange={setStr('notes')} />
+                        <Textarea value={form.notes ?? ''} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 

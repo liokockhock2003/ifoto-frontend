@@ -1,12 +1,14 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import type { Row } from '@tanstack/react-table';
-import { MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { CalendarDays, MoreHorizontal, PackageMinus, Pencil, Trash2 } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
@@ -21,6 +23,7 @@ type MainEquipmentRowActionsProps = {
 };
 
 export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
+    const navigate = useNavigate();
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
@@ -38,6 +41,17 @@ export function MainEquipmentRowActions({ row }: MainEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() =>
+                            navigate(`/manage-inventory/status/${row.original.mainEquipmentId}`, {
+                                state: { breadcrumbLabel: `${row.original.brand} ${row.original.model}` },
+                            })
+                        }
+                    >
+                        <CalendarDays className="mr-2 h-4 w-4" />
+                        Manage Status
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => setOpenDelete(true)}
                         className="text-destructive focus:text-destructive"
@@ -69,6 +83,7 @@ type SubEquipmentRowActionsProps = {
 };
 
 export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
+    const navigate = useNavigate();
     const [openEdit, setOpenEdit] = useState(false);
     const [openDelete, setOpenDelete] = useState(false);
 
@@ -86,6 +101,21 @@ export function SubEquipmentRowActions({ row }: SubEquipmentRowActionsProps) {
                         <Pencil className="mr-2 h-4 w-4" />
                         Edit
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                        onClick={() =>
+                            navigate(`/manage-inventory/holds/${row.original.subEquipmentId}`, {
+                                state: {
+                                    breadcrumbLabel:
+                                        row.original.equipmentType +
+                                        (row.original.brand ? ` — ${row.original.brand}` : ''),
+                                },
+                            })
+                        }
+                    >
+                        <PackageMinus className="mr-2 h-4 w-4" />
+                        Manage Holds
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     <DropdownMenuItem
                         onClick={() => setOpenDelete(true)}
                         className="text-destructive focus:text-destructive"

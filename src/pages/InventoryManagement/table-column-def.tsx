@@ -1,25 +1,35 @@
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
+import { useEquipmentStatuses, useSubEquipmentQuantityHolds } from '@/store/queries/equipment';
 import type { MainEquipment, SubEquipment } from '@/store/schemas/equipment';
+import { EQUIPMENT_CONDITION_BADGE } from '@/constants/equipmentCondition';
+import { EQUIPMENT_STATUS_BADGE, EQUIPMENT_STATUS_LABEL } from '@/constants/equipmentStatus';
 
 import { MainEquipmentRowActions, SubEquipmentRowActions } from './table-row-actions';
 
-// ── Badge class maps (semantic CSS classes from index.css — dark mode safe) ────
+function SchedulesBadge({ id }: { id: number }) {
+    const { data } = useEquipmentStatuses(id);
+    const count = data?.length ?? 0;
+    if (count === 0) return <span className="text-muted-foreground text-xs">—</span>;
+    return (
+        <Badge variant="outline" className="badge-warning text-xs">
+            {count} schedule{count !== 1 ? 's' : ''}
+        </Badge>
+    );
+}
 
-const conditionBadgeClass: Record<string, string> = {
-    Excellent: 'badge-success',
-    Good:      'badge-info',
-    Fair:      'badge-warning',
-    Poor:      'badge-danger',
-};
+function HoldsBadge({ id }: { id: number }) {
+    const { data } = useSubEquipmentQuantityHolds(id);
+    const count = data?.length ?? 0;
+    if (count === 0) return <span className="text-muted-foreground text-xs">—</span>;
+    return (
+        <Badge variant="outline" className="badge-warning text-xs">
+            {count} schedule{count !== 1 ? 's' : ''}
+        </Badge>
+    );
+}
 
-const statusBadgeClass: Record<string, string> = {
-    Available:   'badge-success',
-    'In Use':    'badge-info',
-    Maintenance: 'badge-warning',
-    Unavailable: 'badge-danger',
-};
 
 // ── Main Equipment columns ────────────────────────────────────────────────────
 
@@ -37,27 +47,27 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
     mainColumnHelper.accessor('serialNumber', {
         header: 'Serial No.',
         cell: (info) => (
-            <span className="font-mono text-xs text-muted-foreground">{info.getValue()}</span>
+            <span className="font-mono text-xs text-muted-foreground">{info.getValue() ?? '—'}</span>
         ),
     }),
     mainColumnHelper.accessor('condition', {
         header: 'Condition',
         cell: (info) => {
-            const value: string = info.getValue();
+            const value = info.getValue();
             return (
-                <Badge variant="outline" className={conditionBadgeClass[value] ?? ''}>
+                <Badge variant="outline" className={EQUIPMENT_CONDITION_BADGE[value] ?? ''}>
                     {value}
                 </Badge>
             );
         },
     }),
     mainColumnHelper.accessor('status', {
-        header: 'Status',
-        cell: (info) => {
-            const value: string = info.getValue();
+        header: 'Today Status',
+        cell: ({ row }) => {
+            const s = row.original.status;
             return (
-                <Badge variant="outline" className={statusBadgeClass[value] ?? ''}>
-                    {value}
+                <Badge variant="outline" className={EQUIPMENT_STATUS_BADGE[s]}>
+                    {EQUIPMENT_STATUS_LABEL[s]}
                 </Badge>
             );
         },
@@ -70,11 +80,16 @@ const mainEquipmentBaseColumns: ColumnDef<MainEquipment, any>[] = [
             </Badge>
         ),
     }),
-    mainColumnHelper.accessor('notes', {
+    mainColumnHelper.accessor('problems', {
         header: 'Notes',
         cell: (info) => (
             <span className="text-sm text-muted-foreground">{info.getValue() || '—'}</span>
         ),
+    }),
+    mainColumnHelper.display({
+        id: 'statusIndicator',
+        header: 'Schedules',
+        cell: ({ row }) => <SchedulesBadge id={row.original.mainEquipmentId} />,
     }),
     mainColumnHelper.display({
         id: 'actions',
@@ -102,12 +117,31 @@ const subEquipmentQuantityColumns: ColumnDef<SubEquipment, any>[] = [
         header: 'Total',
         cell: (info) => info.getValue(),
     }),
-    subColumnHelper.accessor('usedQuantity', {
-        header: 'In Use',
-        cell: (info) => info.getValue(),
+    subColumnHelper.accessor('committedQuantity', {
+        header: 'Booked Today',
+        cell: (info) => {
+            const value: number = info.getValue();
+            return (
+                <Badge variant="outline" className={value > 0 ? 'badge-warning' : ''}>
+                    {value}
+                </Badge>
+            );
+        },
+    }),
+    subColumnHelper.accessor('adminHeldQuantity', {
+        header: 'Admin Held Today',
+        cell: (info) => {
+            const value: number = info.getValue() ?? 0;
+            if (value === 0) return <span className="text-muted-foreground text-xs">—</span>;
+            return (
+                <Badge variant="outline" className="badge-warning">
+                    {value}
+                </Badge>
+            );
+        },
     }),
     subColumnHelper.accessor('availableQuantity', {
-        header: 'Available',
+        header: 'Available Today',
         cell: (info) => {
             const value: number = info.getValue();
             return (
@@ -122,6 +156,11 @@ const subEquipmentQuantityColumns: ColumnDef<SubEquipment, any>[] = [
         cell: (info) => (
             <span className="text-sm text-muted-foreground">{info.getValue() || '—'}</span>
         ),
+    }),
+    subColumnHelper.display({
+        id: 'holdsIndicator',
+        header: 'Schedules',
+        cell: ({ row }) => <HoldsBadge id={row.original.subEquipmentId} />,
     }),
     subColumnHelper.display({
         id: 'actions',

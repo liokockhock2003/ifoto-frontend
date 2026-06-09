@@ -20,18 +20,14 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Field, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { useCreateMainEquipment, useCreateSubEquipment } from '@/store/queries/equipment';
 import { Switch } from '@/components/ui/switch';
 import type { MainEquipmentPayload, SubEquipmentPayload } from '@/store/schemas/equipment';
 
+import { EQUIPMENT_CONDITIONS as CONDITIONS, CONDITION_LABEL } from '@/constants/equipmentCondition';
 import { useInventoryManagementContext } from './context';
 import { MAIN_EQUIPMENT_CONFIG, SUB_EQUIPMENT_CONFIG, SUB_EQUIPMENT_KEYS, SUB_KIND_CONFIG, type SubKindConfig } from './provider';
-import { QuantityFields } from './quantity-fields';
-
-// ── Shared ────────────────────────────────────────────────────────────────────
-
-const CONDITIONS = ['Excellent', 'Good', 'Fair', 'Poor'] as const;
-const STATUSES = ['Available', 'In Use', 'Maintenance', 'Unavailable'] as const;
 
 // ── Main Equipment Create Dialog ───────────────────────────────────────────────
 
@@ -50,9 +46,8 @@ const defaultMainForm = (kind: MainEquipmentKind): MainEquipmentPayload => ({
     brand: '',
     model: '',
     serialNumber: '',
-    condition: 'Good',
-    status: 'Available',
-    notes: '',
+    condition: 'GOOD',
+    problems: '',
     isForRent: false,
 });
 
@@ -76,7 +71,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
         !mutation.isPending &&
         form.brand.trim() !== '' &&
         form.model.trim() !== '' &&
-        form.serialNumber.trim() !== '';
+        (form.serialNumber ?? '').trim() !== '';
 
     async function handleSubmit() {
         try {
@@ -116,14 +111,14 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                     </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Serial Number</FieldLabel>
-                        <Input placeholder="e.g. SN-SONY-A7IV-001" value={form.serialNumber} onChange={set('serialNumber')} />
+                        <Input placeholder="e.g. SN-SONY-A7IV-001" value={form.serialNumber ?? ''} onChange={set('serialNumber')} />
                     </Field>
                     <Field>
                         <FieldLabel>Condition</FieldLabel>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.condition}
+                                    {CONDITION_LABEL[form.condition]}
                                     <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -134,29 +129,7 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                                         className={c === form.condition ? 'bg-accent' : ''}
                                         onSelect={() => setVal('condition')(c)}
                                     >
-                                        {c}
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </Field>
-                    <Field>
-                        <FieldLabel>Status</FieldLabel>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="w-full justify-between font-normal text-muted-foreground">
-                                    {form.status}
-                                    <ChevronDown className="h-4 w-4 opacity-50 shrink-0" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent className="min-w-(--radix-dropdown-menu-trigger-width)">
-                                {STATUSES.map((s) => (
-                                    <DropdownMenuItem
-                                        key={s}
-                                        className={s === form.status ? 'bg-accent' : ''}
-                                        onSelect={() => setVal('status')(s)}
-                                    >
-                                        {s}
+                                        {CONDITION_LABEL[c]}
                                     </DropdownMenuItem>
                                 ))}
                             </DropdownMenuContent>
@@ -174,8 +147,8 @@ export function MainEquipmentCreateDialog({ open, onOpenChange, equipmentKind, o
                         </div>
                     </Field>
                     <Field className="sm:col-span-2">
-                        <FieldLabel>Notes</FieldLabel>
-                        <Input placeholder="Optional notes" value={form.notes} onChange={set('notes')} />
+                        <FieldLabel>Problems</FieldLabel>
+                        <Textarea placeholder="Optional notes on problems" value={form.problems ?? ''} onChange={(e) => setForm((p) => ({ ...p, problems: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 
@@ -214,8 +187,6 @@ const defaultSubForm = (kind: SubEquipmentKind): SubEquipmentPayload => ({
     brand: null,
     capacity: 1,
     totalQuantity: 1,
-    usedQuantity: 0,
-    availableQuantity: 1,
     notes: '',
 });
 
@@ -324,14 +295,13 @@ export function SubEquipmentCreateDialog({ open, onOpenChange, equipmentKind, on
                         </Field>
                     )}
 
-                    <QuantityFields
-                        className="sm:col-span-2"
-                        value={{ totalQuantity: form.totalQuantity, usedQuantity: form.usedQuantity, availableQuantity: form.availableQuantity }}
-                        onChange={(q) => setForm((prev) => ({ ...prev, ...q }))}
-                    />
+                    <Field>
+                        <FieldLabel>Total Quantity</FieldLabel>
+                        <Input type="number" min={1} value={form.totalQuantity} onChange={setNum('totalQuantity')} />
+                    </Field>
                     <Field className="sm:col-span-2">
                         <FieldLabel>Notes</FieldLabel>
-                        <Input placeholder="Optional notes" value={form.notes} onChange={setStr('notes')} />
+                        <Textarea placeholder="Optional notes" value={form.notes ?? ''} onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))} rows={2} className="resize-none" />
                     </Field>
                 </div>
 

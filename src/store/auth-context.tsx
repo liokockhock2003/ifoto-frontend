@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { useLogin, useLogout, refreshTokenApi } from '@/store/queries/auth';
-import { setAccessToken, setOnUnauthenticated } from '@/utils/axios-instance';
+import { setAccessToken, getAccessToken, isTokenExpired, setOnUnauthenticated } from '@/utils/axios-instance';
 import { UserSchema, type User } from '@/store/schemas/auth';
 
 interface AuthContextType {
@@ -72,27 +72,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     return;
                 }
 
-                try {
-                    // httpOnly cookie sent automatically — requires backend CORS:
-                    // Access-Control-Allow-Origin: http://localhost:5173  (exact, not *)
-                    // Access-Control-Allow-Credentials: true
-                    const data = await refreshTokenApi();
-                    setAccessToken(data.accessToken);
-                    const refreshedUser = buildUser({
-                        username: data.username,
-                        email: data.email,
-                        fullName: data.fullName,
-                        roles: data.roles,
-                        profilePicture: data.profilePicture,
-                    });
-                    setUser(refreshedUser);
-                    localStorage.setItem('user', JSON.stringify(refreshedUser));
-                } catch {
-                    // refresh failed (CORS / cookie missing / expired)
-                    // still restore user state from localStorage so the UI doesn't
-                    // flash to /login — the first protected API call will re-trigger
-                    // the 401 → refresh flow via the axios interceptor
+                // reuse the sessionStorage token if it's still valid (not expired
+                // or within 60s of expiry); otherwise call refresh proactively
+                const existingToken = getAccessToken();
+                if (existingToken && !isTokenExpired(existingToken)) {
                     setUser(parsedStoredUser.data);
+                } else {
+                    try {
+                        // httpOnly cookie sent automatically — requires backend CORS:
+                        // Access-Control-Allow-Origin: http://localhost:5173  (exact, not *)
+                        // Access-Control-Allow-Credentials: true
+                        const data = await refreshTokenApi();
+                        setAccessToken(data.accessToken);
+                        const refreshedUser = buildUser({
+                            username: data.username,
+                            email: data.email,
+                            fullName: data.fullName,
+                            roles: data.roles,
+                            profilePicture: data.profilePicture,
+                        });
+                        setUser(refreshedUser);
+                        localStorage.setItem('user', JSON.stringify(refreshedUser));
+                    } catch {
+                        // refresh failed (CORS / cookie missing / expired)
+                        // still restore user state from localStorage so the UI doesn't
+                        // flash to /login — the first protected API call will re-trigger
+                        // the 401 → refresh flow via the axios interceptor
+                        setUser(parsedStoredUser.data);
+                    }
                 }
             }
             setIsLoading(false);

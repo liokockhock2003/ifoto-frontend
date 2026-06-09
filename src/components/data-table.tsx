@@ -14,6 +14,7 @@ import { AlertCircle, Search, SearchX } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Input } from '@/components/ui/input';
 import {
     Pagination,
@@ -106,10 +107,12 @@ export function DataTable<TData, TValue>({
         if (table.getRowModel().rows.length === 0) {
             return (
                 <TableRow>
-                    <TableCell colSpan={columns.length} className="py-16 text-center">
-                        <div className="flex flex-col items-center gap-2 text-muted-foreground">
-                            <SearchX className="h-8 w-8 opacity-40" />
-                            <p className="text-sm">{emptyMessage}</p>
+                    <TableCell colSpan={columns.length} className="py-10 text-center">
+                        <div className="flex flex-col items-center gap-3">
+                            <EmptyMedia variant="icon">
+                                <SearchX />
+                            </EmptyMedia>
+                            <EmptyTitle className="text-sm font-normal text-muted-foreground">{emptyMessage}</EmptyTitle>
                         </div>
                     </TableCell>
                 </TableRow>
