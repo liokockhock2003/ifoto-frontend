@@ -244,8 +244,6 @@ export function useConfirmManualPayment() {
     });
 }
 
-export const useConfirmCashPayment = useConfirmManualPayment;
-
 export function useMarkPickedUp() {
     return useMutation<Rental, Error, { id: number }>({
         ...markPickedUpMutation,
