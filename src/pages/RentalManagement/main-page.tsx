@@ -29,6 +29,7 @@ const STATUS_TABS: { value: RentalStatus; label: string }[] = [
     { value: 'APPROVED', label: 'Approved' },
     { value: 'PICKED_UP', label: 'Picked Up' },
     { value: 'ACTIVE', label: 'Active' },
+    { value: 'PENDING_PAYMENT', label: 'Pending Payment' },
     { value: 'PAID', label: 'Paid' },
     { value: 'OVERDUE', label: 'Overdue' },
     { value: 'RETURNED', label: 'Returned' },
@@ -234,6 +235,15 @@ function BookingManagementContent() {
                         title="Active"
                         headerActions={searchOnly}
                         emptyMessage="No active rentals."
+                    />
+                </TabsContent>
+
+                <TabsContent value="PENDING_PAYMENT">
+                    <RentalTable
+                        data={listFor('PENDING_PAYMENT')}
+                        title="Pending Payment"
+                        headerActions={searchOnly}
+                        emptyMessage="No rentals pending payment."
                     />
                 </TabsContent>
 

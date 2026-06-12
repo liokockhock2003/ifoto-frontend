@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Banknote, CheckSquare, Eye, MoreHorizontal, PackageCheck, RefreshCw, Truck } from 'lucide-react';
+import { Banknote, CheckSquare, Eye, Landmark, MoreHorizontal, PackageCheck, RefreshCw, Truck } from 'lucide-react';
 import type { Row } from '@tanstack/react-table';
 
 import { useAuth } from '@/store/auth-context';
@@ -45,7 +45,9 @@ export function BookingRowActions({ row }: BookingRowActionsProps) {
     const showUpdateLogistics = isApprover && (rental.status === 'APPROVED' || rental.status === 'PICKED_UP');
     const showUpdateEquipment = isApprover && rental.status === 'APPROVED';
     const showConfirmCash = rental.paymentStatus === 'CASH_PENDING' || rental.paymentStatus === 'BANK_TRANSFER_PENDING';
-    const confirmLabel = rental.paymentMethod === 'BANK_TRANSFER' ? 'Confirm Bank Transfer' : 'Confirm Cash';
+    const isBankTransfer = rental.paymentMethod === 'BANK_TRANSFER';
+    const confirmLabel = isBankTransfer ? 'Confirm Bank Transfer' : 'Confirm Cash';
+    const ConfirmIcon = isBankTransfer ? Landmark : Banknote;
     const showMarkReturned = rental.status === 'ACTIVE' || rental.status === 'OVERDUE';
 
     return (
@@ -106,7 +108,7 @@ export function BookingRowActions({ row }: BookingRowActionsProps) {
                                 className="text-primary focus:text-primary"
                                 onClick={() => setConfirmCashOpen(true)}
                             >
-                                <Banknote className="mr-2 h-4 w-4" />
+                                <ConfirmIcon className="mr-2 h-4 w-4" />
                                 {confirmLabel}
                             </DropdownMenuItem>
                         </>

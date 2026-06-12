@@ -1,4 +1,4 @@
-import { Banknote } from 'lucide-react';
+import { Banknote, Landmark } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { useConfirmCashPayment } from '@/store/queries/rental';
+import { useConfirmManualPayment } from '@/store/queries/rental';
 import type { Rental } from '@/store/schemas/rental';
 
 type BookingConfirmCashDialogProps = {
@@ -20,16 +20,20 @@ type BookingConfirmCashDialogProps = {
 };
 
 export function BookingConfirmCashDialog({ open, onOpenChange, rental }: BookingConfirmCashDialogProps) {
-    const confirmCashMutation = useConfirmCashPayment();
+    const confirmCashMutation = useConfirmManualPayment();
+
+    const isBankTransfer = rental?.paymentMethod === 'BANK_TRANSFER';
+    const methodLabel = isBankTransfer ? 'Bank Transfer' : 'Cash';
+    const MethodIcon = isBankTransfer ? Landmark : Banknote;
 
     async function handleConfirm() {
         if (!rental) return;
         try {
             await confirmCashMutation.mutateAsync({ id: rental.id });
-            toast.success(`Cash payment confirmed for ${rental.rentalNumber}`);
+            toast.success(`${methodLabel} payment confirmed for ${rental.rentalNumber}`);
             onOpenChange(false);
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Failed to confirm cash payment');
+            toast.error(err instanceof Error ? err.message : `Failed to confirm ${methodLabel.toLowerCase()} payment`);
         }
     }
 
@@ -38,11 +42,13 @@ export function BookingConfirmCashDialog({ open, onOpenChange, rental }: Booking
             <DialogContent className="sm:max-w-md text-muted-foreground">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-foreground">
-                        <Banknote className="h-5 w-5" />
-                        Confirm Cash Payment
+                        <MethodIcon className="h-5 w-5" />
+                        Confirm {methodLabel} Payment
                     </DialogTitle>
                     <DialogDescription>
-                        Confirm that the renter has paid cash in person for rental{' '}
+                        {isBankTransfer
+                            ? 'Confirm that the renter has completed the bank transfer for rental '
+                            : 'Confirm that the renter has paid cash in person for rental '}
                         <span className="font-medium text-foreground">{rental?.rentalNumber ?? '—'}</span>.
                     </DialogDescription>
                 </DialogHeader>
@@ -64,7 +70,7 @@ export function BookingConfirmCashDialog({ open, onOpenChange, rental }: Booking
                         disabled={!rental || confirmCashMutation.isPending}
                         onClick={() => void handleConfirm()}
                     >
-                        <Banknote className="mr-2 h-4 w-4" />
+                        <MethodIcon className="mr-2 h-4 w-4" />
                         {confirmCashMutation.isPending ? 'Confirming...' : 'Confirm Payment'}
                     </Button>
                 </DialogFooter>
