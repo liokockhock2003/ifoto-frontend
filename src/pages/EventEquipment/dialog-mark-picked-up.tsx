@@ -48,7 +48,7 @@ export function RequestMarkPickedUpDialog({ open, onOpenChange, request }: Reque
                 </DialogHeader>
 
                 <p className="text-sm text-muted-foreground">
-                    This records the physical handover. The request status is unchanged.
+                    This records the physical handover and transitions the request to <strong>Picked Up</strong> status.
                 </p>
 
                 <DialogFooter>

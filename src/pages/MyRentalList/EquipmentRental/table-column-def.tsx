@@ -16,7 +16,8 @@ function fmtDatetime(dt: string) {
     return `${date}, ${time}`;
 }
 
-import { CartActionCell, SubEquipmentQuantityCell } from './table-row-actions';
+import { SubEquipmentQuantityCell } from './table-row-actions';
+import { CartActionCell, type EquipmentBrandInfo } from './dialog-mismatch';
 
 
 function priceCell(categoryId: number | null | undefined, pricingMap: Map<number, RentalPricing>, field: 'rate1Day' | 'rate3Days' | 'ratePerDayExtra') {
@@ -28,8 +29,12 @@ function priceCell(categoryId: number | null | undefined, pricingMap: Map<number
 
 const columnHelper = createColumnHelper<MainEquipment>();
 
-export function createAvailableEquipmentColumns(pricingMap: Map<number, RentalPricing>, options?: { showLensType?: boolean }): ColumnDef<MainEquipment, any>[] {
+export function createAvailableEquipmentColumns(
+    pricingMap: Map<number, RentalPricing>,
+    options?: { showLensType?: boolean; equipmentById?: Map<number, EquipmentBrandInfo> },
+): ColumnDef<MainEquipment, any>[] {
     const showLensType = options?.showLensType ?? false;
+    const equipmentById = options?.equipmentById;
     return [
         columnHelper.accessor('model', {
             header: 'Model',
@@ -138,7 +143,7 @@ export function createAvailableEquipmentColumns(pricingMap: Map<number, RentalPr
             id: 'cart',
             header: 'Cart',
             cell: ({ row }) => (
-                <CartActionCell equipmentId={row.original.mainEquipmentId} />
+                <CartActionCell equipmentId={row.original.mainEquipmentId} equipmentById={equipmentById} />
             ),
         }),
     ];

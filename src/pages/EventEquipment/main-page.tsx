@@ -20,6 +20,7 @@ import { requestManagementColumns } from './table-column-def';
 const STATUS_TABS: { value: RequestStatus; label: string }[] = [
     { value: 'PENDING_REVIEW', label: 'Pending Review' },
     { value: 'APPROVED', label: 'Approved' },
+    { value: 'PICKED_UP', label: 'Picked Up' },
     { value: 'ACTIVE', label: 'Active' },
     { value: 'RETURNED', label: 'Returned' },
     { value: 'REJECTED', label: 'Rejected' },
@@ -126,7 +127,7 @@ function RequestManagementContent() {
             </div>
 
             <Tabs defaultValue="PENDING_REVIEW">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col items-end justify-between gap-2 sm:flex-row sm:items-center">
                     <PrimaryTabsList>
                         {STATUS_TABS.map((t) => (
                             <PrimaryTabsTrigger key={t.value} value={t.value}>
@@ -161,6 +162,15 @@ function RequestManagementContent() {
                         title="Approved Requests"
                         headerActions={searchOnly}
                         emptyMessage="No approved requests."
+                    />
+                </TabsContent>
+
+                <TabsContent value="PICKED_UP">
+                    <RequestTable
+                        data={listFor('PICKED_UP')}
+                        title="Picked Up"
+                        headerActions={searchOnly}
+                        emptyMessage="No picked-up requests."
                     />
                 </TabsContent>
 

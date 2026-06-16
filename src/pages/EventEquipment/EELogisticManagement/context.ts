@@ -5,8 +5,8 @@ import type { Rental } from '@/store/schemas/rental';
 import type { EquipmentRequest } from '@/store/schemas/request';
 
 // Mode is derived from the selected request's status:
-//   PENDING_REVIEW → review · APPROVED/ACTIVE → update · anything else → view-only.
-//   (ACTIVE is "picked up": equipment is locked, only the schedule stays editable.)
+//   PENDING_REVIEW → review · APPROVED/PICKED_UP/ACTIVE → update · anything else → view-only.
+//   (PICKED_UP and ACTIVE: equipment is locked, only the schedule stays editable.)
 export type LogisticMode = 'review' | 'update' | 'view';
 
 export type RequestLogisticContextValue = {

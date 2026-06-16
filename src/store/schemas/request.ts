@@ -20,6 +20,7 @@ export const EquipmentRequestSubItemSchema = z.object({
 export const RequestStatusSchema = z.enum([
     'PENDING_REVIEW',
     'APPROVED',
+    'PICKED_UP',
     'REJECTED',
     'CANCELLED',
     'ACTIVE',

@@ -173,7 +173,7 @@ export function RequestActionPanel() {
     }
 
     const r = selectedRequest;
-    const isActive = r.status === 'ACTIVE';
+    const equipmentLocked = r.status === 'PICKED_UP' || r.status === 'ACTIVE';
 
     return (
         <Card className="shadow-sm">
@@ -249,15 +249,15 @@ export function RequestActionPanel() {
 
                 {/* ── Update: Equipment | Schedule ── */}
                 {mode === 'update' && (
-                    <Tabs defaultValue={isActive ? 'schedule' : 'equipment'}>
+                    <Tabs defaultValue={equipmentLocked ? 'schedule' : 'equipment'}>
                         <PrimaryTabsList className="w-full">
-                            {!isActive && (
+                            {!equipmentLocked && (
                                 <PrimaryTabsTrigger value="equipment" className="flex-1">Equipment</PrimaryTabsTrigger>
                             )}
                             <PrimaryTabsTrigger value="schedule" className="flex-1">Schedule</PrimaryTabsTrigger>
                         </PrimaryTabsList>
 
-                        {!isActive && (
+                        {!equipmentLocked && (
                             <TabsContent value="equipment" className="mt-3 space-y-4">
                                 <SelectedLists editable />
                                 <Button

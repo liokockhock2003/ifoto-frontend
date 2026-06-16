@@ -21,3 +21,11 @@ export const SEGMENT_LABELS: Record<string, string> = {
     'reporting-dashboard':            'Reporting Dashboard',
     'committee-bank-details':         'Committee Bank Details',
 };
+
+// Intermediate path segments that have no landing page of their own and should
+// be omitted from the breadcrumb trail (e.g. /manage-inventory/status/:id —
+// "status" links nowhere on its own).
+export const HIDDEN_SEGMENTS = new Set<string>([
+    'status',
+    'holds',
+]);

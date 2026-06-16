@@ -18,7 +18,7 @@ const FETCH_ALL = { page: 0, size: 1000 } as const;
 
 function modeOf(status: RequestStatus): LogisticMode {
     if (status === 'PENDING_REVIEW') return 'review';
-    if (status === 'APPROVED' || status === 'ACTIVE') return 'update';
+    if (status === 'APPROVED' || status === 'PICKED_UP' || status === 'ACTIVE') return 'update';
     return 'view';
 }
 

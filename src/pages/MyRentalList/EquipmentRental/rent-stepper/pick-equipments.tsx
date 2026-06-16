@@ -199,8 +199,20 @@ export function PickEquipments({
         return map;
     }, [pricingList, memberType]);
 
-    const cameraColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap), [pricingMap]);
-    const lensColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap, { showLensType: true }), [pricingMap]);
+    // Brand/type lookup for cart items → drives the camera↔lens mismatch reminder.
+    const equipmentById = useMemo(
+        () =>
+            new Map(
+                (data?.mainEquipment ?? []).map((e) => [
+                    e.mainEquipmentId,
+                    { brand: e.brand, equipmentType: e.equipmentType },
+                ]),
+            ),
+        [data],
+    );
+
+    const cameraColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap, { equipmentById }), [pricingMap, equipmentById]);
+    const lensColumns = useMemo(() => createAvailableEquipmentColumns(pricingMap, { showLensType: true, equipmentById }), [pricingMap, equipmentById]);
     const subEquipmentColumns = useMemo(() => createAvailableSubEquipmentColumns(pricingMap), [pricingMap]);
 
     return (

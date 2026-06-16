@@ -1,4 +1,4 @@
-import { Minus, MinusCircle, Plus, PlusCircle } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -54,41 +54,5 @@ export function SubEquipmentQuantityCell({
                 <Plus className="h-3 w-3" />
             </Button>
         </ButtonGroup>
-    );
-}
-
-export function CartActionCell({ equipmentId }: { equipmentId: number }) {
-    const { isInCart, addToCart, removeFromCart, startDate, endDate } = useEquipmentRentalContext();
-    const datesSelected = !!startDate && !!endDate;
-    const inCart = isInCart(equipmentId);
-
-    if (!datesSelected) {
-        return (
-            <Button variant="outline" size="sm" disabled className="text-muted-foreground">
-                Select dates
-            </Button>
-        );
-    }
-
-    return inCart ? (
-        <Button
-            variant="outline"
-            size="sm"
-            className="gap-1 text-destructive border-destructive hover:bg-destructive/10"
-            onClick={() => removeFromCart(equipmentId)}
-        >
-            <MinusCircle className="h-4 w-4" />
-            Remove
-        </Button>
-    ) : (
-        <Button
-            variant="outline"
-            size="sm"
-            className="gap-1 text-primary border-primary hover:bg-primary/10"
-            onClick={() => addToCart(equipmentId)}
-        >
-            <PlusCircle className="h-4 w-4" />
-            Add
-        </Button>
     );
 }
