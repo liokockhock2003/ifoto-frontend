@@ -83,12 +83,12 @@ function renderNotes(notes: string | null) {
 function renderStatusDetail(label: string, status: EquipmentScheduleStatus) {
     return (
         <div className="space-y-3 text-xs">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                    <Wrench className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{label}</span>
+            <div className="flex items-start justify-between gap-2">
+                <span className="flex min-w-0 items-start gap-1.5 text-sm font-semibold text-foreground">
+                    <Wrench className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                    <span className="wrap-break-word">{label}</span>
                 </span>
-                <Badge variant="outline" className={statusBadgeClass(status.statusType)}>
+                <Badge variant="outline" className={`shrink-0 ${statusBadgeClass(status.statusType)}`}>
                     {statusLabel(status.statusType)}
                 </Badge>
             </div>
@@ -101,12 +101,12 @@ function renderStatusDetail(label: string, status: EquipmentScheduleStatus) {
 function renderHoldDetail(label: string, hold: EquipmentScheduleHold) {
     return (
         <div className="space-y-3 text-xs">
-            <div className="flex items-center justify-between gap-2">
-                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                    <PackageMinus className="h-3.5 w-3.5 text-primary shrink-0" />
-                    <span className="truncate">{label}</span>
+            <div className="flex items-start justify-between gap-2">
+                <span className="flex min-w-0 items-start gap-1.5 text-sm font-semibold text-foreground">
+                    <PackageMinus className="h-3.5 w-3.5 mt-0.5 text-primary shrink-0" />
+                    <span className="wrap-break-word">{label}</span>
                 </span>
-                <Badge variant="outline" className="badge-warning">
+                <Badge variant="outline" className="shrink-0 badge-warning">
                     {hold.quantity} unit{hold.quantity !== 1 ? 's' : ''}
                 </Badge>
             </div>

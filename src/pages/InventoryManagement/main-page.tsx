@@ -129,7 +129,7 @@ function InventoryManagementContent() {
                         data={ctx.cameras}
                         isLoading={ctx.isLoading}
                         title="Cameras"
-                        groupBy={(row) => row.brand}
+                        groupBy={(row) => row.brand || null}
                         searchable
                         filters={MAIN_EQUIPMENT_FILTERS}
                     />
@@ -141,7 +141,7 @@ function InventoryManagementContent() {
                         data={ctx.lenses}
                         isLoading={ctx.isLoading}
                         title="Lenses"
-                        groupBy={(row) => row.brand ?? 'Other'}
+                        groupBy={(row) => row.brand || null}
                         searchable
                         filters={MAIN_EQUIPMENT_FILTERS}
                     />

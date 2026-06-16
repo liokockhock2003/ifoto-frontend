@@ -40,7 +40,7 @@ export function RequestRowActions({ row }: RequestRowActionsProps) {
     const isApprover = request.reviewedByUsername === user?.username;
     const showReview = request.status === 'PENDING_REVIEW';
     const showMarkPickedUp = isApprover && request.status === 'APPROVED';
-    const showUpdate = isApprover && (request.status === 'APPROVED' || request.status === 'ACTIVE');
+    const showUpdate = isApprover && (request.status === 'APPROVED' || request.status === 'PICKED_UP' || request.status === 'ACTIVE');
     const showMarkReturned = request.status === 'ACTIVE';
 
     return (

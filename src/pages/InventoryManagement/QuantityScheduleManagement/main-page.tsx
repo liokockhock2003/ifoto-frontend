@@ -26,7 +26,7 @@ export default function QuantityScheduleMainPage() {
 
     if (!equipment) {
         return (
-            <div className="flex h-full flex-col items-center justify-center gap-3 p-8">
+            <div className="flex h-full flex-col items-center justify-center gap-3 p-8 text-foreground">
                 <p className="text-sm text-muted-foreground">Accessory not found.</p>
                 <Button variant="outline" size="sm" onClick={() => navigate('/manage-inventory')}>
                     <ArrowLeft className="h-4 w-4" />
@@ -40,9 +40,9 @@ export default function QuantityScheduleMainPage() {
 
     return (
         <QuantityScheduleProvider equipment={equipment}>
-            <div className="space-y-6 p-2 sm:p-6">
+            <div className="space-y-6 p-2 sm:p-6 text-foreground">
                 {/* Header */}
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-3 text-foreground">
                     <Button type="button" variant="ghost" size="icon" onClick={() => navigate(-1)}>
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
@@ -58,7 +58,7 @@ export default function QuantityScheduleMainPage() {
                 </div>
 
                 <p className="text-xs text-muted-foreground">
-                    Click an event to edit or delete · drag a range to add · drag/resize to reschedule.
+                    Tap/click an event to edit or delete · tap a day or drag a range to add · drag/resize to reschedule.
                 </p>
 
                 {/* Calendar — hover for details, click an entry to manage, drag to add. */}

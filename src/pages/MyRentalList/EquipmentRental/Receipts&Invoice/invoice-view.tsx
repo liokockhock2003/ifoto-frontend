@@ -99,7 +99,7 @@ export function InvoiceView({ rentalId }: { rentalId: number | null }) {
 
     return (
         <Tabs className="flex flex-col items-center" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex items-center justify-between w-full max-w-2xl px-8">
+            <div className="flex items-center justify-between w-full max-w-3xl px-8">
                 <PrimaryTabsList>
                     <PrimaryTabsTrigger value="invoice">Invoice</PrimaryTabsTrigger>
                     {hasOverdue && (
@@ -111,12 +111,12 @@ export function InvoiceView({ rentalId }: { rentalId: number | null }) {
                 </Button>
             </div>
 
-            <TabsContent value="invoice" className="pt-2">
+            <TabsContent value="invoice" className="pt-2 w-full max-w-3xl">
                 <InvoiceTab invoice={invoice} isLoading={false} isError={isError} />
             </TabsContent>
 
             {hasOverdue && (
-                <TabsContent value="overdue" className="pt-2">
+                <TabsContent value="overdue" className="pt-2 w-full max-w-3xl">
                     <InvoiceTab invoice={overdueInvoice} isLoading={false} isError={isOverdueError} />
                 </TabsContent>
             )}

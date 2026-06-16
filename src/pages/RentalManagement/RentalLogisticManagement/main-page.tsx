@@ -15,7 +15,7 @@ export default function RentalLogisticMainPage() {
 
     return (
         <RentalLogisticProvider initialRentalId={initialRentalId}>
-            <div className="space-y-6 p-2 sm:p-6">
+            <div className="space-y-6 p-2 sm:p-6 text-foreground">
                 {/* Header */}
                 <div className="flex items-center gap-3">
                     <Button type="button" variant="ghost" size="icon" onClick={() => navigate(-1)}>

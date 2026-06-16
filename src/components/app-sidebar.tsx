@@ -1,5 +1,5 @@
-import { NavLink, matchPath, useLocation } from 'react-router-dom'
-import { Landmark, LogOut, User2 } from 'lucide-react'
+import { Link, NavLink, matchPath, useLocation } from 'react-router-dom'
+import { ChevronsUpDown, Landmark, LogOut, User2 } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -12,6 +12,14 @@ import {
     SidebarMenuButton,
     SidebarMenuItem,
 } from '@/components/ui/sidebar'
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu'
 import { menuGroups } from '@/routerMenuItems'
 import { useAuth } from '@/store/auth-context'
 
@@ -46,7 +54,7 @@ export function AppSidebar() {
                 {visibleGroups.length > 0 ? (
                     visibleGroups.map((group) => (
                         <SidebarGroup key={group.label}>
-                            <SidebarGroupLabel className='text-primary font-semibold mb-2'>
+                            <SidebarGroupLabel className='text-primary font-semibold'>
                                 {group.label}
                             </SidebarGroupLabel>
                             <SidebarGroupContent className='pl-2 group-data-[collapsible=icon]:p-0'>
@@ -99,36 +107,53 @@ export function AppSidebar() {
             <SidebarFooter className="px-2 py-4">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <div className="flex items-center gap-1">
-                            <SidebarMenuButton className="h-auto justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-0!">
-                                <div className="flex items-center justify-center rounded-full bg-muted overflow-hidden shrink-0 size-8 group-data-[collapsible=icon]:p-0">
-                                    {user?.profilePicture ? (
-                                        <img src={user.profilePicture} alt={user.fullName ?? user.username} className="size-full object-cover" />
-                                    ) : (
-                                        <User2 className="size-4" />
-                                    )}
-                                </div>
-                                <div className="flex min-w-0 flex-1 flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
-                                    <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
-                                    <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                                </div>
-                            </SidebarMenuButton>
-                            {hasRole('ROLE_EQUIPMENT_COMMITTEE') && (
-                                <NavLink
-                                    to="/committee-bank-details"
-                                    title="Bank Details"
-                                    className="shrink-0 p-2.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors group-data-[collapsible=icon]:hidden"
-                                >
-                                    <Landmark className="size-4" />
-                                </NavLink>
-                            )}
-                            <button
-                                onClick={() => logout()}
-                                className="shrink-0 p-2.5 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors group-data-[collapsible=icon]:hidden"
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <SidebarMenuButton className="h-auto justify-start items-center p-2 transition-all group-data-[collapsible=icon]:p-0! group-data-[collapsible=icon]:pl-0!">
+                                    <div className="flex items-center justify-center rounded-full bg-muted overflow-hidden shrink-0 size-8 group-data-[collapsible=icon]:p-0">
+                                        {user?.profilePicture ? (
+                                            <img src={user.profilePicture} alt={user.fullName ?? user.username} className="size-full object-cover" />
+                                        ) : (
+                                            <User2 className="size-4" />
+                                        )}
+                                    </div>
+                                    <div className="flex min-w-0 flex-1 flex-col text-left leading-none group-data-[collapsible=icon]:hidden">
+                                        <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                                    </div>
+                                    <ChevronsUpDown className="ml-auto size-4 text-muted-foreground group-data-[collapsible=icon]:hidden" />
+                                </SidebarMenuButton>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                side="right"
+                                align="end"
+                                sideOffset={8}
+                                className="min-w-56"
                             >
-                                <LogOut className="size-4" />
-                            </button>
-                        </div>
+                                <DropdownMenuLabel className="font-normal">
+                                    <div className="flex min-w-0 flex-col leading-tight">
+                                        <span className="truncate text-sm font-medium">{user?.fullName ?? user?.username}</span>
+                                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                                    </div>
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                {hasRole('ROLE_EQUIPMENT_COMMITTEE') && (
+                                    <DropdownMenuItem asChild>
+                                        <Link to="/committee-bank-details">
+                                            <Landmark className="size-4" />
+                                            Bank Details
+                                        </Link>
+                                    </DropdownMenuItem>
+                                )}
+                                <DropdownMenuItem
+                                    onClick={() => logout()}
+                                    className="text-destructive focus:text-destructive"
+                                >
+                                    <LogOut className="size-4" />
+                                    Log out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarFooter>

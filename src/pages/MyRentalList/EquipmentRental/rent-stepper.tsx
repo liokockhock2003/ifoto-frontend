@@ -34,10 +34,10 @@ import { PickEquipments } from './rent-stepper/pick-equipments';
 // ── Steps definition ──────────────────────────────────────────────────────────
 
 const STEPS = [
-    { id: 1, label: 'Pick Dates',    icon: <CalendarDays className="size-4" /> },
-    { id: 2, label: 'Add Equipment', icon: <ShoppingCart  className="size-4" /> },
-    { id: 3, label: 'Payment',       icon: <CreditCard    className="size-4" /> },
-    { id: 4, label: 'Receipt',       icon: <Receipt       className="size-4" /> },
+    { id: 1, label: 'Pick Dates', icon: <CalendarDays className="size-4" /> },
+    { id: 2, label: 'Add Equipment', icon: <ShoppingCart className="size-4" /> },
+    { id: 3, label: 'Payment', icon: <CreditCard className="size-4" /> },
+    { id: 4, label: 'Receipt', icon: <Receipt className="size-4" /> },
 ] as const;
 
 type StepId = (typeof STEPS)[number]['id'];
@@ -49,7 +49,7 @@ function PreFillFromRental({ rental }: { rental: Rental }) {
     useEffect(() => {
         setStartDate(rental.programStartDate);
         setEndDate(rental.programEndDate);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [rental.id]);
     return null;
 }
@@ -110,7 +110,7 @@ export function RentStepper() {
                                     className="flex grow flex-col items-start justify-center gap-2.5"
                                     asChild
                                 >
-                                    <StepperIndicator className="data-[state=inactive]:border-border data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent size-8 border-2">
+                                    <StepperIndicator className="data-[state=inactive]:border-border data-[state=inactive]:text-muted-foreground data-[state=inactive]:bg-transparent size-8 border-2 border-primary text-primary">
                                         {step.icon}
                                     </StepperIndicator>
                                     <div className="flex flex-col items-start gap-1">

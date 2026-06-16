@@ -36,7 +36,9 @@ interface ExpandableDataTableProps<TData> {
     data: TData[];
     title?: string;
     isLoading?: boolean;
-    groupBy: (row: TData) => string;
+    // Return a group label, or null/'' to leave the row ungrouped (rendered as a
+    // flat list with no collapsible header — e.g. items that have no brand).
+    groupBy: (row: TData) => string | null | undefined;
     searchable?: boolean;
     filters?: FilterDef[];
 }
@@ -83,14 +85,21 @@ export function ExpandableDataTable<TData>({
 
     const filteredRows = table.getFilteredRowModel().rows;
 
-    const grouped = useMemo(() => {
+    // Named groups render as collapsible sections; rows whose key is null/empty
+    // collect into a flat, header-less list.
+    const { grouped, ungrouped } = useMemo(() => {
         const map = new Map<string, Row<TData>[]>();
+        const loose: Row<TData>[] = [];
         filteredRows.forEach((row) => {
             const key = groupBy(row.original);
+            if (!key) {
+                loose.push(row);
+                return;
+            }
             if (!map.has(key)) map.set(key, []);
             map.get(key)!.push(row);
         });
-        return map;
+        return { grouped: map, ungrouped: loose };
     }, [filteredRows, groupBy]);
 
     const [expanded, setExpanded] = useState<Set<string>>(new Set());
@@ -205,7 +214,7 @@ export function ExpandableDataTable<TData>({
                                     ))}
                                 </TableRow>
                             ))
-                            : grouped.size === 0
+                            : grouped.size === 0 && ungrouped.length === 0
                                 ? (
                                     <TableRow>
                                         <TableCell colSpan={augmentedColumns.length} className="h-24 text-center text-sm text-muted-foreground">
@@ -213,39 +222,53 @@ export function ExpandableDataTable<TData>({
                                         </TableCell>
                                     </TableRow>
                                 )
-                                : Array.from(grouped.entries()).map(([key, groupRows]) => {
-                                    const isOpen = expanded.has(key);
-                                    return (
-                                        <Fragment key={key}>
-                                            <TableRow
-                                                className="bg-muted/30 hover:bg-muted/50 cursor-pointer select-none"
-                                                onClick={() => toggle(key)}
-                                            >
-                                                <TableCell colSpan={augmentedColumns.length} className="px-4 py-2">
-                                                    <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
-                                                        {isOpen
-                                                            ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                                                            : <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                                                        }
-                                                        {key}
-                                                        <span className="ml-1 text-xs font-normal text-muted-foreground">
-                                                            ({groupRows.length})
-                                                        </span>
-                                                    </span>
-                                                </TableCell>
-                                            </TableRow>
-                                            {isOpen && groupRows.map((row) => (
-                                                <TableRow key={row.id} className="transition-colors hover:bg-muted/50">
-                                                    {row.getVisibleCells().map((cell) => (
-                                                        <TableCell key={cell.id} className="px-4 py-3">
-                                                            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                : (
+                                    <>
+                                        {Array.from(grouped.entries()).map(([key, groupRows]) => {
+                                            const isOpen = expanded.has(key);
+                                            return (
+                                                <Fragment key={key}>
+                                                    <TableRow
+                                                        className="bg-muted/30 hover:bg-muted/50 cursor-pointer select-none"
+                                                        onClick={() => toggle(key)}
+                                                    >
+                                                        <TableCell colSpan={augmentedColumns.length} className="px-4 py-2">
+                                                            <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                                                                {isOpen
+                                                                    ? <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                                                                    : <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                                                                }
+                                                                {key}
+                                                                <span className="ml-1 text-xs font-normal text-muted-foreground">
+                                                                    ({groupRows.length})
+                                                                </span>
+                                                            </span>
                                                         </TableCell>
+                                                    </TableRow>
+                                                    {isOpen && groupRows.map((row) => (
+                                                        <TableRow key={row.id} className="transition-colors hover:bg-muted/50">
+                                                            {row.getVisibleCells().map((cell) => (
+                                                                <TableCell key={cell.id} className="px-4 py-3">
+                                                                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                                </TableCell>
+                                                            ))}
+                                                        </TableRow>
                                                     ))}
-                                                </TableRow>
-                                            ))}
-                                        </Fragment>
-                                    );
-                                })
+                                                </Fragment>
+                                            );
+                                        })}
+                                        {/* Ungrouped (brandless) rows render flat, no collapsible header. */}
+                                        {ungrouped.map((row) => (
+                                            <TableRow key={row.id} className="transition-colors hover:bg-muted/50">
+                                                {row.getVisibleCells().map((cell) => (
+                                                    <TableCell key={cell.id} className="px-4 py-3">
+                                                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                                                    </TableCell>
+                                                ))}
+                                            </TableRow>
+                                        ))}
+                                    </>
+                                )
                         }
                     </TableBody>
                 </Table>

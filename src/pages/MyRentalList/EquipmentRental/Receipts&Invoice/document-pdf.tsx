@@ -1,13 +1,4 @@
-import { Document, Page, View, Text, Image, StyleSheet, Font } from '@react-pdf/renderer';
-
-Font.register({
-    family: 'Playfair Display',
-    fonts: [
-        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-400-normal.woff2', fontWeight: 'normal' },
-        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-700-normal.woff2', fontWeight: 'bold' },
-        { src: 'https://cdn.jsdelivr.net/npm/@fontsource/playfair-display/files/playfair-display-latin-400-italic.woff2', fontStyle: 'italic' },
-    ],
-});
+import { Document, Page, View, Text, Image, StyleSheet } from '@react-pdf/renderer';
 
 import type { DocumentData } from './document-card';
 import { fmtRM, fmtDocDate } from './document-card';
@@ -26,16 +17,16 @@ const s = StyleSheet.create({
     page: {
         fontFamily: 'Helvetica',
         fontSize: 12,
-        paddingTop: 56,
+        paddingTop: 40,
         paddingHorizontal: 64,
-        paddingBottom: 48,
+        paddingBottom: 10,
         backgroundColor: '#F5F5EF',
         color: '#111',
     },
 
     // Header: logos side by side
     logoRow: { flexDirection: 'row', alignItems: 'center', gap: 20, marginBottom: 32 },
-    utmLogo: { width: 120 },
+    utmLogo: { width: 130 },
     kfkLogo: { width: 80 },
 
     // Info row 1: ATTN block left, title right
@@ -43,7 +34,7 @@ const s = StyleSheet.create({
     attnLeft: { flex: 1 },
     attn: { fontFamily: 'Helvetica-Bold', fontSize: 11, marginBottom: 2 },
     infoText: { fontSize: 12, color: '#333', lineHeight: 1.3 },
-    docTitle: { fontSize: 34, fontFamily: 'Playfair Display', fontWeight: 'bold', letterSpacing: 3, color: '#111', textAlign: 'right' },
+    docTitle: { fontSize: 34, fontFamily: 'Times-Bold', letterSpacing: 3, color: '#111', textAlign: 'right' },
 
     // Info row 2: club address left, doc number + date right
     infoRow2: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 24 },
@@ -56,12 +47,12 @@ const s = StyleSheet.create({
         flexDirection: 'row',
         borderTopWidth: 1,
         borderBottomWidth: 1,
-        borderColor: '#ccc',
+        borderColor: '#999',
         paddingVertical: 10,
         marginBottom: 8,
     },
     tableHeaderCell: { fontFamily: 'Helvetica-Bold', fontSize: 12 },
-    tableRow: { flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#eee' },
+    tableRow: { flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: '#888' },
     tableCell: { fontSize: 12, color: '#333' },
     colNo: { width: 32 },
     colItem: { flex: 1 },
@@ -85,18 +76,18 @@ const s = StyleSheet.create({
 
     // Footer — receipt
     receivedBy: { fontSize: 13, fontFamily: 'Helvetica-Bold' },
-    sigBlock: { position: 'relative', width: 200, height: 100, marginTop: 8, marginBottom: 6 },
-    sigLineAbsolute: { position: 'absolute', bottom: 0, left: 0, right: 0, borderBottomWidth: 1, borderBottomColor: '#111' },
-    sigImageAbsolute: { position: 'absolute', width: 120, height: 60, bottom: 8, left: 0, objectFit: 'contain' },
+    sigBlock: { position: 'relative', width: 180, height: 105 },
+    sigLineAbsolute: { position: 'absolute', bottom: 20, left: 0, right: 0, borderBottomWidth: 1, borderBottomColor: '#111' },
+    sigImageAbsolute: { position: 'absolute', width: 180, height: 110, bottom: -20, left: 0, objectFit: 'contain' },
     signerName: { fontSize: 12, color: '#111' },
     signerPosition: { fontSize: 11, color: '#555' },
     paidStamp: { width: 160, height: 160 },
 
     // Footer — invoice bank details
     bankDetailsBlock: { textAlign: 'right', alignItems: 'flex-end' },
-    bankDetailsTitle: { fontSize: 13, fontFamily: 'Helvetica-Bold', textAlign: 'right', marginBottom: 4 },
+    bankDetailsTitle: { fontSize: 13, fontFamily: 'Helvetica', textAlign: 'right', marginBottom: 4 },
     bankDetailsRow: { fontSize: 11, color: '#444', textAlign: 'right', marginBottom: 2 },
-    bankDetailsBold: { fontFamily: 'Helvetica-Bold', color: '#111' },
+    bankDetailsBold: { fontFamily: 'Helvetica', color: '#111' },
     noBankDetails: { fontSize: 10, color: '#888', fontStyle: 'italic', textAlign: 'right' },
 });
 
@@ -105,6 +96,9 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
     const isReceipt = data.payment !== null;
     const docNumLabel = isReceipt ? 'RNo#' : 'INo#';
     const docAmount = hasPenalty ? data.rental.totalPenaltyAmount : data.rental.totalBaseAmount;
+    const subTotal = docAmount;
+    const paid = isReceipt ? docAmount : 0;
+    const total = subTotal - paid;
 
     return (
         <Document>
@@ -177,18 +171,18 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
 
                 {/* Totals */}
                 <View style={s.totalsBlock}>
-                    {isReceipt && (
-                        <View style={s.totalRow}>
-                            <Text style={s.totalLabel}>Payment</Text>
-                            <Text style={s.totalValueRed}>-{fmtRM(docAmount)}</Text>
-                        </View>
-                    )}
+                    <View style={s.totalRow}>
+                        <Text style={s.totalLabel}>Subtotal</Text>
+                        <Text style={s.totalValue}>{fmtRM(subTotal)}</Text>
+                    </View>
+                    <View style={s.totalRow}>
+                        <Text style={s.totalLabel}>Payment</Text>
+                        <Text style={s.totalValueRed}>{`-${fmtRM(paid)}`}</Text>
+                    </View>
                     <View style={s.totalDivider} />
                     <View style={s.totalRow}>
                         <Text style={s.grandTotalLabel}>Total</Text>
-                        <Text style={s.grandTotalValue}>
-                            {isReceipt ? 'RM 0.00' : fmtRM(docAmount)}
-                        </Text>
+                        <Text style={s.grandTotalValue}>{fmtRM(total)}</Text>
                     </View>
                 </View>
 
@@ -217,7 +211,7 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                             <Text style={s.thankYou}>Thank you!</Text>
                             {data.committee?.type === 'invoice' ? (
                                 <>
-                                    <Text style={[s.bankDetailsTitle, { textAlign: 'left', marginTop: 12 }]}>Payment Information</Text>
+                                    <Text style={[s.bankDetailsTitle, { textAlign: 'left', marginTop: 12, fontWeight: 'bold' }]}>PAYMENT INFORMATION</Text>
                                     <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}><Text style={s.bankDetailsBold}>{data.committee.bankName}</Text></Text>
                                     <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}>Account Name: <Text style={s.bankDetailsBold}>{data.committee.accountName}</Text></Text>
                                     <Text style={[s.bankDetailsRow, { textAlign: 'left' }]}>Account No.: <Text style={s.bankDetailsBold}>{data.committee.accountNo}</Text></Text>
@@ -227,8 +221,8 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                             )}
                         </View>
                         <View style={{ alignItems: 'flex-end' }}>
-                            <Text style={{ fontSize: 11, color: '#555', marginBottom: 6, fontFamily: 'Playfair Display', fontStyle: 'italic' }}>Accepted by</Text>
-                            <Text style={{ fontSize: 12, fontFamily: 'Helvetica-Bold' }}>{data.renter.fullName.toUpperCase()}</Text>
+                            <Text style={{ fontSize: 20, color: '#111', marginBottom: 6, fontFamily: 'Times-Bold' }}>Accepted by</Text>
+                            <Text style={{ fontSize: 12, fontFamily: 'Helvetica' }}>{data.renter.fullName.toUpperCase()}</Text>
                         </View>
                     </View>
                 )}

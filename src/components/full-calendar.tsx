@@ -1,14 +1,17 @@
-import { useMemo, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import FullCalendar from '@fullcalendar/react';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import timeGridPlugin from '@fullcalendar/timegrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import type { EventInput, EventClickArg, DateSelectArg, EventDropArg, EventContentArg } from '@fullcalendar/core';
-import type { EventResizeDoneArg } from '@fullcalendar/interaction';
+import type { EventResizeDoneArg, DateClickArg } from '@fullcalendar/interaction';
 import { parseISO, format, addDays, subDays, set } from 'date-fns';
 import { CalendarDays, Clock, Package, User } from 'lucide-react';
 
+import { useIsMobile } from '@/hooks/use-mobile';
 import { HoverCard, HoverCardTrigger, HoverCardContent } from '@/components/ui/hover-card';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter } from '@/components/ui/sheet';
+import { Button } from '@/components/ui/button';
 import { Badge, type BadgeProps } from '@/components/reui/badge';
 import type { Rental, RentalStatus } from '@/store/schemas/rental';
 import type { EquipmentRequest, RequestStatus } from '@/store/schemas/request';
@@ -287,10 +290,38 @@ export function ScheduleCalendar({
     scheduleOverlay,
 }: ScheduleCalendarProps) {
     const entryById = useMemo(() => new Map(entries.map((e) => [e.id, e])), [entries]);
+    const isMobile = useIsMobile();
+
+    // On mobile, tapping an event opens this bottom sheet (hover cards don't work on touch).
+    const [detailEvent, setDetailEvent] = useState<{
+        title: string;
+        content: ReactNode;
+        action?: { label: string; run: () => void };
+    } | null>(null);
+
+    // Build the rich detail node for an event (shared by the desktop hover card and the mobile sheet).
+    function detailContentFor(props: { kind?: string; rental?: Rental; request?: EquipmentRequest; detail?: ReactNode }): ReactNode {
+        const { kind, rental, request, detail } = props;
+        if (kind === 'rental' && rental) return <RentalDetails rental={rental} />;
+        if (kind === 'request' && request) return <RequestDetails request={request} />;
+        if ((kind === 'entry' || kind === 'overlay') && detail) return detail;
+        return null;
+    }
+
+    function detailTitleFor(props: { kind?: string; rental?: Rental; request?: EquipmentRequest }): string {
+        const { kind, rental, request } = props;
+        if (kind === 'rental' && rental) return rental.rentalNumber;
+        if (kind === 'request' && request) return request.requestNumber;
+        return 'Details';
+    }
 
     // Custom event rendering: rental/request/entry/overlay chips reveal full detail on hover.
     function renderEventContent(arg: EventContentArg) {
-        const { kind, rental, request, detail } = arg.event.extendedProps as {
+        // Hover cards are pointer-hover only and would swallow taps on touch — on mobile
+        // render the plain chip so taps reach FullCalendar's eventClick (details open in a sheet).
+        if (isMobile) return <div className="w-full truncate px-1">{arg.event.title}</div>;
+
+        const props = arg.event.extendedProps as {
             kind?: string;
             rental?: Rental;
             request?: EquipmentRequest;
@@ -298,11 +329,7 @@ export function ScheduleCalendar({
         };
         const chip = <div className="w-full truncate px-1 cursor-pointer">{arg.event.title}</div>;
 
-        let content: ReactNode = null;
-        if (kind === 'rental' && rental) content = <RentalDetails rental={rental} />;
-        else if (kind === 'request' && request) content = <RequestDetails request={request} />;
-        else if ((kind === 'entry' || kind === 'overlay') && detail) content = detail;
-
+        const content = detailContentFor(props);
         if (!content) return <div className="w-full truncate px-1">{arg.event.title}</div>;
 
         return (
@@ -398,13 +425,39 @@ export function ScheduleCalendar({
         arg.view.calendar.unselect();
     }
 
+    // Touch devices can't reliably drag-select a range, so a single tap on a day
+    // opens the add flow for that day (mouse users keep using drag-select).
+    function handleDateClick(arg: DateClickArg) {
+        if (!isMobile) return;
+        if (arg.allDay) {
+            onSelectRange(format(arg.date, DATE) + 'T00:00', format(arg.date, DATE) + 'T23:59');
+        } else {
+            onSelectRange(format(arg.date, DATETIME), format(arg.date, DATETIME));
+        }
+    }
+
     function handleEventClick(arg: EventClickArg) {
-        const { kind, entryId, rental, request } = arg.event.extendedProps as {
+        const props = arg.event.extendedProps as {
             kind: string;
             entryId?: number;
+            detail?: ReactNode;
             rental?: Rental;
             request?: EquipmentRequest;
         };
+        const { kind, entryId, rental, request } = props;
+
+        // Mobile: no hover, so a tap opens a detail sheet (with the relevant action inside)
+        // instead of firing the action directly.
+        if (isMobile) {
+            let action: { label: string; run: () => void } | undefined;
+            if (kind === 'entry' && entryId != null) action = { label: 'Edit / delete', run: () => onEntryClick(entryId) };
+            else if (kind === 'rental' && rental && onRentalClick) action = { label: 'Select rental', run: () => onRentalClick(rental.id) };
+            else if (kind === 'request' && request && onRequestClick) action = { label: 'Select request', run: () => onRequestClick(request.id) };
+
+            setDetailEvent({ title: detailTitleFor(props), content: detailContentFor(props), action });
+            return;
+        }
+
         if (kind === 'entry' && entryId != null) onEntryClick(entryId);
         // Rentals/requests are clickable only when a handler is supplied (logistics workspace);
         // elsewhere their details surface on hover (see renderEventContent).
@@ -439,23 +492,60 @@ export function ScheduleCalendar({
     }
 
     return (
-        <FullCalendar
-            plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
-            initialView="dayGridMonth"
-            headerToolbar={{ left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }}
-            height={520}
-            eventDisplay="block"
-            selectable
-            selectMirror
-            editable
-            eventStartEditable
-            eventDurationEditable
-            events={events}
-            eventContent={renderEventContent}
-            select={handleSelect}
-            eventClick={handleEventClick}
-            eventDrop={handleDatesChange}
-            eventResize={handleDatesChange}
-        />
+        <>
+            <FullCalendar
+                plugins={[dayGridPlugin, timeGridPlugin, interactionPlugin]}
+                initialView="dayGridMonth"
+                headerToolbar={
+                    isMobile
+                        ? { left: 'prev,next', center: 'title', right: 'today' }
+                        : { left: 'prev,next today', center: 'title', right: 'dayGridMonth,timeGridWeek' }
+                }
+                footerToolbar={isMobile ? { center: 'dayGridMonth,timeGridWeek' } : undefined}
+                height={isMobile ? 'auto' : 520}
+                eventDisplay="block"
+                selectable
+                selectMirror
+                editable
+                eventStartEditable
+                eventDurationEditable
+                // Shorten the touch long-press so drag-select and drag/resize trigger reliably on mobile.
+                longPressDelay={250}
+                selectLongPressDelay={250}
+                eventLongPressDelay={250}
+                events={events}
+                eventContent={renderEventContent}
+                select={handleSelect}
+                dateClick={handleDateClick}
+                eventClick={handleEventClick}
+                eventDrop={handleDatesChange}
+                eventResize={handleDatesChange}
+            />
+
+            {/* Mobile-only: tapping an event opens its details (and any action) in a bottom sheet. */}
+            {isMobile && (
+                <Sheet open={!!detailEvent} onOpenChange={(open) => !open && setDetailEvent(null)}>
+                    <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto text-foreground">
+                        <SheetHeader>
+                            <SheetTitle>{detailEvent?.title}</SheetTitle>
+                        </SheetHeader>
+                        <div className="px-4 pb-2">{detailEvent?.content}</div>
+                        {detailEvent?.action && (
+                            <SheetFooter>
+                                <Button
+                                    className="w-full"
+                                    onClick={() => {
+                                        detailEvent.action?.run();
+                                        setDetailEvent(null);
+                                    }}
+                                >
+                                    {detailEvent.action.label}
+                                </Button>
+                            </SheetFooter>
+                        )}
+                    </SheetContent>
+                </Sheet>
+            )}
+        </>
     );
 }

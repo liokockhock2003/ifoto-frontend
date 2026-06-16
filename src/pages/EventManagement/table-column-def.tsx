@@ -1,24 +1,12 @@
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 
 import { Badge } from '@/components/ui/badge';
+import { formatDateTime } from '@/lib/utils';
 import type { Event } from '@/store/schemas/event';
 
 import { EventRowActions } from './table-row-actions';
 
 const col = createColumnHelper<Event>();
-
-function formatDate(iso: string | undefined | null) {
-    if (!iso) return '—';
-    const date = new Date(iso);
-    if (isNaN(date.getTime())) return '—';
-    return date.toLocaleString('en-MY', {
-        day: 'numeric',
-        month: 'short',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    });
-}
 
 export const eventColumns: ColumnDef<Event, any>[] = [
     col.accessor('eventName', {
@@ -27,11 +15,11 @@ export const eventColumns: ColumnDef<Event, any>[] = [
     }),
     col.accessor('startDatetime', {
         header: 'Start',
-        cell: (info) => formatDate(info.getValue()),
+        cell: (info) => formatDateTime(info.getValue()),
     }),
     col.accessor('endDatetime', {
         header: 'End',
-        cell: (info) => formatDate(info.getValue()),
+        cell: (info) => formatDateTime(info.getValue()),
     }),
     col.accessor('location', {
         header: 'Location',
