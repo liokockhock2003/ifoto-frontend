@@ -24,6 +24,7 @@ import ReportingDashboardMainPage from '@/pages/ReportingDashboard/main-page'
 import EquipmentRequestListMainPage from '@/pages/EventManagement/EquipmentRequestList/main-page'
 import EquipmentRequestMainPage from '@/pages/EventManagement/EquipmentRequestList/EquipmentRequest/main-page'
 import CommitteeBankDetailsMainPage from '@/pages/CommitteeBankDetails/main-page'
+import ProfileMainPage from '@/pages/Profile/main-page'
 
 function RoleRedirect() {
     const { isAuthenticated, isLoading, hasRole } = useAuth();
@@ -251,6 +252,14 @@ export const router = createBrowserRouter([
                 element: (
                     <ProtectedRoute allowedRoles={["ROLE_EQUIPMENT_COMMITTEE"]}>
                         <CommitteeBankDetailsMainPage />
+                    </ProtectedRoute>
+                ),
+            },
+            {
+                path: 'my-profile',
+                element: (
+                    <ProtectedRoute>
+                        <ProfileMainPage />
                     </ProtectedRoute>
                 ),
             },

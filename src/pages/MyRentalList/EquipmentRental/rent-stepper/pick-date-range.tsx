@@ -63,7 +63,7 @@ export function PickDateRange({ onNext }: { onNext: () => void }) {
                             onStartChange={setStartDate}
                             onEndChange={setEndDate}
                             placeholder="Date Range"
-                            minDate={new Date()}
+                        // minDate={new Date()}
                         />
                     </div>
                 </div>

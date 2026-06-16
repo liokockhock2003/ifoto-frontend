@@ -20,6 +20,7 @@ export const SEGMENT_LABELS: Record<string, string> = {
     'equipment-return-management':    'Equipment Return Management',
     'reporting-dashboard':            'Reporting Dashboard',
     'committee-bank-details':         'Committee Bank Details',
+    'my-profile':                     'My Profile',
 };
 
 // Intermediate path segments that have no landing page of their own and should

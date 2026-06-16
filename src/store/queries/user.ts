@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { extractApiErrorMessage, isNotFoundError } from '@/utils/api-error';
 import { QueryFactory } from '@/store/query-factory';
 import {
@@ -10,6 +11,8 @@ import {
     UpdateUserResponseSchema,
     CommitteeBankDetailsSchema,
     CommitteeBankDetailsPayloadSchema,
+    UserProfileSchema,
+    UpdateUserProfilePayloadSchema,
     type UserListFilters,
     type User,
     type UserPageResponse,
@@ -17,6 +20,8 @@ import {
     type UpdateUserResponse,
     type CommitteeBankDetails,
     type CommitteeBankDetailsPayload,
+    type UserProfile,
+    type UpdateUserProfilePayload,
 } from '@/store/schemas/user';
 
 const usersQuery = QueryFactory<User, UserListFilters>(
@@ -121,6 +126,20 @@ export function useDeleteUser() {
 // Backward-compatible aliases for existing UI wiring.
 export const useReplaceUserRoles = useUpdateUser;
 
+// ── Error wrapper (mirrors rental.ts) ────────────────────────────────────────
+
+function withApiError<TInput, TOutput>(
+    fn: (input: TInput) => Promise<TOutput>,
+): (input: TInput) => Promise<TOutput> {
+    return async (input) => {
+        try {
+            return await fn(input);
+        } catch (err) {
+            throw new Error(extractApiErrorMessage(err));
+        }
+    };
+}
+
 // ── Committee bank details ─────────────────────────────────────────────────────
 
 const bankDetailsQuery = QueryFactory<CommitteeBankDetails, unknown, CommitteeBankDetailsPayload>(
@@ -176,5 +195,56 @@ export function useUpdateBankDetails() {
                 throw new Error(extractApiErrorMessage(err));
             }
         },
+    });
+}
+
+// ── User profile ───────────────────────────────────────────────────────────────
+
+const profileQuery = QueryFactory<UserProfile, unknown, UpdateUserProfilePayload>(
+    'profile',
+    {
+        single: UserProfileSchema,
+        list:   UserProfileSchema.array(),
+    },
+    '/api/v1/users/me/profile',
+);
+
+const profileGetQuery = profileQuery.customQuery<UserProfile, void>({
+    responseSchema: UserProfileSchema,
+    urlSuffix:      () => '',
+    queryKeySuffix: () => [],
+});
+
+const profileUpdateMutation = profileQuery.customMutation<UpdateUserProfilePayload>({
+    method:         'put',
+    urlSuffix:      '',
+    inputSchema:    UpdateUserProfilePayloadSchema,
+    responseSchema: UserProfileSchema,
+    toastMsg:       'Profile updated',
+    invalidateKeys: () => [[...profileQuery.qk()]],
+});
+
+export const profileKeys = { all: profileQuery.qk() };
+
+export function useGetProfile() {
+    const opts = profileGetQuery(undefined as void);
+    return useQuery<UserProfile | null>({
+        queryKey: opts.queryKey,
+        queryFn: async (ctx) => {
+            try {
+                return await opts.queryFn!(ctx as never);
+            } catch (err) {
+                if (isNotFoundError(err)) return null;
+                throw err;
+            }
+        },
+    });
+}
+
+export function useUpdateProfile() {
+    return useMutation<UserProfile, Error, UpdateUserProfilePayload>({
+        ...profileUpdateMutation,
+        mutationFn: withApiError(profileUpdateMutation.mutationFn),
+        onError: (err) => toast.error(err.message),
     });
 }

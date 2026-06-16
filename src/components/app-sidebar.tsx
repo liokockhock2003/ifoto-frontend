@@ -1,5 +1,5 @@
 import { Link, NavLink, matchPath, useLocation } from 'react-router-dom'
-import { ChevronsUpDown, Landmark, LogOut, User2 } from 'lucide-react'
+import { ChevronsUpDown, Landmark, LogOut, User2, UserCircle } from 'lucide-react'
 import {
     Sidebar,
     SidebarContent,
@@ -137,6 +137,12 @@ export function AppSidebar() {
                                     </div>
                                 </DropdownMenuLabel>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                    <Link to="/my-profile">
+                                        <UserCircle className="size-4" />
+                                        My Profile
+                                    </Link>
+                                </DropdownMenuItem>
                                 {hasRole('ROLE_EQUIPMENT_COMMITTEE') && (
                                     <DropdownMenuItem asChild>
                                         <Link to="/committee-bank-details">
