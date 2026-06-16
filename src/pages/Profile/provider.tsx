@@ -7,8 +7,8 @@ export function ProfileProvider({ children }: { children: ReactNode }) {
     const { mutate: updateProfile, isPending } = useUpdateProfile();
 
     return (
-        <ProfileContext value={{ data, isLoading, isPending, updateProfile }}>
+        <ProfileContext.Provider value={{ data, isLoading, isPending, updateProfile }}>
             {children}
-        </ProfileContext>
+        </ProfileContext.Provider>
     );
 }

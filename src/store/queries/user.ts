@@ -1,5 +1,6 @@
 import { queryOptions, useMutation, useQuery } from '@tanstack/react-query';
 import { z } from 'zod';
+import { toast } from 'sonner';
 import { extractApiErrorMessage, isNotFoundError } from '@/utils/api-error';
 import { QueryFactory } from '@/store/query-factory';
 import {
@@ -244,5 +245,6 @@ export function useUpdateProfile() {
     return useMutation<UserProfile, Error, UpdateUserProfilePayload>({
         ...profileUpdateMutation,
         mutationFn: withApiError(profileUpdateMutation.mutationFn),
+        onError: (err) => toast.error(err.message),
     });
 }

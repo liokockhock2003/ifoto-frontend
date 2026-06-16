@@ -16,7 +16,6 @@ import {
     FormMessage,
 } from '@/components/ui/form';
 
-import { toast } from 'sonner';
 import { UpdateUserProfilePayloadSchema, type UpdateUserProfilePayload } from '@/store/schemas/user';
 import { useAuth } from '@/store/auth-context';
 
@@ -31,6 +30,7 @@ function ProfileContent() {
 
     const form = useForm<UpdateUserProfilePayload>({
         resolver: zodResolver(UpdateUserProfilePayloadSchema),
+        mode: 'onChange',
         defaultValues: {
             fullName: '',
             email: '',
@@ -64,7 +64,6 @@ function ProfileContent() {
                     position: res.position ?? '',
                 });
             },
-            onError: (err) => toast.error(err.message),
         });
     }
 
