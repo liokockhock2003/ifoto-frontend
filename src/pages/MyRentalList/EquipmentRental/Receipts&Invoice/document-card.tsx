@@ -131,7 +131,7 @@ export function DocumentCard({
                     <div className="flex justify-between gap-4 text-sm">
                         <div className="space-y-0.5">
                             <p className="font-bold uppercase">ATTN: {data.renter.fullName}</p>
-                            <p className="text-foreground text-s">{data.renter.email}</p>
+                            <p className="font-bold uppercase">{data.renter.position}</p>
                             <p className="text-foreground text-s">{data.renter.phoneNumber}</p>
                         </div>
                         <span className="text-4xl font-bold tracking-wide font-[Playfair_Display]">{data.title}</span>

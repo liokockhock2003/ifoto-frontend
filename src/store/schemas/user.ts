@@ -81,6 +81,25 @@ export const CommitteeBankDetailsPayloadSchema = z.object({
 export type CommitteeBankDetails = z.infer<typeof CommitteeBankDetailsSchema>;
 export type CommitteeBankDetailsPayload = z.infer<typeof CommitteeBankDetailsPayloadSchema>;
 
+export const UserProfileSchema = z.object({
+    username:      z.string(),
+    email:         z.string().email(),
+    fullName:      z.string(),
+    phoneNumber:   z.string().nullable(),
+    position:      z.string().nullable(),
+    emailVerified: z.boolean(),
+});
+
+export const UpdateUserProfilePayloadSchema = z.object({
+    fullName:    z.string().min(1).max(100),
+    email:       z.string().email().max(255),
+    phoneNumber: z.string().max(20).optional().nullable(),
+    position:    z.string().max(100).optional().nullable(),
+});
+
+export type UserProfile = z.infer<typeof UserProfileSchema>;
+export type UpdateUserProfilePayload = z.infer<typeof UpdateUserProfilePayloadSchema>;
+
 export type User = z.infer<typeof UserSchema>;
 export type Sort = z.infer<typeof SortSchema>;
 export type Pageable = z.infer<typeof PageableSchema>;
