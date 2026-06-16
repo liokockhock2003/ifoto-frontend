@@ -8,40 +8,52 @@ import {
     BreadcrumbPage,
     BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
-import { SEGMENT_LABELS } from '@/breadcrumbs';
+import { HIDDEN_SEGMENTS, SEGMENT_LABELS } from '@/breadcrumbs';
 
 export function AppBreadcrumb() {
     const { pathname, state } = useLocation();
     const segments = pathname.split('/').filter(Boolean);
-    const breadcrumbLabel = (state as { breadcrumbLabel?: string } | null)?.breadcrumbLabel;
+    const s = state as { breadcrumbLabel?: string; breadcrumbLabels?: Record<string, string> } | null;
+    const breadcrumbLabel = s?.breadcrumbLabel;
+    const breadcrumbLabels = s?.breadcrumbLabels ?? {};
 
     if (segments.length === 0) return null;
+
+    // The last URL segment is always the active page; everything before it is a link.
+    const lastIndex = segments.length - 1;
+
+    // Resolve each segment to its href/label, then drop segments with no landing
+    // page of their own so they don't appear as dead links in the trail.
+    const crumbs = segments
+        .map((segment, index) => ({
+            segment,
+            href: '/' + segments.slice(0, index + 1).join('/'),
+            isLast: index === lastIndex,
+            label: (index === lastIndex && breadcrumbLabel)
+                ? breadcrumbLabel
+                : (breadcrumbLabels[segment] ?? SEGMENT_LABELS[segment] ?? segment),
+        }))
+        .filter((c) => c.isLast || !HIDDEN_SEGMENTS.has(c.segment));
 
     return (
         <Breadcrumb className='pl-6 text-muted-foreground'>
             <BreadcrumbList>
-                {segments.map((segment, index) => {
-                    const href   = '/' + segments.slice(0, index + 1).join('/');
-                    const isLast = index === segments.length - 1;
-                    const label  = (isLast && breadcrumbLabel) ? breadcrumbLabel : (SEGMENT_LABELS[segment] ?? segment);
-
-                    return (
-                        <li key={href} className="inline-flex items-center gap-1.5 text-xs italic">
-                            {index > 0 && <BreadcrumbSeparator />}
-                            <BreadcrumbItem>
-                                {isLast ? (
-                                    <BreadcrumbPage>
-                                        {label}
-                                    </BreadcrumbPage>
-                                ) : (
-                                    <BreadcrumbLink asChild>
-                                        <Link to={href}>{label}</Link>
-                                    </BreadcrumbLink>
-                                )}
-                            </BreadcrumbItem>
-                        </li>
-                    );
-                })}
+                {crumbs.map(({ href, isLast, label }, index) => (
+                    <li key={href} className="inline-flex items-center gap-1.5 text-xs italic">
+                        {index > 0 && <BreadcrumbSeparator />}
+                        <BreadcrumbItem>
+                            {isLast ? (
+                                <BreadcrumbPage>
+                                    {label}
+                                </BreadcrumbPage>
+                            ) : (
+                                <BreadcrumbLink asChild>
+                                    <Link to={href} state={{ breadcrumbLabel: label }}>{label}</Link>
+                                </BreadcrumbLink>
+                            )}
+                        </BreadcrumbItem>
+                    </li>
+                ))}
             </BreadcrumbList>
         </Breadcrumb>
     );

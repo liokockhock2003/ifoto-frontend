@@ -112,7 +112,7 @@ export function AvailableEquipmentTables({
                         data={t.data}
                         title={t.label}
                         isLoading={isLoading}
-                        groupBy={(row) => row.brand ?? 'Other'}
+                        groupBy={(row) => row.brand || null}
                         searchable
                         filters={t.filters}
                     />

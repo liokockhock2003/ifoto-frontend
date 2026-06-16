@@ -1,21 +1,23 @@
 import { useState, useRef, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, Pencil, User } from 'lucide-react';
+import { Eye, EyeOff, IdCard, Info, Lock, Mail, Pencil, User } from 'lucide-react';
 import { toast } from 'sonner';
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
 import { isAuthApiError, useRegister } from '@/store/queries/auth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field, FieldError } from '@/components/ui/field';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 // ── Password strength ─────────────────────────────────────────────────────────
 
 const PASSWORD_RULES = [
     { label: 'At least 8 characters', test: (p: string) => p.length >= 8 },
-    { label: 'Uppercase letter',       test: (p: string) => /[A-Z]/.test(p) },
-    { label: 'Lowercase letter',       test: (p: string) => /[a-z]/.test(p) },
-    { label: 'Number',                 test: (p: string) => /[0-9]/.test(p) },
-    { label: 'Special character',      test: (p: string) => /[^A-Za-z0-9]/.test(p) },
+    { label: 'Uppercase letter', test: (p: string) => /[A-Z]/.test(p) },
+    { label: 'Lowercase letter', test: (p: string) => /[a-z]/.test(p) },
+    { label: 'Number', test: (p: string) => /[0-9]/.test(p) },
+    { label: 'Special character', test: (p: string) => /[^A-Za-z0-9]/.test(p) },
 ] as const;
 
 const STRENGTH_LABELS = ['', 'Weak', 'Fair', 'Good', 'Strong', 'Very strong'] as const;
@@ -47,7 +49,6 @@ export default function RegisterPage() {
     const [profilePicture, setprofilePicture] = useState('');
     const [profilePicturePreview, setProfilePicturePreview] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [error, setError] = useState('');
     const [fieldErrors, setFieldErrors] = useState<{ username?: string; email?: string }>({});
 
     const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
@@ -62,12 +63,12 @@ export default function RegisterPage() {
         if (!file) return;
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            setError('Only JPEG, PNG, and WebP images are allowed.');
+            toast.error('Only JPEG, PNG, and WebP images are allowed.');
             e.target.value = '';
             return;
         }
         if (file.size > MAX_SIZE_BYTES) {
-            setError('Image must be smaller than 5 MB.');
+            toast.error('Image must be smaller than 5 MB.');
             e.target.value = '';
             return;
         }
@@ -83,12 +84,11 @@ export default function RegisterPage() {
 
     function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
-        setError('');
         setFieldErrors({});
         setEmailTouched(true);
         setPasswordTouched(true);
 
-        if (!profilePicture) { setError('Please upload a profile picture.'); return; }
+        if (!profilePicture) { toast.error('Please upload a profile picture.'); return; }
         if (!EMAIL_RE.test(email)) return;
         if (passwordStrength < 3) return;
 
@@ -102,7 +102,6 @@ export default function RegisterPage() {
                 onError(err) {
                     const message = isAuthApiError(err) ? err.message : 'Registration failed';
                     setFieldErrors(isAuthApiError(err) ? (err.fieldErrors ?? {}) : {});
-                    setError(message);
                     toast.error(message);
                 },
             }
@@ -144,42 +143,67 @@ export default function RegisterPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {error && (
-                    <Alert variant="destructive">
-                        <AlertDescription>{error}</AlertDescription>
-                    </Alert>
-                )}
-
                 <Field>
-                    <Input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={e => {
-                            setUsername(e.target.value);
-                            if (fieldErrors.username) setFieldErrors(prev => ({ ...prev, username: undefined }));
-                        }}
-                        placeholder="Username"
-                        className={fieldErrors.username ? 'border-destructive focus-visible:ring-destructive' : ''}
-                        required
-                    />
+                    <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={e => {
+                                setUsername(e.target.value);
+                                if (fieldErrors.username) setFieldErrors(prev => ({ ...prev, username: undefined }));
+                            }}
+                            placeholder="Username"
+                            className={`pl-10 ${fieldErrors.username ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            required
+                        />
+                    </div>
                     <FieldError errors={[{ message: fieldErrors.username }]} />
                 </Field>
 
                 <Field>
-                    <Input
-                        id="email"
-                        type="email"
-                        value={email}
-                        onChange={e => {
-                            setEmail(e.target.value);
-                            if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
-                        }}
-                        onBlur={() => setEmailTouched(true)}
-                        placeholder="Email"
-                        className={emailInvalid || fieldErrors.email ? 'border-destructive focus-visible:ring-destructive' : ''}
-                        required
-                    />
+                    <div className="relative">
+                        <Mail className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="email"
+                            type="email"
+                            value={email}
+                            onChange={e => {
+                                setEmail(e.target.value);
+                                if (fieldErrors.email) setFieldErrors(prev => ({ ...prev, email: undefined }));
+                            }}
+                            onBlur={() => setEmailTouched(true)}
+                            placeholder="Email"
+                            className={`pl-10 pr-10 ${emailInvalid || fieldErrors.email ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            required
+                        />
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <button
+                                    type="button"
+                                    aria-label="Email help"
+                                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground transition-colors"
+                                >
+                                    <Info className="size-4" />
+                                </button>
+                            </PopoverTrigger>
+                            <PopoverContent side="top" align="end" className="w-72 p-0 overflow-hidden">
+                                <div className="flex items-center gap-2 border-b bg-muted/50 px-3 py-2">
+                                    <Info className="size-4 shrink-0 text-primary" />
+                                    <span className="text-sm font-semibold text-foreground">Are you a UTM student?</span>
+                                </div>
+                                <div className="px-3 py-2.5 space-y-1.5">
+                                    <p className="text-xs leading-relaxed text-muted-foreground">
+                                        Sign up with your UTM student email to unlock discounted student rental rates.
+                                    </p>
+                                    <p className="text-xs font-medium text-foreground">
+                                        e.g. <span className="font-mono text-primary">name@graduate.utm.my</span>
+                                    </p>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    </div>
                     {emailInvalid
                         ? <FieldError errors={[{ message: 'Please enter a valid email address.' }]} />
                         : <FieldError errors={[{ message: fieldErrors.email }]} />
@@ -188,6 +212,7 @@ export default function RegisterPage() {
 
                 <Field>
                     <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             id="password"
                             type={showPassword ? 'text' : 'password'}
@@ -195,7 +220,7 @@ export default function RegisterPage() {
                             onChange={e => setPassword(e.target.value)}
                             onBlur={() => setPasswordTouched(true)}
                             placeholder="Password"
-                            className={`pr-10 ${passwordWeak ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                            className={`pl-10 pr-10 ${passwordWeak ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                             required
                         />
                         <button
@@ -238,24 +263,30 @@ export default function RegisterPage() {
                 </Field>
 
                 <Field>
-                    <Input
-                        id="fullName"
-                        type="text"
-                        value={fullName}
-                        onChange={e => setFullName(e.target.value)}
-                        placeholder="Full name"
-                        required
-                    />
+                    <div className="relative">
+                        <IdCard className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="fullName"
+                            type="text"
+                            value={fullName}
+                            onChange={e => setFullName(e.target.value)}
+                            placeholder="Full name"
+                            className="pl-10"
+                            required
+                        />
+                    </div>
                 </Field>
 
                 <Field>
-                    <Input
+                    <PhoneInput
                         id="phoneNumber"
-                        type="tel"
+                        inputComponent={Input}
+                        defaultCountry="MY"
+                        international
                         value={phoneNumber}
-                        onChange={e => setPhoneNumber(e.target.value)}
+                        onChange={(v) => setPhoneNumber(v ?? '')}
                         placeholder="Phone number"
-                        required
+                        className="flex items-center gap-2"
                     />
                 </Field>
 

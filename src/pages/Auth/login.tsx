@@ -1,6 +1,6 @@
 import { useState, type SyntheticEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAuthApiError, useLogin } from '@/store/queries/auth';
 import { setAccessToken } from '@/utils/axios-instance';
@@ -13,7 +13,6 @@ export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
-    const [loginError, setLoginError] = useState('');
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const registered = searchParams.get('registered') === 'true';
@@ -21,7 +20,6 @@ export default function LoginPage() {
 
     async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
         e.preventDefault();
-        setLoginError('');
 
         loginMutation.mutate(
             { username, password },
@@ -41,7 +39,6 @@ export default function LoginPage() {
                 },
                 onError(err) {
                     const message = isAuthApiError(err) ? err.message : 'Login failed';
-                    setLoginError(message);
                     toast.error(message);
                 },
             }
@@ -64,32 +61,31 @@ export default function LoginPage() {
                     </Alert>
                 )}
 
-                {loginError && (
-                    <Alert variant="destructive">
-                        <AlertDescription>{loginError}</AlertDescription>
-                    </Alert>
-                )}
-
                 <Field>
-                    <Input
-                        id="username"
-                        type="text"
-                        value={username}
-                        onChange={e => setUsername(e.target.value)}
-                        placeholder="Username"
-                        required
-                    />
+                    <div className="relative">
+                        <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="username"
+                            type="text"
+                            value={username}
+                            onChange={e => setUsername(e.target.value)}
+                            placeholder="Username"
+                            className="pl-10"
+                            required
+                        />
+                    </div>
                 </Field>
 
                 <Field>
                     <div className="relative">
+                        <Lock className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                         <Input
                             id="password"
                             type={showPassword ? 'text' : 'password'}
                             value={password}
                             onChange={e => setPassword(e.target.value)}
                             placeholder="Password"
-                            className="pr-10"
+                            className="pl-10 pr-10"
                             required
                         />
                         <button

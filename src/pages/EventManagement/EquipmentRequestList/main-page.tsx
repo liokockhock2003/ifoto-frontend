@@ -1,5 +1,5 @@
-import { ClipboardList, Plus } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { ClipboardList, Plus, ArrowLeft } from 'lucide-react';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { DataTable } from '@/components/data-table';
 import { Button } from '@/components/ui/button';
@@ -13,12 +13,19 @@ function EquipmentRequestListContent() {
         useEquipmentRequestListContext();
 
     const navigate = useNavigate();
-    const eventName = requests[0]?.eventName ?? `Event #${eventId}`;
+    const { state } = useLocation();
+    const eventName =
+        (state as { breadcrumbLabel?: string } | null)?.breadcrumbLabel ??
+        requests[0]?.eventName ??
+        `Event #${eventId}`;
 
     return (
-        <div className="space-y-6 p-2 sm:p-6">
+        <div className="space-y-6 p-2 sm:p-6 text-foreground">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
+                    <Button type="button" variant="ghost" size="icon" onClick={() => navigate(-1)}>
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
                     <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
                         <ClipboardList className="h-5 w-5 text-primary" />
                     </div>
@@ -32,7 +39,12 @@ function EquipmentRequestListContent() {
                 <Button
                     type="button"
                     size="sm"
-                    onClick={() => navigate(`/equipment-requests/${eventId}/new`)}
+                    onClick={() => navigate(`/equipment-requests/${eventId}/new`, {
+                        state: {
+                            breadcrumbLabel: 'New Request',
+                            breadcrumbLabels: { [String(eventId)]: eventName },
+                        },
+                    })}
                 >
                     <Plus className="h-4 w-4" />
                     <span className="hidden sm:inline">New Request</span>

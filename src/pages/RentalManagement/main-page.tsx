@@ -27,10 +27,10 @@ import { bookingManagementColumns } from './table-column-def';
 const STATUS_TABS: { value: RentalStatus; label: string }[] = [
     { value: 'PENDING_REVIEW', label: 'Pending Review' },
     { value: 'APPROVED', label: 'Approved' },
-    { value: 'PICKED_UP', label: 'Picked Up' },
-    { value: 'ACTIVE', label: 'Active' },
     { value: 'PENDING_PAYMENT', label: 'Pending Payment' },
     { value: 'PAID', label: 'Paid' },
+    { value: 'PICKED_UP', label: 'Picked Up' },
+    { value: 'ACTIVE', label: 'Active' },
     { value: 'OVERDUE', label: 'Overdue' },
     { value: 'RETURNED', label: 'Returned' },
 ];
@@ -182,7 +182,7 @@ function BookingManagementContent() {
             </div>
 
             <Tabs defaultValue="PENDING_REVIEW">
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex flex-col items-end justify-between gap-2 sm:flex-row sm:items-center">
                     <PrimaryTabsList>
                         {STATUS_TABS.map((t) => (
                             <PrimaryTabsTrigger key={t.value} value={t.value}>

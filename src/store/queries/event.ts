@@ -65,8 +65,8 @@ const myEventsListQuery = eventQuery.customList<Event[]>({
 
 const eventsByCommitteeQuery = eventQuery.customQuery<Event[], number>({
     responseSchema: EventSchema.array(),
-    urlSuffix: (userId) => `/users/${userId}`,
-    queryKeySuffix: (userId) => ['users', userId],
+    urlSuffix: (userId) => `/committee/${userId}`,
+    queryKeySuffix: (userId) => ['committee', userId],
 });
 
 // ── Query hooks ───────────────────────────────────────────────────────────────

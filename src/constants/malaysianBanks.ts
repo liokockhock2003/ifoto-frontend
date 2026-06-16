@@ -16,6 +16,14 @@ export const MALAYSIAN_BANKS = [
     'UOB Bank',
     'Bank Muamalat',
     'BSN',
+    'Agrobank',
+    'MBSB Bank',
+    'Al Rajhi Bank',
+    'Kuwait Finance House',
+    'Bank of China',
+    'GXBank',
+    'AEON Bank',
+    'Boost Bank',
 ] as const;
 
 export type MalaysianBank = typeof MALAYSIAN_BANKS[number];

@@ -3,6 +3,7 @@ import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { Badge } from '@/components/ui/badge';
 import type { EquipmentRequest, RequestStatus } from '@/store/schemas/request';
 import { REQUEST_STATUS_BADGE, REQUEST_STATUS_LABEL } from '@/constants/requestStatus';
+import { formatDate, formatDateTime } from '@/lib/utils';
 
 import { RequestRowActions } from './table-row-actions';
 
@@ -34,15 +35,15 @@ export const requestManagementColumns: ColumnDef<EquipmentRequest, any>[] = [
     }),
     columnHelper.accessor('startDatetime', {
         header: 'Start',
-        cell: (info) => new Date(info.getValue()).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' }),
+        cell: (info) => formatDateTime(info.getValue()),
     }),
     columnHelper.accessor('endDatetime', {
         header: 'End',
-        cell: (info) => new Date(info.getValue()).toLocaleString('en-MY', { dateStyle: 'medium', timeStyle: 'short' }),
+        cell: (info) => formatDateTime(info.getValue()),
     }),
     columnHelper.accessor('createdAt', {
         header: 'Submitted',
-        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+        cell: (info) => formatDate(info.getValue()),
     }),
     columnHelper.display({
         id: 'actions',

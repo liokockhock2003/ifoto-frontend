@@ -88,7 +88,7 @@ export function ReceiptView({ rentalId, isSSEConnected }: { rentalId: number | n
 
     return (
         <Tabs className="flex flex-col items-center" value={activeTab} onValueChange={setActiveTab}>
-            <div className="flex items-center justify-between w-full max-w-2xl px-8">
+            <div className="flex items-center justify-between w-full max-w-3xl px-8">
                 <PrimaryTabsList>
                     <PrimaryTabsTrigger value="receipt">Receipt</PrimaryTabsTrigger>
                     {hasPenalty && (
@@ -100,7 +100,7 @@ export function ReceiptView({ rentalId, isSSEConnected }: { rentalId: number | n
                 </Button>
             </div>
 
-            <TabsContent value="receipt" className="pt-2">
+            <TabsContent value="receipt" className="pt-2 w-full max-w-3xl">
                 <ReceiptTab
                     receipt={receipt}
                     isPenalty={false}
@@ -111,7 +111,7 @@ export function ReceiptView({ rentalId, isSSEConnected }: { rentalId: number | n
             </TabsContent>
 
             {hasPenalty && (
-                <TabsContent value="penalty" className="pt-2">
+                <TabsContent value="penalty" className="pt-2 w-full max-w-3xl">
                     <ReceiptTab
                         receipt={penaltyReceipt}
                         isPenalty={true}

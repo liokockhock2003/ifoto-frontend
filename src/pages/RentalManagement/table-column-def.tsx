@@ -3,6 +3,7 @@ import { Badge } from '@/components/ui/badge';
 import type { Rental } from '@/store/schemas/rental';
 import { type ColumnDef, createColumnHelper } from '@tanstack/react-table';
 import { RENTAL_STATUS_LABEL, type RentalStatus } from '@/constants/rentalStatus';
+import { formatDate } from '@/lib/utils';
 import { statusVariant } from '@/pages/MyRentalList/table-column-def';
 
 import { BookingRowActions } from './table-row-actions';
@@ -35,11 +36,11 @@ export const bookingManagementColumns: ColumnDef<Rental, any>[] = [
     }),
     columnHelper.accessor('programStartDate', {
         header: 'Start Date',
-        cell: (info) => info.getValue(),
+        cell: (info) => formatDate(info.getValue()),
     }),
     columnHelper.accessor('programEndDate', {
         header: 'End Date',
-        cell: (info) => info.getValue(),
+        cell: (info) => formatDate(info.getValue()),
     }),
     columnHelper.accessor('totalBaseAmount', {
         header: 'Base Amount',
@@ -53,7 +54,7 @@ export const bookingManagementColumns: ColumnDef<Rental, any>[] = [
     }),
     columnHelper.accessor('createdAt', {
         header: 'Submitted',
-        cell: (info) => new Date(info.getValue()).toLocaleDateString(),
+        cell: (info) => formatDate(info.getValue()),
     }),
     columnHelper.display({
         id: 'actions',
