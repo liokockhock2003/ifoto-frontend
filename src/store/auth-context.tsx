@@ -12,6 +12,7 @@ interface AuthContextType {
     login: (username: string, password: string) => Promise<void>;
     logout: () => Promise<void>;
     hasRole: (role: string) => boolean;
+    updateUser: (patch: Partial<Pick<User, 'fullName' | 'email'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -144,6 +145,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // ── Role helper ────────────────────────────────────────────────────────────
     const hasRole = (role: string) => user?.roles.includes(role) ?? false;
 
+    // ── Profile update helper ──────────────────────────────────────────────────
+    function updateUser(patch: Partial<Pick<User, 'fullName' | 'email'>>) {
+        setUser((prev) => {
+            if (!prev) return prev;
+            const updated = { ...prev, ...patch };
+            localStorage.setItem('user', JSON.stringify(updated));
+            return updated;
+        });
+    }
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -152,6 +163,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             login,
             logout,
             hasRole,
+            updateUser,
         }}>
             {children}
         </AuthContext.Provider>

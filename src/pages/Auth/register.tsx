@@ -1,6 +1,6 @@
 import { useState, useRef, type SyntheticEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Eye, EyeOff, IdCard, Info, Lock, Mail, Pencil, User } from 'lucide-react';
+import { Briefcase, Eye, EyeOff, IdCard, Info, Lock, Mail, Pencil, User } from 'lucide-react';
 import { toast } from 'sonner';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
@@ -46,6 +46,7 @@ export default function RegisterPage() {
     const [passwordTouched, setPasswordTouched] = useState(false);
     const [fullName, setFullName] = useState('');
     const [phoneNumber, setPhoneNumber] = useState('');
+    const [position, setPosition] = useState('');
     const [profilePicture, setprofilePicture] = useState('');
     const [profilePicturePreview, setProfilePicturePreview] = useState('');
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -93,7 +94,7 @@ export default function RegisterPage() {
         if (passwordStrength < 3) return;
 
         registerMutation.mutate(
-            { username, email, password, fullName, phoneNumber, profilePicture },
+            { username, email, password, fullName, phoneNumber, profilePicture, position: position.trim() || null },
             {
                 onSuccess() {
                     toast.success('Registration successful. Please check your email to verify your account.');
@@ -288,6 +289,20 @@ export default function RegisterPage() {
                         placeholder="Phone number"
                         className="flex items-center gap-2"
                     />
+                </Field>
+
+                <Field>
+                    <div className="relative">
+                        <Briefcase className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                            id="position"
+                            type="text"
+                            value={position}
+                            onChange={e => setPosition(e.target.value)}
+                            placeholder="Position (optional)"
+                            className="pl-10"
+                        />
+                    </div>
                 </Field>
 
                 <Button type="submit" disabled={registerMutation.isPending} className="w-full">

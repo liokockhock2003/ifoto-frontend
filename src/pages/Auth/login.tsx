@@ -1,5 +1,5 @@
 import { useState, type SyntheticEvent } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Lock, User } from 'lucide-react';
 import { toast } from 'sonner';
 import { isAuthApiError, useLogin } from '@/store/queries/auth';
@@ -7,15 +7,12 @@ import { setAccessToken } from '@/utils/axios-instance';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Field } from '@/components/ui/field';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function LoginPage() {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
     const navigate = useNavigate();
-    const [searchParams] = useSearchParams();
-    const registered = searchParams.get('registered') === 'true';
     const loginMutation = useLogin();
 
     async function handleSubmit(e: SyntheticEvent<HTMLFormElement>) {
@@ -53,14 +50,6 @@ export default function LoginPage() {
             </div>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-                {registered && (
-                    <Alert>
-                        <AlertDescription>
-                            Registration successful. Please verify your email before logging in.
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 <Field>
                     <div className="relative">
                         <User className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

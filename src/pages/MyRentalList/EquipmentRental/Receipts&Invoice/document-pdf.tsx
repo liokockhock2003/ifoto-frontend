@@ -114,11 +114,8 @@ export function DocumentPdfDocument({ data }: { data: DocumentData }) {
                 <View style={s.infoRow1}>
                     <View style={s.attnLeft}>
                         <Text style={s.attn}>ATTN: {data.renter.fullName.toUpperCase()}</Text>
-                        <Text style={s.infoText}>{data.renter.email}</Text>
-                        {data.renter.phoneNumber
-                            ? <Text style={s.infoText}>{data.renter.phoneNumber}</Text>
-                            : null
-                        }
+                        <Text style={s.attn}>{data.renter.position?.toUpperCase() || 'N/A'}</Text>
+                        <Text style={s.infoText}>{data.renter.phoneNumber}</Text>
                     </View>
                     <Text style={s.docTitle}>{data.title}</Text>
                 </View>

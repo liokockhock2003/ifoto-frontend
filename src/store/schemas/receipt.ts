@@ -5,6 +5,7 @@ export const ReceiptRenterSchema = z.object({
     fullName: z.string(),
     email: z.string(),
     phoneNumber: z.string().nullable(),
+    position: z.string().nullable(),
 });
 
 export const ReceiptRentalItemSchema = z.object({
