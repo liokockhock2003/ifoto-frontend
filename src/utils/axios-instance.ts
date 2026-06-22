@@ -14,8 +14,12 @@ type AuthInternalRequestConfig = InternalAxiosRequestConfig & {
     _retry?: boolean;
 };
 
+// Resolved API origin — empty in dev (Vite proxies /api → :8080), VITE_API_URL in prod.
+// Exported so non-axios callers (e.g. SSE fetch in use-rental-events) hit the same backend.
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '' : 'http://localhost:8080');
+
 const api = axios.create({
-    baseURL: import.meta.env.VITE_API_URL ?? (import.meta.env.DEV ? '' : 'http://localhost:8080'),
+    baseURL: API_BASE_URL,
     timeout: 10000,
     headers: { 'Content-Type': 'application/json' },
     withCredentials: true,   // sends httpOnly cookies (refresh token) on every request
