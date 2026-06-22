@@ -79,7 +79,7 @@ export function RentStepper() {
     const [rental] = useState<Rental | null>(prefilledRental);
 
     const rentalId = rental?.id ?? rentalIdFromSession;
-    const { isConnected: isSSEConnected } = useRentalEvents(rentalId);
+    useRentalEvents(rentalId);
 
     const goTo = (step: StepId) => setCurrentStep(step);
 
@@ -181,7 +181,6 @@ export function RentStepper() {
                         <StepperContent value={4}>
                             <GeneratedReceipt
                                 rentalId={rentalId}
-                                isSSEConnected={isSSEConnected}
                                 onBack={() => goTo(3)}
                             />
                         </StepperContent>

@@ -49,19 +49,18 @@ type ReceiptTabProps = {
     isPenalty: boolean;
     isLoading: boolean;
     isError: boolean;
-    isSSEConnected?: boolean;
 };
 
-function ReceiptTab({ receipt, isPenalty, isLoading, isError, isSSEConnected }: ReceiptTabProps) {
+function ReceiptTab({ receipt, isPenalty, isLoading, isError }: ReceiptTabProps) {
     if (isLoading) return <LoadingCard />;
-    if (isSSEConnected && !receipt) return <GeneratingCard />;
-    if (isError || !receipt) return <ErrorCard />;
+    if (isError) return <ErrorCard />;
+    if (!receipt) return <GeneratingCard />;
     return <DocumentCard data={receiptToDoc(receipt, isPenalty)} />;
 }
 
 // ── Main component ────────────────────────────────────────────────────────────
 
-export function ReceiptView({ rentalId, isSSEConnected }: { rentalId: number | null; isSSEConnected?: boolean }) {
+export function ReceiptView({ rentalId }: { rentalId: number | null }) {
     const { data: receipt, isLoading: receiptLoading, isError } = useReceipt(rentalId);
     const { data: penaltyReceipt, isLoading: penaltyLoading, isError: isPenaltyError } = usePenaltyReceipt(rentalId);
     const [activeTab, setActiveTab] = useState('receipt');
@@ -106,7 +105,6 @@ export function ReceiptView({ rentalId, isSSEConnected }: { rentalId: number | n
                     isPenalty={false}
                     isLoading={isLoading}
                     isError={isError}
-                    isSSEConnected={isSSEConnected}
                 />
             </TabsContent>
 
