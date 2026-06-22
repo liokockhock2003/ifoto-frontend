@@ -2,7 +2,7 @@ import { queryOptions } from '@tanstack/react-query';
 import { type AxiosRequestConfig } from 'axios';
 import { toast } from 'sonner';
 import { invalidateQuery } from '@/store/query-client';
-import { axios } from '@/utils/axios-instance';
+import { axios, API_BASE_URL } from '@/utils/axios-instance';
 import { type ZodType } from 'zod';
 
 // ── Shared option shape ────────────────────────────────────────────────────────
@@ -160,7 +160,10 @@ export function QueryFactory<TModel, TFilters = unknown, TPayload = Partial<TMod
             urlSuffix: (param: TParam) => string;
         }) {
             return {
-                url: (param: TParam) => `${baseUrl}${options.urlSuffix(param)}`,
+                // Prepend API_BASE_URL so the raw fetch() in SSE hooks targets the
+                // backend (VITE_API_URL) in prod, not the frontend origin. axios calls
+                // get this via baseURL; this bare-fetch path must add it explicitly.
+                url: (param: TParam) => `${API_BASE_URL}${baseUrl}${options.urlSuffix(param)}`,
             };
         },
 
