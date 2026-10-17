@@ -5,25 +5,46 @@ on:
     branches: [main, staging]
   pull_request:
     branches: [main, staging]
+  workflow_dispatch:
+
+# Cancel superseded runs on the same branch / PR
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  build-and-test:
+  build:
+    name: Lint & build
     runs-on: ubuntu-latest
+    timeout-minutes: 15
 
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v7
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
-          node-version: '20'
-          cache: 'npm'
+          node-version: '22'
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
+      # Non-blocking until the existing lint errors are cleaned up;
+      # remove continue-on-error afterwards so new errors fail the build
+      - name: Lint
+        run: npm run lint
+        continue-on-error: true
+
+      # Type-check (tsc -b) + production bundle — the same build Vercel runs
       - name: Build
         run: npm run build
+        env:
+          VITE_API_URL: https://api.example.com
 
-      - name: Run tests
+      - name: Test
         run: npm run test --if-present

@@ -1,4 +1,5 @@
-import { Banknote, CreditCard, Building2, X } from 'lucide-react';
+// CreditCard is only used by the Online (Billplz) option, which is disabled for now
+import { Banknote, /* CreditCard, */ Building2, X } from 'lucide-react';
 import { useState } from 'react';
 
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -18,7 +19,7 @@ export function MakePayment({
     rental: Rental | null;
     onNext: () => void;
 }) {
-    const [paymentMethod, setPaymentMethod] = useState<'ONLINE' | 'CASH' | 'BANK_TRANSFER'>('ONLINE');
+    const [paymentMethod, setPaymentMethod] = useState<'ONLINE' | 'CASH' | 'BANK_TRANSFER'>('CASH');
     const [cancelOpen, setCancelOpen] = useState(false);
     const { mutate, isPending, error } = usePayRental();
     const canCancel = rental?.status === 'PENDING_REVIEW' || rental?.status === 'APPROVED';
@@ -54,8 +55,11 @@ export function MakePayment({
                         <RadioGroup
                             value={paymentMethod}
                             onValueChange={(v) => setPaymentMethod(v as 'ONLINE' | 'CASH' | 'BANK_TRANSFER')}
-                            className="grid grid-cols-3 gap-3 max-w-lg"
+                            className="grid grid-cols-2 gap-3 max-w-lg"
                         >
+                            {/* Online payment (Billplz) disabled for now — restore this option,
+                                the CreditCard import, grid-cols-3, and the 'ONLINE' default
+                                once BILLPLZ_ENABLED=true on the backend.
                             <FieldLabel className="cursor-pointer transition-colors">
                                 <Field orientation="horizontal">
                                     <FieldContent>
@@ -68,6 +72,7 @@ export function MakePayment({
                                     <RadioGroupItem value="ONLINE" />
                                 </Field>
                             </FieldLabel>
+                            */}
                             <FieldLabel className="cursor-pointer transition-colors">
                                 <Field orientation="horizontal">
                                     <FieldContent>
