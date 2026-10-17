@@ -28,7 +28,7 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     },
     {
         q: 'How and when do I pay?',
-        a: 'Payment is made after you have collected the equipment. Once you pick up the equipment, your rental status will update and a payment option will appear. You can pay online or in cash — your committee member will guide you.',
+        a: 'Payment is made after you have collected the equipment. Once you pick up the equipment, your rental status will update and a payment option will appear. You can pay in cash or by bank transfer — your committee member will guide you.',
     },
     {
         q: 'Can I cancel my request?',
